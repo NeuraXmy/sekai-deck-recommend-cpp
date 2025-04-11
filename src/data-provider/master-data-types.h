@@ -1,0 +1,37 @@
+#ifndef MASTER_DATA_TYPES_H
+#define MASTER_DATA_TYPES_H
+
+#include "master-data/area-item-level.h"
+#include "master-data/area-item.h"
+#include "master-data/area.h"
+#include "master-data/card-episode.h"
+#include "master-data/card.h"
+#include "master-data/card-mysekai-canvas-bonus.h"
+#include "master-data/card-rarity.h"
+#include "master-data/character-rank.h"
+#include "master-data/event-card.h"
+#include "master-data/event-deck-bonus.h"
+#include "master-data/event-exchange-summary.h"
+#include "master-data/event.h"
+#include "master-data/event-item.h"
+#include "master-data/event-rarity-bonus-rate.h"
+#include "master-data/game-character.h"
+#include "master-data/game-character-unit.h"
+#include "master-data/honor.h"
+#include "master-data/master-lesson.h"
+#include "master-data/music-difficulty.h"
+#include "master-data/music.h"
+#include "master-data/music-vocal.h"
+#include "master-data/mysekai-fixture-game-character-group.h"
+#include "master-data/mysekai-fixture-game-character-group-performance-bonus.h"
+#include "master-data/mysekai-gate.h"
+#include "master-data/mysekai-gate-level.h"
+#include "master-data/shop-item.h"
+#include "master-data/skill.h"
+#include "master-data/world-bloom-different-attribute-bonus.h"
+#include "master-data/world-bloom.h"
+#include "master-data/world-bloom-support-deck-bonus.h"
+#include "master-data/world-bloom-support-deck-unit-event-limited-bonus.h"
+
+
+#endif // MASTER_DATA_TYPES_H
