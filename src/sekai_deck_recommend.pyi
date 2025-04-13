@@ -26,7 +26,7 @@ class DeckRecommendSaOptions:
         run_num (int): Number of simulated annealing runs, default is 20
         seed (int): Random seed, leave it None or use -1 for random seed, default is None
         max_iter (int): Maximum iterations, default is 1000000
-        max_no_improve_iter (int): Maximum iterations without improvement, default is 1000
+        max_no_improve_iter (int): Maximum iterations without improvement, default is 10000
         time_limit_ms (int): Time limit in milliseconds, default is 200
         start_temprature (float): Start temperature, default is 1e8
         cooling_rate (float): Cooling rate, default is 0.999

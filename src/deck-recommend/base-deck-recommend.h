@@ -27,7 +27,7 @@ struct DeckRecommendConfig {
     int saRunCount = 20; // 运行次数
     int saSeed = -1; // 随机数种子 -1 代表使用当前时间
     int saMaxIter = 1000000; // 最大迭代次数
-    int saMaxIterNoImprove = 1000; // 最大无改进迭代次数
+    int saMaxIterNoImprove = 10000; // 最大无改进迭代次数
     int saMaxTimeMs = 200; // 最大运行时间
     double saStartTemperature = 1e8; // 初始温度
     double saCoolingRate = 0.999; // 冷却速率
