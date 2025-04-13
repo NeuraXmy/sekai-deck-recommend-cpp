@@ -19,7 +19,7 @@ class DeckRecommendCardConfig:
     skill_max: Optional[bool]
 
 
-class PySaOptions:
+class DeckRecommendSaOptions:
     """
     Simulated annealing options
     Attributes:
@@ -62,9 +62,9 @@ class DeckRecommendOptions:
         rarity_3_config (DeckRecommendCardConfig): Card config for rarity 3
         rarity_birthday_config (DeckRecommendCardConfig): Card config for birthday cards
         rarity_4_config (DeckRecommendCardConfig): Card config for rarity 4
-        sa_options (PySaOptions): Simulated annealing options
+        sa_options (DeckRecommendSaOptions): Simulated annealing options
     """
-    algorithm: str
+    algorithm: Optional[str]
     region: str
     user_data_file_path: str
     live_type: str
@@ -80,7 +80,7 @@ class DeckRecommendOptions:
     rarity_3_config: Optional[DeckRecommendCardConfig]
     rarity_birthday_config: Optional[DeckRecommendCardConfig]
     rarity_4_config: Optional[DeckRecommendCardConfig]
-    sa_options: Optional[PySaOptions]
+    sa_options: Optional[DeckRecommendSaOptions]
 
 
 class RecommendCard:

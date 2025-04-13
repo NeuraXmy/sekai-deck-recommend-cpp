@@ -237,16 +237,14 @@ void BaseDeckRecommend::findBestCardsSA(
             if (!isChallengeLive && i != deck[pos]->characterId && deckCharacters.count(i))
                 continue;
             for(int j = 0; j < int(charaCardDetails[i].size()); j++) {
-                // 排除同一张卡
-                if (deckCardIds.count(charaCardDetails[i][j].cardId)) 
+                // 如果是挑战live，需要排除和其他卡重复（不是挑战live的情况不用，因为其他卡会被角色相同判断排除）
+                // 但是不排除需要替换的那张卡，避免出现没有能够替换的问题
+                if (isChallengeLive && charaCardDetails[i][j].cardId != deck[pos]->cardId 
+                    && deckCardIds.count(charaCardDetails[i][j].cardId))
                     continue;
                 replacableCardIndices.push_back(i * 10000 + j);
             }
         }
-
-        // 如果没有能替换的，直接退出
-        if (replacableCardIndices.empty()) 
-            break;
         
         // 随机一个进行替换
         int index = std::uniform_int_distribution<int>(0, int(replacableCardIndices.size()) - 1)(rng);
@@ -355,21 +353,26 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
     
     auto honorBonus = deckCalculator.getHonorBonusPower();
 
-    // 为了优化性能，会根据活动加成和卡牌稀有度优先级筛选卡牌
     std::vector<RecommendDeck> ans{};
+    std::vector<CardDetail> cardDetails{};
     std::vector<CardDetail> preCardDetails{};
     RecommendCalcInfo calcInfo{};
 
     auto sf = [&scoreFunc, &musicMeta](const DeckDetail& deckDetail) { return scoreFunc(musicMeta, deckDetail); };
 
     while (true) {
-        auto cardDetails = filterCardPriority(liveType, eventConfig.eventType, cards, preCardDetails, config.member);
+        if (!config.useSa) {
+            // 为了优化性能，会根据活动加成和卡牌稀有度优先级筛选卡牌
+            cardDetails = filterCardPriority(liveType, eventConfig.eventType, cards, preCardDetails, config.member);
+        } else {
+            // 如果使用模拟退火不需要过滤
+            cardDetails = cards;
+        }
         if (cardDetails.size() == preCardDetails.size()) {
-            // 如果所有卡牌都上阵了还是组不出队伍，就报错
-            if (ans.empty())
+            if (ans.empty())    // 如果所有卡牌都上阵了还是组不出队伍，就报错
                 throw std::runtime_error("Cannot recommend any deck in " + std::to_string(cards.size()) + " cards");
-            else
-                return ans; // 返回上次组出的队伍
+            else    // 返回上次组出的队伍
+                return ans; 
         }
         preCardDetails = cardDetails;
         auto cards0 = cardDetails;

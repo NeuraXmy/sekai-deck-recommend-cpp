@@ -217,9 +217,9 @@ class SekaiDeckRecommend {
             if (!VALID_ALGORITHMS.count(algorithm))
                 throw std::invalid_argument("Invalid algorithm: " + algorithm);
             if (algorithm == "sa")
-                options.config.useSa = true;
+                config.useSa = true;
             else if (algorithm == "dfs")
-                options.config.useSa = false;
+                config.useSa = false;
 
             // music
             if (!pyoptions.music_id.has_value())
@@ -280,7 +280,7 @@ class SekaiDeckRecommend {
             }
 
             // sa config
-            if (options.config.useSa && pyoptions.sa_options.has_value()) {
+            if (config.useSa && pyoptions.sa_options.has_value()) {
                 auto sa_options = pyoptions.sa_options.value();
 
                 if (sa_options.run_num.has_value())
@@ -443,7 +443,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("rarity_3_config", &PyDeckRecommendOptions::rarity_3_config)
         .def_readwrite("rarity_birthday_config", &PyDeckRecommendOptions::rarity_birthday_config)
         .def_readwrite("rarity_4_config", &PyDeckRecommendOptions::rarity_4_config)
-        .def_readwrite("simulated_annealing_options", &PyDeckRecommendOptions::sa_options);
+        .def_readwrite("sa_options", &PyDeckRecommendOptions::sa_options);
 
     py::class_<PyRecommendCard>(m, "RecommendCard")
         .def(py::init<>())

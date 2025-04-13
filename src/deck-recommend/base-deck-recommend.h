@@ -23,7 +23,7 @@ struct DeckRecommendConfig {
     std::unordered_map<int, CardConfig> cardConfig = {};
 
     // 模拟退火参数
-    bool useSa = false; // 是否使用模拟退火
+    bool useSa = true; // 是否使用模拟退火
     int saRunCount = 20; // 运行次数
     int saSeed = -1; // 随机数种子 -1 代表使用当前时间
     int saMaxIter = 1000000; // 最大迭代次数
