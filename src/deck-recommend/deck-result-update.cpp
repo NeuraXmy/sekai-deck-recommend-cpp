@@ -1,4 +1,5 @@
 #include "deck-recommend/deck-result-update.h"
+#include "deck-result-update.h"
 
 bool RecommendDeck::operator>(const RecommendDeck &other) const
 {
@@ -24,7 +25,7 @@ long long getDeckHash(const RecommendDeck &deck)
     return hash;
 }
 
-void RecommendDeckDfsInfo::reset()
+void RecommendCalcInfo::reset()
 {
     while(!deckQueue.empty()) {
         deckQueue.pop();
@@ -32,14 +33,21 @@ void RecommendDeckDfsInfo::reset()
     deckHashSet.clear();
     deckCards.clear();
     deckCharacters.clear();
+    deckScoreMap.clear();
 }
 
-void RecommendDeckDfsInfo::update(const RecommendDeck &deck, int limit)
+void RecommendCalcInfo::update(const RecommendDeck &deck, int limit)
 {
-    // 添加一个新结果
+    // 判断是否已经存在
     long long hash = getDeckHash(deck);
-    if (deckHashSet.count(hash)) return; // 已经存在了
+    if (deckHashSet.count(hash)) 
+        return; 
     deckHashSet.insert(hash);
+    
+    // 如果已经足够，判断是否劣于当前最差的
+    if (int(deckQueue.size()) >= limit && deckQueue.top() > deck)
+        return;
+
     deckQueue.push(deck);
     while (int(deckQueue.size()) > limit) {
         deckQueue.pop();

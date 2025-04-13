@@ -8,5 +8,9 @@ std::vector<CardDetail> BloomSupportDeckRecommend::recommendBloomSupportDeck(
 {
     auto userCards = dataProvider.userData->userCards;
     auto allCards = cardCalculator.batchGetCardDetail(userCards, {}, EventConfig{ .specialCharacterId = specialCharacterId });
-    return deckCalculator.getSupportDeckBonus(mainDeck, allCards, supportDeckCount).cards;
+
+    std::vector<const CardDetail*> pMainDeck{};
+    for (const auto& card : mainDeck) 
+        pMainDeck.push_back(&card);
+    return deckCalculator.getSupportDeckBonus(pMainDeck, allCards, supportDeckCount).cards;
 }

@@ -18,12 +18,13 @@ struct RecommendDeck : DeckDetail {
 };
 
 
-// 存储卡组推荐DFS的结果以及过程中需要记录的信息
-struct RecommendDeckDfsInfo {
+// 存储卡组推荐计算的结果以及过程中需要记录的信息
+struct RecommendCalcInfo {
     std::priority_queue<RecommendDeck, std::vector<RecommendDeck>, std::greater<>> deckQueue = {};
     std::unordered_set<long long> deckHashSet = {};
-    std::vector<CardDetail> deckCards = {};
+    std::vector<const CardDetail*> deckCards = {};
     std::unordered_set<int> deckCharacters = {};
+    std::map<long long, int> deckScoreMap{};
 
     // 重置
     void reset();

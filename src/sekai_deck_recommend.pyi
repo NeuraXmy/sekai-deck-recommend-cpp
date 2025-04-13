@@ -19,10 +19,34 @@ class DeckRecommendCardConfig:
     skill_max: Optional[bool]
 
 
+class PySaOptions:
+    """
+    Simulated annealing options
+    Attributes:
+        run_num (int): Number of simulated annealing runs, default is 20
+        seed (int): Random seed, leave it None or use -1 for random seed, default is None
+        max_iter (int): Maximum iterations, default is 1000000
+        max_no_improve_iter (int): Maximum iterations without improvement, default is 1000
+        time_limit_ms (int): Time limit in milliseconds, default is 200
+        start_temprature (float): Start temperature, default is 1e8
+        cooling_rate (float): Cooling rate, default is 0.999
+        debug (bool): Whether to print debug information, default is False
+    """
+    run_num: Optional[int]
+    seed: Optional[int]
+    max_iter: Optional[int]
+    max_no_improve_iter: Optional[int]
+    time_limit_ms: Optional[int]
+    start_temprature: Optional[float]
+    cooling_rate: Optional[float]
+    debug: Optional[bool]
+
+
 class DeckRecommendOptions:
     """
     Deck recommend options
     Attributes:
+        algorithm (str): "sa" for simulated annealing, "dfs" for brute force. Default is "sa"
         region (str): Region in ["jp", "en", "tw", "kr", "cn"]
         user_data_file_path (str): File path of user suite data
         live_type (str): Live type in ["multi", "solo", "auto", "challenge"]
@@ -38,7 +62,9 @@ class DeckRecommendOptions:
         rarity_3_config (DeckRecommendCardConfig): Card config for rarity 3
         rarity_birthday_config (DeckRecommendCardConfig): Card config for birthday cards
         rarity_4_config (DeckRecommendCardConfig): Card config for rarity 4
+        sa_options (PySaOptions): Simulated annealing options
     """
+    algorithm: str
     region: str
     user_data_file_path: str
     live_type: str
@@ -54,6 +80,7 @@ class DeckRecommendOptions:
     rarity_3_config: Optional[DeckRecommendCardConfig]
     rarity_birthday_config: Optional[DeckRecommendCardConfig]
     rarity_4_config: Optional[DeckRecommendCardConfig]
+    sa_options: Optional[PySaOptions]
 
 
 class RecommendCard:
@@ -133,6 +160,7 @@ class SekaiDeckRecommend:
     sekai_deck_recommend.update_musicmetas("file/path/of/musicmetas", "jp")
 
     options = DeckRecommendOptions()
+    options.algorithm = "sa"
     options.region = "jp"
     options.user_data_file_path = "user/data/file/path"
     options.live_type = "multi"
@@ -142,6 +170,8 @@ class SekaiDeckRecommend:
     
     result = sekai_deck_recommend.recommend(options)
     ```
+
+    For more details about the options, please refer docstring of `DeckRecommendOptions` class.
     """
 
     def __init__(self) -> None:

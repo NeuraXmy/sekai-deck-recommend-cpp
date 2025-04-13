@@ -29,7 +29,7 @@ public:
      * @param deckCards 卡组
      * @param eventType （可选）活动类型
      */
-    std::optional<double> getDeckBonus(const std::vector<CardDetail>& deckCards, std::optional<int> eventType = std::nullopt);
+    std::optional<double> getDeckBonus(const std::vector<const CardDetail*>& deckCards, std::optional<int> eventType = std::nullopt);
 
     /**
      * 这个函数原本在 EventCalculator 中，为防止循环引用移动到这里
@@ -38,7 +38,7 @@ public:
      * @param allCards 所有卡牌（按支援卡组加成从大到小排序）
      * @param supportDeckCount 支援卡组数量
      */
-    SupportDeckBonus getSupportDeckBonus(const std::vector<CardDetail>& deckCards, const std::vector<CardDetail>& allCards, int supportDeckCount);
+    SupportDeckBonus getSupportDeckBonus(const std::vector<const CardDetail*>& deckCards, const std::vector<CardDetail>& allCards, int supportDeckCount);
 
 
     /**
@@ -52,27 +52,14 @@ public:
      * @param allCards 参与计算的所有卡，按支援队伍加成从大到小排序
      * @param honorBonus 称号加成
      * @param eventType 活动类型（用于算加成）
+     * @param eventId 活动ID（用于算加成）
      */
     DeckDetail getDeckDetailByCards(
-        const std::vector<CardDetail>& cardDetails,
+        const std::vector<const CardDetail*>& cardDetails,
         const std::vector<CardDetail>& allCards,
         int honorBonus = 0,
         std::optional<int> eventType = std::nullopt,
         std::optional<int> eventId = std::nullopt
-    );
-
-    /**
-     * 根据用户卡组获得卡组详情
-     * @param deckCards 用户卡组中的用户卡牌
-     * @param allCards 用户全部卡牌
-     * @param eventConfig （可选）活动设置
-     * @param areaItemLevels （可选）使用的区域道具
-     */
-    DeckDetail getDeckDetail(
-        const std::vector<UserCard>& deckCards,
-        const std::vector<UserCard>& allCards,
-        std::optional<EventConfig> eventConfig = std::nullopt,
-        std::vector<AreaItemLevel> areaItemLevels = {}
     );
 };
    

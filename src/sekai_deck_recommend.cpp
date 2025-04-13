@@ -18,6 +18,10 @@ static const std::map<std::string, Region> REGION_ENUM_MAP = {
     {"cn", Region::CN},
 };
 
+static const std::set<std::string> VALID_ALGORITHMS = {
+    "sa",
+    "dfs"
+};
 static const std::set<std::string> VALID_MUSIC_DIFFS = {
     "easy",
     "normal",
@@ -50,8 +54,21 @@ struct PyCardConfig {
     std::optional<bool> skill_max;
 };
 
+// python传入的模拟退火参数
+struct PySaOptions {
+    std::optional<int> run_num;
+    std::optional<int> seed;
+    std::optional<int> max_iter;
+    std::optional<int> max_no_improve_iter;
+    std::optional<int> time_limit_ms;
+    std::optional<double> start_temprature;
+    std::optional<double> cooling_rate;
+    std::optional<bool> debug;
+};
+
 // python传入的推荐参数
 struct PyDeckRecommendOptions {
+    std::optional<std::string> algorithm;
     std::optional<std::string> region;
     std::optional<std::string> user_data_file_path;
     std::optional<std::string> live_type;
@@ -67,6 +84,7 @@ struct PyDeckRecommendOptions {
     std::optional<PyCardConfig> rarity_3_config;
     std::optional<PyCardConfig> rarity_birthday_config;
     std::optional<PyCardConfig> rarity_4_config;
+    std::optional<PySaOptions> sa_options;
 };
 
 // 单个Card推荐结果
@@ -109,16 +127,16 @@ class SekaiDeckRecommend {
     mutable std::map<Region, std::shared_ptr<MusicMetas>> region_musicmetas;
 
     struct DeckRecommendOptions {
-        int liveType;
-        int eventId;
-        int worldBloomCharacterId;
-        int challengeLiveCharacterId;
-        DeckRecommendConfig config;
-        DataProvider dataProvider;
+        int liveType = 0;
+        int eventId = 0;
+        int worldBloomCharacterId = 0;
+        int challengeLiveCharacterId = 0;
+        DeckRecommendConfig config = {};
+        DataProvider dataProvider = {};
     };
     
     DeckRecommendOptions construct_options_from_py(const PyDeckRecommendOptions& pyoptions) const {
-        DeckRecommendOptions options;
+        DeckRecommendOptions options = {};
 
         // region
         if (!pyoptions.region.has_value())
@@ -166,6 +184,7 @@ class SekaiDeckRecommend {
         else {
             if (pyoptions.live_type != "challenge")
                 throw std::invalid_argument("event_id is required for non-challenge live.");
+            options.eventId = 0;
         }
 
         // challengeLiveCharacterId
@@ -184,11 +203,23 @@ class SekaiDeckRecommend {
             options.worldBloomCharacterId = pyoptions.world_bloom_character_id.value();
             if (options.worldBloomCharacterId < 1 || options.worldBloomCharacterId > 26)
                 throw std::invalid_argument("Invalid world bloom character ID: " + std::to_string(options.worldBloomCharacterId));
+            findOrThrow(options.dataProvider.masterData->worldBlooms, [&](const WorldBloom& it) {
+                return it.eventId == options.eventId && it.gameCharacterId == options.worldBloomCharacterId;
+            }, "World bloom chapter not found for eventId: " + std::to_string(options.eventId) + ", characterId: " + std::to_string(options.worldBloomCharacterId));
         }
 
         // config
         {
             auto config = DeckRecommendConfig();
+
+            // algorithm
+            std::string algorithm = pyoptions.algorithm.value_or("sa");
+            if (!VALID_ALGORITHMS.count(algorithm))
+                throw std::invalid_argument("Invalid algorithm: " + algorithm);
+            if (algorithm == "sa")
+                options.config.useSa = true;
+            else if (algorithm == "dfs")
+                options.config.useSa = false;
 
             // music
             if (!pyoptions.music_id.has_value())
@@ -246,6 +277,47 @@ class SekaiDeckRecommend {
                         card_config.skillMax = value->skill_max.value();
                 }
                 config.cardConfig[mapEnum(EnumMap::cardRarityType, key)] = card_config;
+            }
+
+            // sa config
+            if (options.config.useSa && pyoptions.sa_options.has_value()) {
+                auto sa_options = pyoptions.sa_options.value();
+
+                if (sa_options.run_num.has_value())
+                    config.saRunCount = sa_options.run_num.value();
+                if (config.saRunCount < 1)
+                    throw std::invalid_argument("Invalid sa run count: " + std::to_string(config.saRunCount));
+                
+                if (sa_options.seed.has_value())
+                    config.saSeed = sa_options.seed.value();
+                
+                if (sa_options.max_iter.has_value())
+                    config.saMaxIter = sa_options.max_iter.value();
+                if (config.saMaxIter < 1)
+                    throw std::invalid_argument("Invalid sa max iter: " + std::to_string(config.saMaxIter));
+
+                if (sa_options.max_no_improve_iter.has_value())
+                    config.saMaxIterNoImprove = sa_options.max_no_improve_iter.value();
+                if (config.saMaxIterNoImprove < 1)
+                    throw std::invalid_argument("Invalid sa max no improve iter: " + std::to_string(config.saMaxIterNoImprove));
+
+                if (sa_options.time_limit_ms.has_value())
+                    config.saMaxTimeMs = sa_options.time_limit_ms.value();
+                if (config.saMaxTimeMs < 0)
+                    throw std::invalid_argument("Invalid sa max time ms: " + std::to_string(config.saMaxTimeMs));
+
+                if (sa_options.start_temprature.has_value())
+                    config.saStartTemperature = sa_options.start_temprature.value();
+                if (config.saStartTemperature < 0)
+                    throw std::invalid_argument("Invalid sa start temperature: " + std::to_string(config.saStartTemperature));
+
+                if (sa_options.cooling_rate.has_value())
+                    config.saCoolingRate = sa_options.cooling_rate.value();
+                if (config.saCoolingRate < 0 || config.saCoolingRate > 1)
+                    throw std::invalid_argument("Invalid sa cooling rate: " + std::to_string(config.saCoolingRate));
+
+                if (sa_options.debug.has_value())
+                    config.saDebug = sa_options.debug.value();
             }
 
             options.config = config;
@@ -325,8 +397,6 @@ public:
             );
         }
 
-
-
         return construct_result_to_py(result);
     }
 
@@ -343,9 +413,21 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("episode_read", &PyCardConfig::episode_read)
         .def_readwrite("master_max", &PyCardConfig::master_max)
         .def_readwrite("skill_max", &PyCardConfig::skill_max);
+
+    py::class_<PySaOptions>(m, "DeckRecommendSaOptions")
+        .def(py::init<>())
+        .def_readwrite("run_num", &PySaOptions::run_num)
+        .def_readwrite("seed", &PySaOptions::seed)
+        .def_readwrite("max_iter", &PySaOptions::max_iter)
+        .def_readwrite("max_no_improve_iter", &PySaOptions::max_no_improve_iter)
+        .def_readwrite("time_limit_ms", &PySaOptions::time_limit_ms)
+        .def_readwrite("start_temprature", &PySaOptions::start_temprature)
+        .def_readwrite("cooling_rate", &PySaOptions::cooling_rate)
+        .def_readwrite("debug", &PySaOptions::debug);
     
     py::class_<PyDeckRecommendOptions>(m, "DeckRecommendOptions")
         .def(py::init<>())
+        .def_readwrite("algorithm", &PyDeckRecommendOptions::algorithm)
         .def_readwrite("region", &PyDeckRecommendOptions::region)
         .def_readwrite("user_data_file_path", &PyDeckRecommendOptions::user_data_file_path)
         .def_readwrite("live_type", &PyDeckRecommendOptions::live_type)
@@ -360,7 +442,8 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("rarity_2_config", &PyDeckRecommendOptions::rarity_2_config)
         .def_readwrite("rarity_3_config", &PyDeckRecommendOptions::rarity_3_config)
         .def_readwrite("rarity_birthday_config", &PyDeckRecommendOptions::rarity_birthday_config)
-        .def_readwrite("rarity_4_config", &PyDeckRecommendOptions::rarity_4_config);
+        .def_readwrite("rarity_4_config", &PyDeckRecommendOptions::rarity_4_config)
+        .def_readwrite("simulated_annealing_options", &PyDeckRecommendOptions::sa_options);
 
     py::class_<PyRecommendCard>(m, "RecommendCard")
         .def(py::init<>())

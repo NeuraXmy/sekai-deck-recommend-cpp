@@ -3,15 +3,15 @@
 
 static int world_bloom_enum = mapEnum(EnumMap::eventType, "world_bloom");
 
-std::optional<double> DeckCalculator::getDeckBonus(const std::vector<CardDetail> &deckCards, std::optional<int> eventType)
+std::optional<double> DeckCalculator::getDeckBonus(const std::vector<const CardDetail*> &deckCards, std::optional<int> eventType)
 {
     // 如果没有预处理好活动加成，则返回空
     for (const auto &card : deckCards) 
-        if (!card.eventBonus.has_value()) 
+        if (!card->eventBonus.has_value()) 
             return std::nullopt;
     double bonus = 0;
     for (const auto &card : deckCards) 
-        bonus += card.eventBonus.value();
+        bonus += card->eventBonus.value();
     if (eventType != world_bloom_enum) 
         return bonus;
     
@@ -19,7 +19,7 @@ std::optional<double> DeckCalculator::getDeckBonus(const std::vector<CardDetail>
     auto& worldBloomDifferentAttributeBonuses = this->dataProvider.masterData->worldBloomDifferentAttributeBonuses;
     bool attr_vis[10] = {};
     for (const auto &card : deckCards) 
-        attr_vis[card.attr] = true;
+        attr_vis[card->attr] = true;
     int attr_count = 0;
     for (int i = 0; i < 10; ++i) 
         attr_count += attr_vis[i];
@@ -29,7 +29,7 @@ std::optional<double> DeckCalculator::getDeckBonus(const std::vector<CardDetail>
     return bonus + it.bonusRate;
 }
 
-SupportDeckBonus DeckCalculator::getSupportDeckBonus(const std::vector<CardDetail> &deckCards, const std::vector<CardDetail> &allCards, int supportDeckCount)
+SupportDeckBonus DeckCalculator::getSupportDeckBonus(const std::vector<const CardDetail*> &deckCards, const std::vector<CardDetail> &allCards, int supportDeckCount)
 {
     double bonus = 0;
     int count = 0;
@@ -40,7 +40,7 @@ SupportDeckBonus DeckCalculator::getSupportDeckBonus(const std::vector<CardDetai
             continue;
         // 支援卡组的卡不能和主队伍重复，需要排除掉
         if (std::find_if(deckCards.begin(), deckCards.end(), [&](const auto &it) { 
-            return it.cardId == card.cardId; 
+            return it->cardId == card.cardId; 
         }) != deckCards.end()) 
             continue;
         bonus += card.supportDeckBonus.value();
@@ -73,7 +73,7 @@ int DeckCalculator::getHonorBonusPower()
 long long c[5] = {};
 
 DeckDetail DeckCalculator::getDeckDetailByCards(
-    const std::vector<CardDetail> &cardDetails, 
+    const std::vector<const CardDetail*> &cardDetails, 
     const std::vector<CardDetail> &allCards, 
     int honorBonus, 
     std::optional<int> eventType,
@@ -83,7 +83,8 @@ DeckDetail DeckCalculator::getDeckDetailByCards(
     // 预处理队伍和属性，存储每个队伍或属性出现的次数
     int attr_map[10] = {};
     int unit_map[10] = {};
-    for (const auto &cardDetail : cardDetails) {
+    for (auto p : cardDetails) {
+        auto& cardDetail = *p;
         attr_map[cardDetail.attr]++;
         for (const auto &key : cardDetail.units) {
             unit_map[key]++;
@@ -92,7 +93,8 @@ DeckDetail DeckCalculator::getDeckDetailByCards(
 
     // 计算当前卡组的综合力，要加上称号的固定加成
     std::vector<DeckCardPowerDetail> cardPower{};
-    for (const auto &cardDetail : cardDetails) {
+    for (auto p : cardDetails) {
+        auto& cardDetail = *p;
         DeckCardPowerDetail powerDetail = {};
         for (const auto &unit : cardDetail.units) {
             auto current = cardDetail.power.get(unit, unit_map[unit], attr_map[cardDetail.attr]);
@@ -128,7 +130,7 @@ DeckDetail DeckCalculator::getDeckDetailByCards(
     // 计算当前卡组的技能效果，并归纳卡牌在队伍中的详情信息
     std::vector<DeckCardDetail> cards{};
     for (int i = 0; i < int(cardDetails.size()); ++i) {
-        auto& cardDetail = cardDetails[i];
+        auto& cardDetail = *cardDetails[i];
         DeckCardSkillDetail skill = {};
         for (const auto &unit : cardDetail.units) {
             auto current = cardDetail.skill.get(unit, unit_map[unit], 1);
@@ -145,13 +147,14 @@ DeckDetail DeckCalculator::getDeckDetailByCards(
         });
     }
 
-    // 计算卡组活动加成
+    // 计算卡组活动加成（与顺序无关，不用考虑deckCardOrder）
     auto eventBonus = getDeckBonus(cardDetails, eventType);
 
     // 旧WL和新WL不同的支援卡组数量
     int supportDeckCount = 20;
     if (eventId.has_value() && 0 < eventId.value() && eventId.value() <= 140)
         supportDeckCount = 12;
+    // （与顺序无关，不用考虑deckCardOrder）
     auto supportDeckBonus = this->getSupportDeckBonus(cardDetails, allCards, supportDeckCount); 
 
     return DeckDetail{ 
@@ -163,21 +166,3 @@ DeckDetail DeckCalculator::getDeckDetailByCards(
     };
 }
 
-DeckDetail DeckCalculator::getDeckDetail(const std::vector<UserCard> &deckCards, const std::vector<UserCard> &allCards, std::optional<EventConfig> eventConfig, std::vector<AreaItemLevel> areaItemLevels)
-{
-    std::optional<int> eventType = std::nullopt;
-    std::optional<int> eventId = std::nullopt;
-    if (eventConfig.has_value()) {
-        eventType = eventConfig->eventType;
-        eventId = eventConfig->eventId;
-    }
-    auto allCards0 = this->cardCalculator.batchGetCardDetail(allCards, {}, eventConfig, areaItemLevels);
-    auto deckCards0 = this->cardCalculator.batchGetCardDetail(deckCards, {}, eventConfig, areaItemLevels);
-    return this->getDeckDetailByCards(
-        deckCards0,
-        allCards0,
-        this->getHonorBonusPower(),
-        eventType,
-        eventId
-    );
-}

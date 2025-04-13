@@ -149,15 +149,6 @@ std::optional<std::vector<DeckCardSkillDetail>> LiveCalculator::getSoloLiveSkill
     return ret;
 }
 
-LiveDetail LiveCalculator::getLiveDetail(const std::vector<UserCard> &deckCards, const MusicMeta &musicMeta, int liveType, const std::optional<std::vector<LiveSkill>> &liveSkills)
-{
-    auto deckDetail = this->deckCalculator.getDeckDetail(deckCards, deckCards);
-    auto skills = liveType == enum_multi ? std::nullopt : this->getSoloLiveSkill(liveSkills.value(), deckDetail.cards);
-    auto ret = this->getLiveDetailByDeck(deckDetail, musicMeta, liveType, skills);
-    ret.deck = deckDetail; // 附加上卡组信息，方便debug
-    return ret;
-}
-
 int LiveCalculator::getLiveScoreByDeck(const DeckDetail &deckDetail, const MusicMeta &musicMeta, int liveType)
 {
     return this->getLiveDetailByDeck(deckDetail, musicMeta, liveType).score;

@@ -42,10 +42,11 @@ UserData::UserData(const std::string& path) {
     this->userGamedata = loadUserDataFromJson<UserGameData>(j, "userGamedata");
     this->userAreas = loadUserDataFromJsonList<UserArea>(j, "userAreas");
     this->userCards = loadUserDataFromJsonList<UserCard>(j, "userCards");
-    this->userChallengeLiveSoloDecks = loadUserDataFromJsonList<UserChallengeLiveSoloDeck>(j, "userChallengeLiveSoloDecks");
     this->userCharacters = loadUserDataFromJsonList<UserCharacter>(j, "userCharacters");
     this->userDecks = loadUserDataFromJsonList<UserDeck>(j, "userDecks");
     this->userHonors = loadUserDataFromJsonList<UserHonor>(j, "userHonors");
+
+    // this->userChallengeLiveSoloDecks = loadUserDataFromJsonList<UserChallengeLiveSoloDeck>(j, "userChallengeLiveSoloDecks", false);
 
     this->userMysekaiCanvases = loadUserDataFromJsonList<UserMysekaiCanvas>(j, "userMysekaiCanvases", false);
     this->userMysekaiFixtureGameCharacterPerformanceBonuses = loadUserDataFromJsonList<UserMysekaiFixtureGameCharacterPerformanceBonus>(j, "userMysekaiFixtureGameCharacterPerformanceBonuses", false);

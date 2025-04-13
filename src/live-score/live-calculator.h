@@ -116,20 +116,6 @@ public:
     );
 
     /**
-     * 计算Live详情
-     * @param deckCards 用户卡组中的用户卡牌
-     * @param musicMeta 歌曲信息
-     * @param liveType Live类型
-     * @param liveSkills 技能顺序（多人或最佳留空）
-     */
-    LiveDetail getLiveDetail(
-        const std::vector<UserCard> &deckCards, 
-        const MusicMeta &musicMeta, 
-        int liveType, 
-        const std::optional<std::vector<LiveSkill>>& liveSkills = std::nullopt
-    );
-
-    /**
      * 获取卡组Live分数
      * @param deckDetail 卡组
      * @param musicMeta 歌曲信息
