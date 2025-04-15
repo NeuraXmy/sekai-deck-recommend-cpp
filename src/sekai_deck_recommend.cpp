@@ -79,6 +79,7 @@ struct PyDeckRecommendOptions {
     std::optional<int> challenge_live_character_id;
     std::optional<int> limit;
     std::optional<int> member;
+    std::optional<int> timeout_ms;
     std::optional<PyCardConfig> rarity_1_config;
     std::optional<PyCardConfig> rarity_2_config;
     std::optional<PyCardConfig> rarity_3_config;
@@ -252,6 +253,13 @@ class SekaiDeckRecommend {
             }
             else {
                 config.member = 5;
+            }
+
+            // timeout
+            if (pyoptions.timeout_ms.has_value()) {
+                config.timeout_ms = pyoptions.timeout_ms.value();
+                if (config.timeout_ms < 0)
+                    throw std::invalid_argument("Invalid timeout: " + std::to_string(config.timeout_ms));
             }
 
             // card config
@@ -438,6 +446,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("challenge_live_character_id", &PyDeckRecommendOptions::challenge_live_character_id)
         .def_readwrite("limit", &PyDeckRecommendOptions::limit)
         .def_readwrite("member", &PyDeckRecommendOptions::member)
+        .def_readwrite("timeout_ms", &PyDeckRecommendOptions::timeout_ms)
         .def_readwrite("rarity_1_config", &PyDeckRecommendOptions::rarity_1_config)
         .def_readwrite("rarity_2_config", &PyDeckRecommendOptions::rarity_2_config)
         .def_readwrite("rarity_3_config", &PyDeckRecommendOptions::rarity_3_config)

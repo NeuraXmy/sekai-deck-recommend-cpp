@@ -19,6 +19,8 @@ struct DeckRecommendConfig {
     int limit = 1; 
     // 限制人数（2-5、默认5）
     int member = 5; 
+    // 超时时间
+    int timeout_ms = std::numeric_limits<int>::max();
     // 卡牌设置
     std::unordered_map<int, CardConfig> cardConfig = {};
 

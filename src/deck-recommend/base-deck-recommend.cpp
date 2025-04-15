@@ -96,6 +96,10 @@ void BaseDeckRecommend::findBestCards(
         return;
     }
 
+    // 超时
+    if (dfsInfo.isTimeout()) 
+        return;
+
     // 非完整卡组，继续遍历所有情况
     std::optional<CardDetail> preCard = std::nullopt;
 
@@ -320,6 +324,9 @@ void BaseDeckRecommend::findBestCardsSA(
         auto current_time = std::chrono::high_resolution_clock::now();
         auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
         if (elapsed_time > cfg.saMaxTimeMs) 
+            break;  
+        // 超出总时间限制
+        if (saInfo.isTimeout()) 
             break;
         temperature *= cfg.saCoolingRate;
     }
@@ -356,9 +363,11 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
     std::vector<RecommendDeck> ans{};
     std::vector<CardDetail> cardDetails{};
     std::vector<CardDetail> preCardDetails{};
-    RecommendCalcInfo calcInfo{};
-
     auto sf = [&scoreFunc, &musicMeta](const DeckDetail& deckDetail) { return scoreFunc(musicMeta, deckDetail); };
+
+    RecommendCalcInfo calcInfo{};
+    calcInfo.start_ts = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    calcInfo.timeout = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::milliseconds(config.timeout_ms)).count();
 
     while (true) {
         if (!config.useSa) {
@@ -376,17 +385,19 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
         }
         preCardDetails = cardDetails;
         auto cards0 = cardDetails;
-        std::sort(cards0.begin(), cards0.end(), [](const CardDetail& a, const CardDetail& b) { return a.cardId < b.cardId; });
-
-        calcInfo.reset();
+        // 卡牌大致按强度排序，保证dfs先遍历强度高的卡组
+        std::sort(cards0.begin(), cards0.end(), [](const CardDetail& a, const CardDetail& b) { 
+            return std::make_tuple(a.power.max, a.power.min, a.cardId) > std::make_tuple(b.power.max, b.power.min, b.cardId);
+        });
 
         if (config.useSa) {
+            // 使用模拟退火
             long long seed = config.saSeed;
-            if (seed == -1) {
+            if (seed == -1) 
                 seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-            }
+    
             auto rng = Rng(seed);
-            for (int i = 0; i < config.saRunCount; i++) {
+            for (int i = 0; i < config.saRunCount && !calcInfo.isTimeout(); i++) {
                 findBestCardsSA(
                     config, rng, cards0, cards, sf,
                     calcInfo,
@@ -395,6 +406,10 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
                 );
             }
         } else {
+            // 使用DFS
+            calcInfo.deckCards.clear();
+            calcInfo.deckCharacters.clear();
+
             findBestCards(
                 cards0, cards, sf,
                 calcInfo,
@@ -409,7 +424,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
             calcInfo.deckQueue.pop();
         }
         std::reverse(ans.begin(), ans.end());
-        if (int(ans.size()) >= config.limit) 
+        if (int(ans.size()) >= config.limit || calcInfo.isTimeout()) 
             return ans;
     }
 }

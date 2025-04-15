@@ -20,17 +20,20 @@ struct RecommendDeck : DeckDetail {
 
 // 存储卡组推荐计算的结果以及过程中需要记录的信息
 struct RecommendCalcInfo {
+    long long start_ts = 0;
+    long long timeout = std::numeric_limits<long long>::max();
     std::priority_queue<RecommendDeck, std::vector<RecommendDeck>, std::greater<>> deckQueue = {};
     std::unordered_set<long long> deckHashSet = {};
+    
     std::vector<const CardDetail*> deckCards = {};
     std::unordered_set<int> deckCharacters = {};
     std::map<long long, int> deckScoreMap{};
 
-    // 重置
-    void reset();
-
     // 添加一个新结果
     void update(const RecommendDeck &deck, int limit);
+
+    // 检查是否超时
+    bool isTimeout() const;
 };
 
 

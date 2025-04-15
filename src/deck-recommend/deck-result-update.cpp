@@ -25,17 +25,6 @@ long long getDeckHash(const RecommendDeck &deck)
     return hash;
 }
 
-void RecommendCalcInfo::reset()
-{
-    while(!deckQueue.empty()) {
-        deckQueue.pop();
-    }
-    deckHashSet.clear();
-    deckCards.clear();
-    deckCharacters.clear();
-    deckScoreMap.clear();
-}
-
 void RecommendCalcInfo::update(const RecommendDeck &deck, int limit)
 {
     // 判断是否已经存在
@@ -54,3 +43,7 @@ void RecommendCalcInfo::update(const RecommendDeck &deck, int limit)
     }
 }
 
+bool RecommendCalcInfo::isTimeout() const
+{
+    return std::chrono::high_resolution_clock::now().time_since_epoch().count() - start_ts > timeout;
+}

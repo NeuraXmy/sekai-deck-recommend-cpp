@@ -27,7 +27,7 @@ class DeckRecommendSaOptions:
         seed (int): Random seed, leave it None or use -1 for random seed, default is None
         max_iter (int): Maximum iterations, default is 1000000
         max_no_improve_iter (int): Maximum iterations without improvement, default is 10000
-        time_limit_ms (int): Time limit in milliseconds, default is 200
+        time_limit_ms (int): Time limit of each run in milliseconds, default is 200
         start_temprature (float): Start temperature, default is 1e8
         cooling_rate (float): Cooling rate, default is 0.999
         debug (bool): Whether to print debug information, default is False
@@ -57,6 +57,7 @@ class DeckRecommendOptions:
         challenge_live_character_id (int): Challenge live character ID, only required when live_type is "challenge"
         limit (int): Limit of returned decks, default is 10. No guarantee to return this number of decks if not enough cards
         member (int): Number of members in the deck, default is 5
+        timeout_ms (int): Timeout in milliseconds, default is None
         rarity_1_config (DeckRecommendCardConfig): Card config for rarity 1
         rarity_2_config (DeckRecommendCardConfig): Card config for rarity 2
         rarity_3_config (DeckRecommendCardConfig): Card config for rarity 3
@@ -75,6 +76,7 @@ class DeckRecommendOptions:
     challenge_live_character_id: Optional[int]
     limit: Optional[int]
     member: Optional[int]
+    timeout_ms: Optional[int]
     rarity_1_config: Optional[DeckRecommendCardConfig]
     rarity_2_config: Optional[DeckRecommendCardConfig]
     rarity_3_config: Optional[DeckRecommendCardConfig]
