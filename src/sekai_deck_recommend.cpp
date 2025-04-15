@@ -416,6 +416,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
 
     py::class_<PyCardConfig>(m, "DeckRecommendCardConfig")
         .def(py::init<>())
+        .def(py::init<const PyCardConfig&>())
         .def_readwrite("disable", &PyCardConfig::disable)
         .def_readwrite("level_max", &PyCardConfig::level_max)
         .def_readwrite("episode_read", &PyCardConfig::episode_read)
@@ -424,6 +425,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
 
     py::class_<PySaOptions>(m, "DeckRecommendSaOptions")
         .def(py::init<>())
+        .def(py::init<const PySaOptions&>())
         .def_readwrite("run_num", &PySaOptions::run_num)
         .def_readwrite("seed", &PySaOptions::seed)
         .def_readwrite("max_iter", &PySaOptions::max_iter)
@@ -435,6 +437,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
     
     py::class_<PyDeckRecommendOptions>(m, "DeckRecommendOptions")
         .def(py::init<>())
+        .def(py::init<const PyDeckRecommendOptions&>())
         .def_readwrite("algorithm", &PyDeckRecommendOptions::algorithm)
         .def_readwrite("region", &PyDeckRecommendOptions::region)
         .def_readwrite("user_data_file_path", &PyDeckRecommendOptions::user_data_file_path)
@@ -456,6 +459,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
 
     py::class_<PyRecommendCard>(m, "RecommendCard")
         .def(py::init<>())
+        .def(py::init<const PyRecommendCard&>())
         .def_readwrite("card_id", &PyRecommendCard::card_id)
         .def_readwrite("total_power", &PyRecommendCard::total_power)
         .def_readwrite("base_power", &PyRecommendCard::base_power)
@@ -468,6 +472,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
 
     py::class_<PyRecommendDeck>(m, "RecommendDeck")
         .def(py::init<>())
+        .def(py::init<const PyRecommendDeck&>())
         .def_readwrite("score", &PyRecommendDeck::score)
         .def_readwrite("total_power", &PyRecommendDeck::total_power)
         .def_readwrite("base_power", &PyRecommendDeck::base_power)
@@ -482,10 +487,12 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
     
     py::class_<PyDeckRecommendResult>(m, "DeckRecommendResult")
         .def(py::init<>())
+        .def(py::init<const PyDeckRecommendResult&>())
         .def_readwrite("decks", &PyDeckRecommendResult::decks);
 
     py::class_<SekaiDeckRecommend>(m, "SekaiDeckRecommend")
         .def(py::init<>())
+        .def(py::init<const SekaiDeckRecommend&>())
         .def("update_masterdata", &SekaiDeckRecommend::update_masterdata)
         .def("update_musicmetas", &SekaiDeckRecommend::update_musicmetas)
         .def("recommend", &SekaiDeckRecommend::recommend);
