@@ -42,14 +42,9 @@ RecommendDeck getBestPermutation(
     auto score = scoreFunc(deckDetail);
     auto cards = deckDetail.cards;
     // 寻找加分效果最高的卡牌
-    int bestScoreUp = cards[0].skill.scoreUp;
-    int bestScoreIndex = 0;
-    for (size_t i = 0; i < cards.size(); ++i) {
-        if (cards[i].skill.scoreUp > bestScoreUp) {
-            bestScoreUp = cards[i].skill.scoreUp;
-            bestScoreIndex = i;
-        }
-    }
+    int bestScoreIndex = std::max_element(cards.begin(), cards.end(), [](const DeckCardDetail& a, const DeckCardDetail& b) {
+        return std::tuple(a.skill.scoreUp, a.cardId) < std::tuple(b.skill.scoreUp, b.cardId);
+    }) - cards.begin();
     // 如果现在C位已经对了（加分技能最高的卡牌在C位）
     if (bestScoreIndex == 0) 
         return RecommendDeck{ deckDetail, score };
