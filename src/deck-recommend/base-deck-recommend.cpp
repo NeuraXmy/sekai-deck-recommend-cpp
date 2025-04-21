@@ -342,7 +342,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
     auto cards = cardCalculator.batchGetCardDetail(userCards, config.cardConfig, eventConfig, areaItemLevels);
 
     // 过滤箱活的卡，不上其它组合的
-    if (eventConfig.eventUnit) {
+    if (eventConfig.eventUnit && config.filterOtherUnit) {
         std::vector<CardDetail> newCards{};
         for (const auto& card : cards) {
             if ((card.units.size() == 1 && card.units[0] == piapro_unit_enum) || 

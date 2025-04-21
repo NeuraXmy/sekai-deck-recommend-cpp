@@ -65,6 +65,7 @@ class DeckRecommendOptions:
         rarity_3_config (DeckRecommendCardConfig): Card config for rarity 3
         rarity_birthday_config (DeckRecommendCardConfig): Card config for birthday cards
         rarity_4_config (DeckRecommendCardConfig): Card config for rarity 4
+        filter_other_unit (bool): Whether to filter out other units for banner event, default is False
         sa_options (DeckRecommendSaOptions): Simulated annealing options
     """
     algorithm: Optional[str]
@@ -86,6 +87,7 @@ class DeckRecommendOptions:
     rarity_3_config: Optional[DeckRecommendCardConfig]
     rarity_birthday_config: Optional[DeckRecommendCardConfig]
     rarity_4_config: Optional[DeckRecommendCardConfig]
+    filter_other_unit: Optional[bool]
     sa_options: Optional[DeckRecommendSaOptions]
 
 

@@ -102,6 +102,7 @@ struct PyDeckRecommendOptions {
     std::optional<PyCardConfig> rarity_3_config;
     std::optional<PyCardConfig> rarity_birthday_config;
     std::optional<PyCardConfig> rarity_4_config;
+    std::optional<bool> filter_other_unit;
     std::optional<PySaOptions> sa_options;
 };
 
@@ -254,6 +255,14 @@ class SekaiDeckRecommend {
                 config.useSa = true;
             else if (algorithm == "dfs")
                 config.useSa = false;
+
+            // filter other unit
+            if (pyoptions.filter_other_unit.has_value()) {
+                config.filterOtherUnit = pyoptions.filter_other_unit.value();
+            }
+            else {
+                config.filterOtherUnit = false;
+            }
 
             // music
             if (!pyoptions.music_id.has_value())
@@ -490,6 +499,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("rarity_3_config", &PyDeckRecommendOptions::rarity_3_config)
         .def_readwrite("rarity_birthday_config", &PyDeckRecommendOptions::rarity_birthday_config)
         .def_readwrite("rarity_4_config", &PyDeckRecommendOptions::rarity_4_config)
+        .def_readwrite("filter_other_unit", &PyDeckRecommendOptions::filter_other_unit)
         .def_readwrite("sa_options", &PyDeckRecommendOptions::sa_options);
 
     py::class_<PyRecommendCard>(m, "RecommendCard")

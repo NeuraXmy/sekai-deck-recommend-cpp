@@ -24,6 +24,9 @@ struct DeckRecommendConfig {
     // 卡牌设置
     std::unordered_map<int, CardConfig> cardConfig = {};
 
+    // 箱活是否过滤掉其他组合成员
+    bool filterOtherUnit = false; 
+
     // 模拟退火参数
     bool useSa = true; // 是否使用模拟退火
     int saRunCount = 20; // 运行次数
