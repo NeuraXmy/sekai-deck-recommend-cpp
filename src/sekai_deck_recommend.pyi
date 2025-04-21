@@ -52,7 +52,9 @@ class DeckRecommendOptions:
         live_type (str): Live type in ["multi", "solo", "auto", "challenge"]
         music_id (int): Music ID
         music_diff (str): Music difficulty in ["easy", "normal", "hard", "expert", "master", "append"]
-        event_id (int): Event ID, only required when live_type is not "challenge"
+        event_id (int): Event ID, only required when live_type is not "challenge". leave it None to use no-event or unit-attr-specificed recommendation
+        event_attr (str): Attribute of unit-attr-specificed recommendation, only available when event_id is None. In ["mysterious", "cute", "cool", "pure", "happy"]
+        event_unit (str): Unit of unit-attr-specificed recommendation, only available when event_id is None. In ["light_sound", "idol", "street", "theme_park", "school_refusal", "piapro"]
         world_bloom_character_id (int): World bloom character ID, only required when event is world bloom
         challenge_live_character_id (int): Challenge live character ID, only required when live_type is "challenge"
         limit (int): Limit of returned decks, default is 10. No guarantee to return this number of decks if not enough cards
@@ -72,6 +74,8 @@ class DeckRecommendOptions:
     music_id: int
     music_diff: str
     event_id: Optional[int]
+    event_attr: Optional[str]
+    event_unit: Optional[str]
     world_bloom_character_id: Optional[int]
     challenge_live_character_id: Optional[int]
     limit: Optional[int]

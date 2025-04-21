@@ -2,6 +2,10 @@
 
 #include <fstream>
 #include <iostream>
+#include "master-data.h"
+
+static int event_type_marathon = mapEnum(EnumMap::eventType, "marathon");
+
 
 template <typename T>
 std::vector<T> loadMasterData(const std::string& baseDir, const std::string& fileName, bool required = true) {
@@ -20,6 +24,53 @@ std::vector<T> loadMasterData(const std::string& baseDir, const std::string& fil
     file.close();
     return T::fromJsonList(j);
 }
+
+
+// 添加用于无活动组卡和指定团+颜色组卡的假活动
+void MasterData::addFakeEvent() {
+    // 无活动组卡
+    Event noEvent;
+    noEvent.id = getNoEventFakeEventId();
+    noEvent.eventType = event_type_marathon;
+    events.push_back(noEvent);
+
+    // 指定团名+指定颜色组卡
+    for (auto unit : mapEnumList(EnumMap::unit)) {
+        for (auto attr : mapEnumList(EnumMap::attr)) {
+            Event e;
+            e.id = getUnitAttrFakeEventId(unit, attr);
+            e.eventType = event_type_marathon;
+            events.push_back(e);
+            // 相同团的角色加成
+            for (auto& charaUnit : gameCharacterUnits) {
+                if (charaUnit.unit == unit) {
+                    // 同团同色
+                    EventDeckBonus b;
+                    b.eventId = e.id;
+                    b.gameCharacterUnitId = charaUnit.id;
+                    b.cardAttr = attr;
+                    b.bonusRate = 50.0;
+                    eventDeckBonuses.push_back(b);
+                    // 同团不同色
+                    EventDeckBonus b2;
+                    b2.eventId = e.id;
+                    b2.gameCharacterUnitId = charaUnit.id;
+                    b2.cardAttr = mapEnum(EnumMap::attr, "");
+                    b2.bonusRate = 20.0;
+                    eventDeckBonuses.push_back(b2);
+                }
+            }
+            // 不同团同色加成
+            EventDeckBonus b;
+            b.eventId = e.id;
+            b.gameCharacterUnitId = 0;
+            b.cardAttr = attr;
+            b.bonusRate = 20.0;
+            eventDeckBonuses.push_back(b);
+        }
+    }
+}
+
 
 MasterData::MasterData(const std::string& baseDir) {
     this->baseDir = baseDir;
@@ -57,4 +108,18 @@ MasterData::MasterData(const std::string& baseDir) {
     this->mysekaiFixtureGameCharacterGroupPerformanceBonuses = loadMasterData<MysekaiFixtureGameCharacterGroupPerformanceBonus>(baseDir, "mysekaiFixtureGameCharacterGroupPerformanceBonuses.json", false);
     this->mysekaiGates = loadMasterData<MysekaiGate>(baseDir, "mysekaiGates.json", false);
     this->mysekaiGateLevels = loadMasterData<MysekaiGateLevel>(baseDir, "mysekaiGateLevels.json", false);
+
+    addFakeEvent();
 }
+
+
+int MasterData::getNoEventFakeEventId() const
+{
+    return 2000000;
+}
+
+int MasterData::getUnitAttrFakeEventId(int unit, int attr) const
+{
+    return 1000000 * unit * 100 + attr;
+}
+

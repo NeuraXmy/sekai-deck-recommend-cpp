@@ -36,6 +36,11 @@ double CardEventCalculator::getCardEventBonus(const UserCard &userCard, int even
     auto& eventCards = this->dataProvider.masterData->eventCards;
     auto& eventRarityBonusRates = this->dataProvider.masterData->eventRarityBonusRates;
 
+    // 无活动组卡
+    if (eventId == this->dataProvider.masterData->getNoEventFakeEventId()) {
+        return 0;
+    }
+
     // 计算角色、属性加成
     double eventBonus = 0;
     auto card = findOrThrow(cards, [&](const Card& it) { 

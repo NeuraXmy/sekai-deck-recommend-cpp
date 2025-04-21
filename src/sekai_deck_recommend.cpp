@@ -44,6 +44,21 @@ static const std::set<std::string> VALID_RARITY_TYPES = {
     "rarity_2",
     "rarity_1"
 };
+static const std::set<std::string> VALID_UNIT_TYPES = {
+    "light_sound",
+    "idol",
+    "street",
+    "theme_park",
+    "school_refusal",
+    "piapro",
+};
+static const std::set<std::string> VALID_EVENT_ATTRS = {
+    "mysterious",
+    "cool",
+    "pure",
+    "cute",
+    "happy",
+};
 
 // python传入的card config
 struct PyCardConfig {
@@ -75,6 +90,8 @@ struct PyDeckRecommendOptions {
     std::optional<int> music_id;
     std::optional<std::string> music_diff;
     std::optional<int> event_id;
+    std::optional<std::string> event_attr;
+    std::optional<std::string> event_unit;
     std::optional<int> world_bloom_character_id;
     std::optional<int> challenge_live_character_id;
     std::optional<int> limit;
@@ -183,9 +200,25 @@ class SekaiDeckRecommend {
             }, "Event not found for eventId: " + std::to_string(options.eventId));
         }
         else {
-            if (pyoptions.live_type != "challenge")
-                throw std::invalid_argument("event_id is required for non-challenge live.");
-            options.eventId = 0;
+            if (pyoptions.live_type != "challenge") {
+                if (pyoptions.event_attr.has_value() || pyoptions.event_unit.has_value()) {
+                    // liveType非挑战，没有传入eventId时，尝试指定团+颜色组卡
+                    if (!pyoptions.event_attr.has_value() || !pyoptions.event_unit.has_value())
+                        throw std::invalid_argument("event_attr and event_unit must be specified together.");
+                    if (!VALID_EVENT_ATTRS.count(pyoptions.event_attr.value()))
+                        throw std::invalid_argument("Invalid event attr: " + pyoptions.event_attr.value());
+                    if (!VALID_UNIT_TYPES.count(pyoptions.event_unit.value()))
+                        throw std::invalid_argument("Invalid event unit: " + pyoptions.event_unit.value());
+                    auto unit = mapEnum(EnumMap::unit, pyoptions.event_unit.value());
+                    auto attr = mapEnum(EnumMap::attr, pyoptions.event_attr.value());
+                    options.eventId = options.dataProvider.masterData->getUnitAttrFakeEventId(unit, attr);
+                } else {
+                    // 无活动组卡
+                    options.eventId = options.dataProvider.masterData->getNoEventFakeEventId();
+                }
+            } else {
+                options.eventId = 0;    
+            }
         }
 
         // challengeLiveCharacterId
@@ -445,6 +478,8 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("music_id", &PyDeckRecommendOptions::music_id)
         .def_readwrite("music_diff", &PyDeckRecommendOptions::music_diff)
         .def_readwrite("event_id", &PyDeckRecommendOptions::event_id)
+        .def_readwrite("event_attr", &PyDeckRecommendOptions::event_attr)
+        .def_readwrite("event_unit", &PyDeckRecommendOptions::event_unit)
         .def_readwrite("world_bloom_character_id", &PyDeckRecommendOptions::world_bloom_character_id)
         .def_readwrite("challenge_live_character_id", &PyDeckRecommendOptions::challenge_live_character_id)
         .def_readwrite("limit", &PyDeckRecommendOptions::limit)

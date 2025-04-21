@@ -5,6 +5,10 @@
 
 class MasterData {
 
+private:
+
+    void addFakeEvent();
+
 public:
     std::string baseDir;
 
@@ -41,6 +45,10 @@ public:
     std::vector<WorldBloomSupportDeckUnitEventLimitedBonus> worldBloomSupportDeckUnitEventLimitedBonuses;
 
     MasterData(const std::string& baseDir);
+
+    int getNoEventFakeEventId() const;
+
+    int getUnitAttrFakeEventId(int unit, int attr) const;
 
 };
 

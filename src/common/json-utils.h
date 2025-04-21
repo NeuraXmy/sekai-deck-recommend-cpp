@@ -44,6 +44,15 @@ inline std::string mappedEnumToString(EnumMap map_id, int key)
     throw std::runtime_error("Key " + std::to_string(key) + " not found in map " + std::to_string(static_cast<int>(map_id)));
 }
 
+inline std::vector<int> mapEnumList(EnumMap map_id) {
+    std::vector<int> result;
+    auto& map = _enum_reverse_maps[static_cast<int>(map_id)];
+    for (const auto& pair : map) {
+        result.push_back(pair.first);
+    }
+    return result;
+}
+
 template <typename T, typename U>
 const T& findOrThrow(const std::vector<T>& vec, const U& predicate) {
     auto it = std::find_if(vec.begin(), vec.end(), predicate);
