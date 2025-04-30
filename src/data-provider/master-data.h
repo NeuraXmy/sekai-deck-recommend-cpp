@@ -7,7 +7,7 @@ class MasterData {
 
 private:
 
-    void addFakeEvent();
+    void addFakeEvent(int eventType);
 
 public:
     std::string baseDir;
@@ -46,9 +46,9 @@ public:
 
     MasterData(const std::string& baseDir);
 
-    int getNoEventFakeEventId() const;
+    int getNoEventFakeEventId(int eventType) const;
 
-    int getUnitAttrFakeEventId(int unit, int attr) const;
+    int getUnitAttrFakeEventId(int eventType, int unit, int attr) const;
 
 };
 

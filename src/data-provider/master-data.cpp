@@ -5,7 +5,8 @@
 #include "master-data.h"
 
 static int event_type_marathon = mapEnum(EnumMap::eventType, "marathon");
-
+static int event_type_cheerful = mapEnum(EnumMap::eventType, "cheerful_carnival");
+static int event_type_world_bloom = mapEnum(EnumMap::eventType, "world_bloom");
 
 template <typename T>
 std::vector<T> loadMasterData(const std::string& baseDir, const std::string& fileName, bool required = true) {
@@ -27,18 +28,22 @@ std::vector<T> loadMasterData(const std::string& baseDir, const std::string& fil
 
 
 // 添加用于无活动组卡和指定团+颜色组卡的假活动
-void MasterData::addFakeEvent() {
+void MasterData::addFakeEvent(int eventType) {
+    if (eventType != event_type_marathon && eventType != event_type_cheerful) {
+        throw std::invalid_argument("Not supported event type for fake event");
+    }
+
     // 无活动组卡
     Event noEvent;
-    noEvent.id = getNoEventFakeEventId();
-    noEvent.eventType = event_type_marathon;
+    noEvent.id = getNoEventFakeEventId(eventType);
+    noEvent.eventType = eventType;
     events.push_back(noEvent);
 
     // 指定团名+指定颜色组卡
     for (auto unit : mapEnumList(EnumMap::unit)) {
         for (auto attr : mapEnumList(EnumMap::attr)) {
             Event e;
-            e.id = getUnitAttrFakeEventId(unit, attr);
+            e.id = getUnitAttrFakeEventId(eventType, unit, attr);
             e.eventType = event_type_marathon;
             events.push_back(e);
             // 相同团的角色加成
@@ -56,7 +61,7 @@ void MasterData::addFakeEvent() {
                     b2.eventId = e.id;
                     b2.gameCharacterUnitId = charaUnit.id;
                     b2.cardAttr = mapEnum(EnumMap::attr, "");
-                    b2.bonusRate = 20.0;
+                    b2.bonusRate = 25.0;
                     eventDeckBonuses.push_back(b2);
                 }
             }
@@ -65,7 +70,7 @@ void MasterData::addFakeEvent() {
             b.eventId = e.id;
             b.gameCharacterUnitId = 0;
             b.cardAttr = attr;
-            b.bonusRate = 20.0;
+            b.bonusRate = 25.0;
             eventDeckBonuses.push_back(b);
         }
     }
@@ -109,17 +114,23 @@ MasterData::MasterData(const std::string& baseDir) {
     this->mysekaiGates = loadMasterData<MysekaiGate>(baseDir, "mysekaiGates.json", false);
     this->mysekaiGateLevels = loadMasterData<MysekaiGateLevel>(baseDir, "mysekaiGateLevels.json", false);
 
-    addFakeEvent();
+    addFakeEvent(event_type_marathon);
+    addFakeEvent(event_type_cheerful);
 }
 
 
-int MasterData::getNoEventFakeEventId() const
+int MasterData::getNoEventFakeEventId(int eventType) const
 {
-    return 2000000;
+    if (eventType != event_type_marathon && eventType != event_type_cheerful) {
+        throw std::invalid_argument("Not supported event type for fake event");
+    }
+    return 2000000 + eventType * 100000;
 }
 
-int MasterData::getUnitAttrFakeEventId(int unit, int attr) const
+int MasterData::getUnitAttrFakeEventId(int eventType, int unit, int attr) const
 {
-    return 1000000 * unit * 100 + attr;
+    if (eventType != event_type_marathon && eventType != event_type_cheerful) {
+        throw std::invalid_argument("Not supported event type for fake event");
+    }
+    return 1000000 + unit * 100 + attr + eventType * 100000;
 }
-

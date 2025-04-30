@@ -59,6 +59,11 @@ static const std::set<std::string> VALID_EVENT_ATTRS = {
     "cute",
     "happy",
 };
+static const std::set<std::string> VALID_EVENT_TYPES = {
+    "marathon",
+    "cheerful_carnival",
+    "world_bloom",
+};
 
 // python传入的card config
 struct PyCardConfig {
@@ -92,6 +97,7 @@ struct PyDeckRecommendOptions {
     std::optional<int> event_id;
     std::optional<std::string> event_attr;
     std::optional<std::string> event_unit;
+    std::optional<std::string> event_type;
     std::optional<int> world_bloom_character_id;
     std::optional<int> challenge_live_character_id;
     std::optional<int> limit;
@@ -202,6 +208,12 @@ class SekaiDeckRecommend {
         }
         else {
             if (pyoptions.live_type != "challenge") {
+                // 活动类型，没有指定则默认马拉松
+                auto event_type = pyoptions.event_type.value_or("marathon");
+                if (!VALID_EVENT_TYPES.count(event_type))
+                    throw std::invalid_argument("Invalid event type: " + event_type);    
+                auto event_type_enum = mapEnum(EnumMap::eventType, event_type);
+
                 if (pyoptions.event_attr.has_value() || pyoptions.event_unit.has_value()) {
                     // liveType非挑战，没有传入eventId时，尝试指定团+颜色组卡
                     if (!pyoptions.event_attr.has_value() || !pyoptions.event_unit.has_value())
@@ -212,10 +224,10 @@ class SekaiDeckRecommend {
                         throw std::invalid_argument("Invalid event unit: " + pyoptions.event_unit.value());
                     auto unit = mapEnum(EnumMap::unit, pyoptions.event_unit.value());
                     auto attr = mapEnum(EnumMap::attr, pyoptions.event_attr.value());
-                    options.eventId = options.dataProvider.masterData->getUnitAttrFakeEventId(unit, attr);
+                    options.eventId = options.dataProvider.masterData->getUnitAttrFakeEventId(event_type_enum, unit, attr);
                 } else {
                     // 无活动组卡
-                    options.eventId = options.dataProvider.masterData->getNoEventFakeEventId();
+                    options.eventId = options.dataProvider.masterData->getNoEventFakeEventId(event_type_enum);
                 }
             } else {
                 options.eventId = 0;    
@@ -489,6 +501,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("event_id", &PyDeckRecommendOptions::event_id)
         .def_readwrite("event_attr", &PyDeckRecommendOptions::event_attr)
         .def_readwrite("event_unit", &PyDeckRecommendOptions::event_unit)
+        .def_readwrite("event_type", &PyDeckRecommendOptions::event_type)
         .def_readwrite("world_bloom_character_id", &PyDeckRecommendOptions::world_bloom_character_id)
         .def_readwrite("challenge_live_character_id", &PyDeckRecommendOptions::challenge_live_character_id)
         .def_readwrite("limit", &PyDeckRecommendOptions::limit)

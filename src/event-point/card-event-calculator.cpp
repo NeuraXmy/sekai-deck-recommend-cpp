@@ -1,5 +1,9 @@
 #include "event-point/card-event-calculator.h"
 
+static int event_type_marathon = mapEnum(EnumMap::eventType, "marathon");
+static int event_type_cheerful = mapEnum(EnumMap::eventType, "cheerful_carnival");
+static int event_type_world_bloom = mapEnum(EnumMap::eventType, "world_bloom");
+
 double CardEventCalculator::getEventDeckBonus(int eventId, const Card &card)
 {
     auto& eventDeckBonuses = this->dataProvider.masterData->eventDeckBonuses;
@@ -37,7 +41,8 @@ double CardEventCalculator::getCardEventBonus(const UserCard &userCard, int even
     auto& eventRarityBonusRates = this->dataProvider.masterData->eventRarityBonusRates;
 
     // 无活动组卡
-    if (eventId == this->dataProvider.masterData->getNoEventFakeEventId()) {
+    if (eventId == this->dataProvider.masterData->getNoEventFakeEventId(event_type_marathon)
+     || eventId == this->dataProvider.masterData->getNoEventFakeEventId(event_type_cheerful)) {
         return 0;
     }
 
