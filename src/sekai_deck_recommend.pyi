@@ -42,11 +42,38 @@ class DeckRecommendSaOptions:
     debug: Optional[bool]
 
 
+class DeckRecommendGaOptions:
+    """
+    Genetic algorithm options
+    Attributes:
+        seed (int): Random seed, leave it None or use -1 for random seed, default is None
+        debug (bool): Whether to print debug information, default is False
+        max_iter (int): Maximum iterations, default is 1000000
+        max_no_improve_iter (int): Maximum iterations without improvement, default is 5
+        pop_size (int): Population size, default is 10000
+        parent_size (int): Parent size, default is 1000
+        elite_size (int): Elite size, default is 0
+        crossover_rate (float): Crossover rate, default is 1.0
+        base_mutation_rate (float): Base mutation rate, default is 0.1
+        no_improve_iter_to_mutation_rate (float): Rate of no improvement iterations to mutation rate (mutation_rate = base_mutation_rate + no_improve_iter * no_improve_iter_to_mutation_rate), default is 0.02
+    """
+    seed: Optional[int]
+    debug: Optional[bool]
+    max_iter: Optional[int]
+    max_no_improve_iter: Optional[int]
+    pop_size: Optional[int]
+    parent_size: Optional[int]
+    elite_size: Optional[int]
+    crossover_rate: Optional[float]
+    base_mutation_rate: Optional[float]
+    no_improve_iter_to_mutation_rate: Optional[float]
+
+
 class DeckRecommendOptions:
     """
     Deck recommend options
     Attributes:
-        algorithm (str): "sa" for simulated annealing, "dfs" for brute force. Default is "sa"
+        algorithm (str): "dfs" for brute force, "sa" for simulated annealing, "ga" for genetic algorithm, default is "ga"
         region (str): Region in ["jp", "en", "tw", "kr", "cn"]
         user_data_file_path (str): File path of user suite data
         live_type (str): Live type in ["multi", "solo", "auto", "challenge"]
@@ -68,6 +95,7 @@ class DeckRecommendOptions:
         rarity_4_config (DeckRecommendCardConfig): Card config for rarity 4
         filter_other_unit (bool): Whether to filter out other units for banner event, default is False
         sa_options (DeckRecommendSaOptions): Simulated annealing options
+        ga_options (DeckRecommendGaOptions): Genetic algorithm options
     """
     algorithm: Optional[str]
     region: str

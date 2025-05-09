@@ -18,9 +18,12 @@ static const std::map<std::string, Region> REGION_ENUM_MAP = {
     {"cn", Region::CN},
 };
 
+static const std::string DEFAULT_ALGORITHM = "ga";
+
 static const std::set<std::string> VALID_ALGORITHMS = {
     "sa",
-    "dfs"
+    "dfs",
+    "ga",
 };
 static const std::set<std::string> VALID_MUSIC_DIFFS = {
     "easy",
@@ -86,6 +89,20 @@ struct PySaOptions {
     std::optional<bool> debug;
 };
 
+// python传入的遗传算法参数
+struct PyGaOptions {
+    std::optional<int> seed;
+    std::optional<bool> debug;
+    std::optional<int> max_iter;
+    std::optional<int> max_no_improve_iter;
+    std::optional<int> pop_size;
+    std::optional<int> parent_size;
+    std::optional<int> elite_size;
+    std::optional<double> crossover_rate;
+    std::optional<double> base_mutation_rate;
+    std::optional<double> no_improve_iter_to_mutation_rate;
+};
+
 // python传入的推荐参数
 struct PyDeckRecommendOptions {
     std::optional<std::string> algorithm;
@@ -110,6 +127,7 @@ struct PyDeckRecommendOptions {
     std::optional<PyCardConfig> rarity_4_config;
     std::optional<bool> filter_other_unit;
     std::optional<PySaOptions> sa_options;
+    std::optional<PyGaOptions> ga_options;
 };
 
 // 单个Card推荐结果
@@ -260,13 +278,15 @@ class SekaiDeckRecommend {
             auto config = DeckRecommendConfig();
 
             // algorithm
-            std::string algorithm = pyoptions.algorithm.value_or("sa");
+            std::string algorithm = pyoptions.algorithm.value_or(DEFAULT_ALGORITHM);
             if (!VALID_ALGORITHMS.count(algorithm))
                 throw std::invalid_argument("Invalid algorithm: " + algorithm);
             if (algorithm == "sa")
-                config.useSa = true;
+                config.algorithm = RecommendAlgorithm::SA;
             else if (algorithm == "dfs")
-                config.useSa = false;
+                config.algorithm = RecommendAlgorithm::DFS;
+            else if (algorithm == "ga")
+                config.algorithm = RecommendAlgorithm::GA;
 
             // filter other unit
             if (pyoptions.filter_other_unit.has_value()) {
@@ -342,7 +362,7 @@ class SekaiDeckRecommend {
             }
 
             // sa config
-            if (config.useSa && pyoptions.sa_options.has_value()) {
+            if (config.algorithm == RecommendAlgorithm::SA && pyoptions.sa_options.has_value()) {
                 auto sa_options = pyoptions.sa_options.value();
 
                 if (sa_options.run_num.has_value())
@@ -380,6 +400,55 @@ class SekaiDeckRecommend {
 
                 if (sa_options.debug.has_value())
                     config.saDebug = sa_options.debug.value();
+            }
+
+            // ga config
+            if (config.algorithm == RecommendAlgorithm::GA && pyoptions.ga_options.has_value()) {
+                auto ga_options = pyoptions.ga_options.value();
+
+                if (ga_options.seed.has_value())
+                    config.gaSeed = ga_options.seed.value();
+                
+                if (ga_options.debug.has_value())
+                    config.gaDebug = ga_options.debug.value();
+
+                if (ga_options.max_iter.has_value())
+                    config.gaMaxIter = ga_options.max_iter.value();
+                if (config.gaMaxIter < 1)
+                    throw std::invalid_argument("Invalid ga max iter: " + std::to_string(config.gaMaxIter));
+
+                if (ga_options.max_no_improve_iter.has_value())
+                    config.gaMaxIterNoImprove = ga_options.max_no_improve_iter.value();
+                if (config.gaMaxIterNoImprove < 1)
+                    throw std::invalid_argument("Invalid ga max no improve iter: " + std::to_string(config.gaMaxIterNoImprove));
+
+                if (ga_options.pop_size.has_value())
+                    config.gaPopSize = ga_options.pop_size.value();
+                if (config.gaPopSize < 1)
+                    throw std::invalid_argument("Invalid ga pop size: " + std::to_string(config.gaPopSize));
+
+                if (ga_options.parent_size.has_value())
+                    config.gaParentSize = ga_options.parent_size.value();
+                if (config.gaParentSize < 1 || config.gaParentSize > config.gaPopSize)
+                    throw std::invalid_argument("Invalid ga parent size: " + std::to_string(config.gaParentSize));
+
+                if (ga_options.elite_size.has_value())
+                    config.gaEliteSize = ga_options.elite_size.value();
+                if (config.gaEliteSize < 0 || config.gaEliteSize > config.gaPopSize)
+                    throw std::invalid_argument("Invalid ga elite size: " + std::to_string(config.gaEliteSize));
+
+                if (ga_options.crossover_rate.has_value())
+                    config.gaCrossoverRate = ga_options.crossover_rate.value();
+                if (config.gaCrossoverRate < 0 || config.gaCrossoverRate > 1)
+                    throw std::invalid_argument("Invalid ga crossover rate: " + std::to_string(config.gaCrossoverRate));
+
+                if (ga_options.base_mutation_rate.has_value())
+                    config.gaBaseMutationRate = ga_options.base_mutation_rate.value();
+                if (config.gaBaseMutationRate < 0 || config.gaBaseMutationRate > 1)
+                    throw std::invalid_argument("Invalid ga base mutation rate: " + std::to_string(config.gaBaseMutationRate));
+
+                if (ga_options.no_improve_iter_to_mutation_rate.has_value())
+                    config.gaNoImproveIterToMutationRate = ga_options.no_improve_iter_to_mutation_rate.value();
             }
 
             options.config = config;
@@ -488,6 +557,20 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("start_temprature", &PySaOptions::start_temprature)
         .def_readwrite("cooling_rate", &PySaOptions::cooling_rate)
         .def_readwrite("debug", &PySaOptions::debug);
+
+    py::class_<PyGaOptions>(m, "DeckRecommendGaOptions")
+        .def(py::init<>())
+        .def(py::init<const PyGaOptions&>())
+        .def_readwrite("seed", &PyGaOptions::seed)
+        .def_readwrite("debug", &PyGaOptions::debug)
+        .def_readwrite("max_iter", &PyGaOptions::max_iter)
+        .def_readwrite("max_no_improve_iter", &PyGaOptions::max_no_improve_iter)
+        .def_readwrite("pop_size", &PyGaOptions::pop_size)
+        .def_readwrite("parent_size", &PyGaOptions::parent_size)
+        .def_readwrite("elite_size", &PyGaOptions::elite_size)
+        .def_readwrite("crossover_rate", &PyGaOptions::crossover_rate)
+        .def_readwrite("base_mutation_rate", &PyGaOptions::base_mutation_rate)
+        .def_readwrite("no_improve_iter_to_mutation_rate", &PyGaOptions::no_improve_iter_to_mutation_rate);
     
     py::class_<PyDeckRecommendOptions>(m, "DeckRecommendOptions")
         .def(py::init<>())
@@ -513,7 +596,8 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("rarity_birthday_config", &PyDeckRecommendOptions::rarity_birthday_config)
         .def_readwrite("rarity_4_config", &PyDeckRecommendOptions::rarity_4_config)
         .def_readwrite("filter_other_unit", &PyDeckRecommendOptions::filter_other_unit)
-        .def_readwrite("sa_options", &PyDeckRecommendOptions::sa_options);
+        .def_readwrite("sa_options", &PyDeckRecommendOptions::sa_options)
+        .def_readwrite("ga_options", &PyDeckRecommendOptions::ga_options);
 
     py::class_<PyRecommendCard>(m, "RecommendCard")
         .def(py::init<>())

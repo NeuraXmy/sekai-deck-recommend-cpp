@@ -1,6 +1,6 @@
 # Sekai Deck Recommendation C++
 
-A C++ optimized version of [sekai-calculator](https://github.com/xfl03/sekai-calculator) with Python bindings, providing both the original brute-force search algorithm and a new simulated annealing algorithm.
+A C++ optimized version of [sekai-calculator](https://github.com/xfl03/sekai-calculator) with Python bindings, providing both the original brute-force search algorithm and some new randomized algorithms.
 
 ## Install
 
@@ -37,8 +37,9 @@ sekai_deck_recommend.update_musicmetas("file/path/of/musicmetas.json", "jp")
 
 options = DeckRecommendOptions()
 
-# "sa" for simulated annealing, "dfs" for brute-force search
-options.algorithm = "sa"   
+# "ga" for genetic algorithm, "sa" for simulated annealing, "dfs" for brute-force search
+# default is "ga"
+options.algorithm = "ga"   
 
 options.region = "jp"
 options.user_data_file_path = "user/data/file/path.json"

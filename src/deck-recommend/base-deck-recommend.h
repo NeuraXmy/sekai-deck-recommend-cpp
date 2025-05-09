@@ -10,6 +10,12 @@
 
 using Rng = std::mt19937_64;
 
+enum class RecommendAlgorithm {
+    DFS,
+    SA,
+    GA
+};
+
 struct DeckRecommendConfig {
     // 歌曲ID
     int musicId;
@@ -27,8 +33,10 @@ struct DeckRecommendConfig {
     // 箱活是否过滤掉其他组合成员
     bool filterOtherUnit = false; 
 
+    // 推荐算法
+    RecommendAlgorithm algorithm = RecommendAlgorithm::SA; 
+
     // 模拟退火参数
-    bool useSa = true; // 是否使用模拟退火
     int saRunCount = 20; // 运行次数
     int saSeed = -1; // 随机数种子 -1 代表使用当前时间
     int saMaxIter = 1000000; // 最大迭代次数
@@ -37,6 +45,18 @@ struct DeckRecommendConfig {
     double saStartTemperature = 1e8; // 初始温度
     double saCoolingRate = 0.999; // 冷却速率
     bool saDebug = false; // 是否输出调试信息
+
+    // 遗传算法参数
+    int gaSeed = -1;
+    bool gaDebug = false;
+    int gaMaxIter = 1000000; // 最大迭代次数
+    int gaMaxIterNoImprove = 5; // 最大无改进迭代次数
+    int gaPopSize = 10000; // 种群大小
+    int gaParentSize = 1000; // 父代数量
+    int gaEliteSize = 0; // 精英数量
+    double gaCrossoverRate = 1.0; // 交叉率
+    double gaBaseMutationRate = 0.1; // 基础变异率
+    double gaNoImproveIterToMutationRate = 0.02; // 无改进迭代次数转换为变异率的比例
 };
   
 
@@ -56,6 +76,20 @@ public:
           cardCalculator(dataProvider),
           liveCalculator(dataProvider),
           areaItemService(dataProvider) {}
+
+    // 计算第一位+后几位顺序无关的哈希值
+    long long calcDeckHash(const std::vector<const CardDetail*>& deck);
+
+    // 获取卡组的最佳排列
+    RecommendDeck getBestPermutation(
+        DeckCalculator& deckCalculator,
+        const std::vector<const CardDetail*> &deckCards,
+        const std::vector<CardDetail> &allCards,
+        const std::function<int(const DeckDetail &)> &scoreFunc,
+        int honorBonus,
+        std::optional<int> eventType,
+        std::optional<int> eventId
+    ) const;
 
     /**
      * 使用递归寻找最佳卡组
@@ -100,6 +134,35 @@ public:
      * @param eventType （可选）活动类型
      */
     void findBestCardsSA(
+        const DeckRecommendConfig& config,
+        Rng& rng,
+        const std::vector<CardDetail>& cardDetails,
+        const std::vector<CardDetail>& allCards,
+        const std::function<int(const DeckDetail&)>& scoreFunc,
+        RecommendCalcInfo& dfsInfo,
+        int limit = 1,
+        bool isChallengeLive = false,
+        int member = 5,
+        int honorBonus = 0,
+        std::optional<int> eventType = std::nullopt,
+        std::optional<int> eventId = std::nullopt
+    );
+
+    /**
+     * 使用遗传算法寻找最佳卡组
+     * （按分数高到低排序）
+     * @param config 配置
+     * @param cardDetails 参与计算的卡牌
+     * @param allCards 全部卡牌（按支援卡组加成排序）
+     * @param scoreFunc 获得分数的公式
+     * @param dfsInfo DFS信息
+     * @param limit 需要推荐的卡组数量（按分数高到低）
+     * @param isChallengeLive 是否挑战Live（人员可重复）
+     * @param member 人数限制（2-5、默认5）
+     * @param honorBonus 称号加成
+     * @param eventType （可选）活动类型
+     */
+    void findBestCardsGA(
         const DeckRecommendConfig& config,
         Rng& rng,
         const std::vector<CardDetail>& cardDetails,
