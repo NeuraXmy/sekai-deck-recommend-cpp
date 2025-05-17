@@ -36,6 +36,9 @@ struct DeckRecommendConfig {
     // 推荐算法
     RecommendAlgorithm algorithm = RecommendAlgorithm::SA; 
 
+    // 指定一定要包含的卡牌
+    std::vector<int> fixedCards = {}; 
+
     // 模拟退火参数
     int saRunCount = 20; // 运行次数
     int saSeed = -1; // 随机数种子 -1 代表使用当前时间
@@ -106,7 +109,7 @@ public:
      * @param honorBonus 称号加成
      * @param eventType （可选）活动类型
      */
-    void findBestCards(
+    void findBestCardsDFS(
         const std::vector<CardDetail>& cardDetails,
         const std::vector<CardDetail>& allCards,
         const std::function<int(const DeckDetail&)>& scoreFunc,
@@ -116,7 +119,8 @@ public:
         int member = 5,
         int honorBonus = 0,
         std::optional<int> eventType = std::nullopt,
-        std::optional<int> eventId = std::nullopt
+        std::optional<int> eventId = std::nullopt,
+        const std::vector<CardDetail>& fixedCards = {}
     );
 
     /**
@@ -145,7 +149,8 @@ public:
         int member = 5,
         int honorBonus = 0,
         std::optional<int> eventType = std::nullopt,
-        std::optional<int> eventId = std::nullopt
+        std::optional<int> eventId = std::nullopt,
+        const std::vector<CardDetail>& fixedCards = {}
     );
 
     /**
@@ -174,7 +179,8 @@ public:
         int member = 5,
         int honorBonus = 0,
         std::optional<int> eventType = std::nullopt,
-        std::optional<int> eventId = std::nullopt
+        std::optional<int> eventId = std::nullopt,
+        const std::vector<CardDetail>& fixedCards = {}
     );
 
     /**

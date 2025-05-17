@@ -94,6 +94,7 @@ class DeckRecommendOptions:
         rarity_birthday_config (DeckRecommendCardConfig): Card config for birthday cards
         rarity_4_config (DeckRecommendCardConfig): Card config for rarity 4
         filter_other_unit (bool): Whether to filter out other units for banner event, default is False
+        fixed_cards (List[int]): List of card IDs that always included in the deck, default is None
         sa_options (DeckRecommendSaOptions): Simulated annealing options
         ga_options (DeckRecommendGaOptions): Genetic algorithm options
     """
@@ -118,6 +119,7 @@ class DeckRecommendOptions:
     rarity_birthday_config: Optional[DeckRecommendCardConfig]
     rarity_4_config: Optional[DeckRecommendCardConfig]
     filter_other_unit: Optional[bool]
+    fixed_cards: Optional[List[int]]
     sa_options: Optional[DeckRecommendSaOptions]
 
 

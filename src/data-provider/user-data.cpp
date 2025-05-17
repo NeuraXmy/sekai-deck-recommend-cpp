@@ -51,5 +51,5 @@ UserData::UserData(const std::string& path) {
     this->userMysekaiCanvases = loadUserDataFromJsonList<UserMysekaiCanvas>(j, "userMysekaiCanvases", false);
     this->userMysekaiFixtureGameCharacterPerformanceBonuses = loadUserDataFromJsonList<UserMysekaiFixtureGameCharacterPerformanceBonus>(j, "userMysekaiFixtureGameCharacterPerformanceBonuses", false);
     this->userMysekaiGates = loadUserDataFromJsonList<UserMysekaiGate>(j, "userMysekaiGates", false);
-    this->userWorldBloomSupportDecks = loadUserDataFromJsonList<UserWorldBloomSupportDeck>(j, "userWorldBloomSupportDecks", false);
+    // this->userWorldBloomSupportDecks = loadUserDataFromJsonList<UserWorldBloomSupportDeck>(j, "userWorldBloomSupportDecks", false);
 }

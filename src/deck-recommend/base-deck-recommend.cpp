@@ -9,6 +9,8 @@
 int piapro_unit_enum = mapEnum(EnumMap::unit, "piapro");
 int challenge_live_type_enum = mapEnum(EnumMap::liveType, "challenge");
 
+int not_doing_special_training_status = mapEnum(EnumMap::specialTrainingStatus, "not_doing");
+
 
 long long BaseDeckRecommend::calcDeckHash(const std::vector<const CardDetail*>& deck) {
     std::vector<int> v{};
@@ -78,6 +80,8 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
 
     auto cards = cardCalculator.batchGetCardDetail(userCards, config.cardConfig, eventConfig, areaItemLevels);
 
+    auto& cardEpisodes = this->dataProvider.masterData->cardEpisodes;
+
     // 过滤箱活的卡，不上其它组合的
     if (eventConfig.eventUnit && config.filterOtherUnit) {
         std::vector<CardDetail> newCards{};
@@ -89,7 +93,63 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
         }
         cards = std::move(newCards);
     }
-    
+
+    std::vector<CardDetail> fixedCards{};
+    for (auto card_id : config.fixedCards) {
+        // 从当前卡牌中找到对应的卡牌
+        auto it = std::find_if(cards.begin(), cards.end(), [&](const CardDetail& card) {
+            return card.cardId == card_id;
+        });
+        if (it != cards.end()) {
+            fixedCards.push_back(*it);
+        } else {
+            // 找不到的情况下，生成一个初始养成情况的卡牌
+            UserCard uc;
+            uc.cardId = card_id;
+            uc.level = 1;
+            uc.skillLevel = 1;
+            uc.masterRank = 0;
+            uc.specialTrainingStatus = not_doing_special_training_status;
+            for (auto& ep : cardEpisodes) 
+                if (ep.cardId == card_id) {
+                    UserCardEpisodes uce{};
+                    uce.cardEpisodeId = ep.id;
+                    uce.scenarioStatus = 0;
+                    uc.episodes.push_back(uce);
+                }
+            auto card = cardCalculator.batchGetCardDetail({uc}, config.cardConfig, eventConfig, areaItemLevels);
+            if (card.size() > 0) {
+                fixedCards.push_back(card[0]);
+            } else {
+                throw std::runtime_error("Failed to generate virtual card for fixed card id: " + std::to_string(card_id));
+            }
+        }
+    }
+    // 检查是否有效
+    if (fixedCards.size()) {
+        std::set<int> fixedCardIds{};
+        std::set<int> fixedCardCharacterIds{};
+        for (const auto& card : fixedCards) {
+            fixedCardIds.insert(card.cardId);
+            fixedCardCharacterIds.insert(card.characterId);
+        }
+        if (int(fixedCards.size()) > config.member) {
+            throw std::runtime_error("Fixed cards size is larger than member size");
+        }
+        if (fixedCardIds.size() != fixedCards.size()) {
+            throw std::runtime_error("Fixed cards have duplicate cards");
+        }
+        if (liveType == challenge_live_type_enum) {
+            if (fixedCardCharacterIds.size() != 1 || fixedCards[0].characterId != cards[0].characterId) {
+                throw std::runtime_error("Fixed cards have invalid characters");
+            }
+        } else {
+            if (fixedCardCharacterIds.size() != fixedCards.size()) {
+                throw std::runtime_error("Fixed cards have duplicate characters");
+            }
+        }
+    }
+
     auto honorBonus = deckCalculator.getHonorBonusPower();
 
     std::vector<RecommendDeck> ans{};
@@ -134,7 +194,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
                     config, rng, cards0, cards, sf,
                     calcInfo,
                     config.limit, liveType == challenge_live_type_enum, config.member, honorBonus,
-                    eventConfig.eventType, eventConfig.eventId
+                    eventConfig.eventType, eventConfig.eventId, fixedCards
                 );
             }
         } 
@@ -149,7 +209,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
                 config, rng, cards0, cards, sf,
                 calcInfo,
                 config.limit, liveType == challenge_live_type_enum, config.member, honorBonus,
-                eventConfig.eventType, eventConfig.eventId
+                eventConfig.eventType, eventConfig.eventId, fixedCards
             );
         }
         else if (config.algorithm == RecommendAlgorithm::DFS) {
@@ -157,21 +217,28 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
             calcInfo.deckCards.clear();
             calcInfo.deckCharacters.clear();
 
-            findBestCards(
+            // 插入固定卡牌
+            for (const auto& card : fixedCards) {
+                calcInfo.deckCards.push_back(&card);
+                calcInfo.deckCharacters.insert(card.characterId);
+            }
+
+            findBestCardsDFS(
                 cards0, cards, sf,
                 calcInfo,
                 config.limit, liveType == challenge_live_type_enum, config.member, honorBonus, 
-                eventConfig.eventType, eventConfig.eventId
+                eventConfig.eventType, eventConfig.eventId, fixedCards
             );
         }
         else {
             throw std::runtime_error("Unknown algorithm: " + std::to_string(int(config.algorithm)));
         }
-
+        
         ans.clear();
-        while (calcInfo.deckQueue.size()) {
-            ans.emplace_back(calcInfo.deckQueue.top());
-            calcInfo.deckQueue.pop();
+        auto q = calcInfo.deckQueue;
+        while (q.size()) {
+            ans.emplace_back(q.top());
+            q.pop();
         }
         std::reverse(ans.begin(), ans.end());
         if (int(ans.size()) >= config.limit || calcInfo.isTimeout()) 

@@ -13,9 +13,18 @@ void BaseDeckRecommend::findBestCardsSA(
     int member, 
     int honorBonus, 
     std::optional<int> eventType, 
-    std::optional<int> eventId
+    std::optional<int> eventId,
+    const std::vector<CardDetail>& fixedCards
 )
 {
+    // 防止挑战Live卡的数量小于允许上场的数量导致无法组队
+    if (isChallengeLive) {
+        member = std::min(member, int(cardDetails.size()));
+    }
+
+    // 实际需要退火的卡牌数量
+    member = member - fixedCards.size();
+
     // 根据卡的角色map参与组队的卡牌
     constexpr int MAX_CID = 27;
     std::vector<CardDetail> charaCardDetails[MAX_CID] = {};
@@ -34,20 +43,29 @@ void BaseDeckRecommend::findBestCardsSA(
     
     // 根据综合力生成一个初始卡组
     std::vector<const CardDetail*> deck{};
+    if (member > 0)
     {
         if (!isChallengeLive) {
-            // 遍历所有角色 找到每个角色综合力最高的一个卡牌
+            // 遍历所有角色 找到每个角色综合力最高的一个卡牌（不能是和fixedCards相同的角色）
             for (int i = 0; i < MAX_CID; ++i) {
                 auto& cards = charaCardDetails[i];
                 if (cards.empty()) continue;
+                if (std::find_if(fixedCards.begin(), fixedCards.end(), [&](const CardDetail& card) {
+                    return card.characterId == i;
+                }) != fixedCards.end()) continue;
                 auto& max_card = *std::max_element(cards.begin(), cards.end(), [](const CardDetail& a, const CardDetail& b) {
                     return a.power.min != b.power.min ? a.power.min < b.power.min : a.cardId > b.cardId;
                 });
                 deck.push_back(&max_card);
             }
         } else {
-            for (auto& card : cardDetails) 
+            // 选取全部（不能是和fixedCards相同的卡）
+            for (auto& card : cardDetails) {
+                if (std::find_if(fixedCards.begin(), fixedCards.end(), [&](const CardDetail& fixedCard) {
+                    return card.cardId == fixedCard.cardId;
+                }) != fixedCards.end()) continue;
                 deck.push_back(&card);
+            }
         }
         // 再排序后resize为member数量
         std::sort(deck.begin(), deck.end(), [](const CardDetail* a, const CardDetail* b) {
@@ -69,10 +87,26 @@ void BaseDeckRecommend::findBestCardsSA(
         saInfo.deckScoreMap[calcDeckHash(deck)] = recDeck.score;
     }
 
+    // 添加固定卡牌（在末尾）
+    for (const auto& card : fixedCards) {
+        deck.push_back(&card);
+        deckCharacters.insert(card.characterId);
+        deckCardIds.insert(card.cardId);
+    }
+
+    // 如果member=0，不需要退火
+    if (member == 0) {
+        saInfo.update(getBestPermutation(
+            this->deckCalculator, deck, allCards, scoreFunc, 
+            honorBonus, eventType, eventId
+        ), limit);
+        return;
+    }
+
     // 退火
     while (true) {
-        // 随机选一个位置替换
-        int pos = std::uniform_int_distribution<int>(0, int(deck.size()) - 1)(rng);
+        // 随机选一个位置替换（不能是固定卡牌）
+        int pos = std::uniform_int_distribution<int>(0, int(deck.size()) - int(fixedCards.size()) - 1)(rng);
 
         // 收集该位置能够替换的卡的索引 chara_index * 10000 + card_index
         replacableCardIndices.clear();

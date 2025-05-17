@@ -126,6 +126,7 @@ struct PyDeckRecommendOptions {
     std::optional<PyCardConfig> rarity_birthday_config;
     std::optional<PyCardConfig> rarity_4_config;
     std::optional<bool> filter_other_unit;
+    std::optional<std::vector<int>> fixed_cards;
     std::optional<PySaOptions> sa_options;
     std::optional<PyGaOptions> ga_options;
 };
@@ -327,6 +328,19 @@ class SekaiDeckRecommend {
             }
             else {
                 config.member = 5;
+            }
+
+            // fixed cards
+            if (pyoptions.fixed_cards.has_value()) {
+                auto fixed_cards = pyoptions.fixed_cards.value();
+                if (int(fixed_cards.size()) > config.member)
+                    throw std::invalid_argument("Fixed cards size exceeds member count.");
+                for (const auto& card_id : fixed_cards) {
+                    findOrThrow(options.dataProvider.masterData->cards, [&](const Card& it) {
+                        return it.id == card_id;
+                    }, "Invalid fixed card ID: " + std::to_string(card_id));
+                }
+                config.fixedCards = fixed_cards;
             }
 
             // timeout
@@ -596,6 +610,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("rarity_birthday_config", &PyDeckRecommendOptions::rarity_birthday_config)
         .def_readwrite("rarity_4_config", &PyDeckRecommendOptions::rarity_4_config)
         .def_readwrite("filter_other_unit", &PyDeckRecommendOptions::filter_other_unit)
+        .def_readwrite("fixed_cards", &PyDeckRecommendOptions::fixed_cards)
         .def_readwrite("sa_options", &PyDeckRecommendOptions::sa_options)
         .def_readwrite("ga_options", &PyDeckRecommendOptions::ga_options);
 
