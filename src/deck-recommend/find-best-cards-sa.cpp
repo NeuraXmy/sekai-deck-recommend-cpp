@@ -2,6 +2,7 @@
 
 
 void BaseDeckRecommend::findBestCardsSA(
+    int liveType,
     const DeckRecommendConfig& cfg,
     Rng& rng,
     const std::vector<CardDetail> &cardDetails,     // 所有参与组队的卡牌
@@ -35,8 +36,8 @@ void BaseDeckRecommend::findBestCardsSA(
     auto start_time = std::chrono::high_resolution_clock::now();
     int iter_num = 0;
     int no_improve_iter_num = 0;
-    int current_score = 0;
-    int last_score = 0;
+    double current_score = 0;
+    double last_score = 0;
     std::vector<int> replacableCardIndices{};
     std::set<int> deckCharacters{};
     std::set<int> deckCardIds{};
@@ -76,7 +77,7 @@ void BaseDeckRecommend::findBestCardsSA(
         // 计算当前综合力
         auto recDeck = getBestPermutation(
             this->deckCalculator, deck, allCards, scoreFunc, 
-            honorBonus, eventType, eventId
+            honorBonus, eventType, eventId, cfg.target, liveType
         );
         // 记录当前卡组
         for (const auto& card : deck) {
@@ -84,7 +85,7 @@ void BaseDeckRecommend::findBestCardsSA(
             deckCardIds.insert(card->cardId);
         }
         saInfo.update(recDeck, limit);
-        saInfo.deckScoreMap[calcDeckHash(deck)] = recDeck.score;
+        saInfo.deckTargetValueMap[calcDeckHash(deck)] = recDeck.targetValue;
     }
 
     // 添加固定卡牌（在末尾）
@@ -98,7 +99,7 @@ void BaseDeckRecommend::findBestCardsSA(
     if (member == 0) {
         saInfo.update(getBestPermutation(
             this->deckCalculator, deck, allCards, scoreFunc, 
-            honorBonus, eventType, eventId
+            honorBonus, eventType, eventId, cfg.target, liveType
         ), limit);
         return;
     }
@@ -134,20 +135,21 @@ void BaseDeckRecommend::findBestCardsSA(
         // 替换，计算新的综合力，并计算接受概率
         deck[pos] = new_card;
         long long hash = calcDeckHash(deck);
-        bool visited = saInfo.deckScoreMap.count(hash);
-        int new_score = 0;
-        RecommendDeck recDeck{};
+        bool visited = saInfo.deckTargetValueMap.count(hash);
+        double new_score = 0;
         if (visited) {
             // 如果已经计算过这个组合，直接取值
-            new_score = saInfo.deckScoreMap[hash];
+            new_score = saInfo.deckTargetValueMap[hash];
         }
         else {
-            recDeck = getBestPermutation(
+            auto recDeck = getBestPermutation(
                 this->deckCalculator, deck, allCards, scoreFunc, 
-                honorBonus, eventType, eventId
+                honorBonus, eventType, eventId, cfg.target, liveType
             );
-            new_score = recDeck.score;
-            saInfo.deckScoreMap[hash] = new_score;
+            new_score = recDeck.targetValue;
+            saInfo.deckTargetValueMap[hash] = new_score;
+            // 记录当前卡组答案
+            saInfo.update(recDeck, limit);
         }
 
         double delta = new_score - current_score;
@@ -168,9 +170,6 @@ void BaseDeckRecommend::findBestCardsSA(
             deck[pos] = new_card;
             last_score = current_score;
             current_score = new_score;
-            // 记录当前卡组答案
-            if (!visited)
-                saInfo.update(RecommendDeck{recDeck, current_score}, limit);
         } else {
             // 恢复
             deck[pos] = old_card;

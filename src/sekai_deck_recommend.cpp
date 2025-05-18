@@ -18,13 +18,20 @@ static const std::map<std::string, Region> REGION_ENUM_MAP = {
     {"cn", Region::CN},
 };
 
-static const std::string DEFAULT_ALGORITHM = "ga";
+static const std::string DEFAULT_TARGET = "score";
+static const std::set<std::string> VALID_TARGETS = {
+    "score",
+    "skill",
+    "power",
+};
 
+static const std::string DEFAULT_ALGORITHM = "ga";
 static const std::set<std::string> VALID_ALGORITHMS = {
     "sa",
     "dfs",
     "ga",
 };
+
 static const std::set<std::string> VALID_MUSIC_DIFFS = {
     "easy",
     "normal",
@@ -105,6 +112,7 @@ struct PyGaOptions {
 
 // python传入的推荐参数
 struct PyDeckRecommendOptions {
+    std::optional<std::string> target;
     std::optional<std::string> algorithm;
     std::optional<std::string> region;
     std::optional<std::string> user_data_file_path;
@@ -142,6 +150,10 @@ struct PyRecommendCard {
     int skill_level;
     int skill_score_up;
     int skill_life_recovery;
+    bool episode1_read;
+    bool episode2_read;
+    bool after_training;
+    std::string default_image;
 };
 
 // 单个Deck推荐结果
@@ -156,6 +168,7 @@ struct PyRecommendDeck {
     int gate_bonus_power;
     double event_bonus_rate;
     double support_deck_bonus_rate;
+    double expect_skill_score_up;
     std::vector<PyRecommendCard> cards;
 };
 
@@ -277,6 +290,17 @@ class SekaiDeckRecommend {
         // config
         {
             auto config = DeckRecommendConfig();
+
+            // target
+            std::string target = pyoptions.target.value_or(DEFAULT_TARGET);
+            if (!VALID_TARGETS.count(target))
+                throw std::invalid_argument("Invalid target: " + target);
+            if (target == "score")
+                config.target = RecommendTarget::Score;
+            else if (target == "skill")
+                config.target = RecommendTarget::Skill;
+            else if (target == "power")
+                config.target = RecommendTarget::Power;
 
             // algorithm
             std::string algorithm = pyoptions.algorithm.value_or(DEFAULT_ALGORITHM);
@@ -484,6 +508,7 @@ class SekaiDeckRecommend {
             py_deck.gate_bonus_power = deck.power.gateBonus;
             py_deck.event_bonus_rate = deck.eventBonus.value_or(0);
             py_deck.support_deck_bonus_rate = deck.supportDeckBonus.value_or(0);
+            py_deck.expect_skill_score_up = deck.expectSkillBonus;
 
             for (const auto& card : deck.cards) {
                 auto py_card = PyRecommendCard();
@@ -496,6 +521,10 @@ class SekaiDeckRecommend {
                 py_card.skill_level = card.skillLevel;
                 py_card.skill_score_up = card.skill.scoreUp;
                 py_card.skill_life_recovery = card.skill.lifeRecovery;
+                py_card.episode1_read = card.episode1Read;
+                py_card.episode2_read = card.episode2Read;
+                py_card.after_training = card.afterTraining;
+                py_card.default_image = mappedEnumToString(EnumMap::defaultImage, card.defaultImage);
                 py_deck.cards.push_back(py_card);
             }
 
@@ -589,6 +618,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
     py::class_<PyDeckRecommendOptions>(m, "DeckRecommendOptions")
         .def(py::init<>())
         .def(py::init<const PyDeckRecommendOptions&>())
+        .def_readwrite("target", &PyDeckRecommendOptions::target)
         .def_readwrite("algorithm", &PyDeckRecommendOptions::algorithm)
         .def_readwrite("region", &PyDeckRecommendOptions::region)
         .def_readwrite("user_data_file_path", &PyDeckRecommendOptions::user_data_file_path)
@@ -625,7 +655,11 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("level", &PyRecommendCard::level)
         .def_readwrite("skill_level", &PyRecommendCard::skill_level)
         .def_readwrite("skill_score_up", &PyRecommendCard::skill_score_up)
-        .def_readwrite("skill_life_recovery", &PyRecommendCard::skill_life_recovery);
+        .def_readwrite("skill_life_recovery", &PyRecommendCard::skill_life_recovery)
+        .def_readwrite("episode1_read", &PyRecommendCard::episode1_read)
+        .def_readwrite("episode2_read", &PyRecommendCard::episode2_read)
+        .def_readwrite("after_training", &PyRecommendCard::after_training)
+        .def_readwrite("default_image", &PyRecommendCard::default_image);
 
     py::class_<PyRecommendDeck>(m, "RecommendDeck")
         .def(py::init<>())
@@ -640,6 +674,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("gate_bonus_power", &PyRecommendDeck::gate_bonus_power)
         .def_readwrite("event_bonus_rate", &PyRecommendDeck::event_bonus_rate)
         .def_readwrite("support_deck_bonus_rate", &PyRecommendDeck::support_deck_bonus_rate)
+        .def_readwrite("expect_skill_score_up", &PyRecommendDeck::expect_skill_score_up)
         .def_readwrite("cards", &PyRecommendDeck::cards);
     
     py::class_<PyDeckRecommendResult>(m, "DeckRecommendResult")

@@ -37,6 +37,9 @@ sekai_deck_recommend.update_musicmetas("file/path/of/musicmetas.json", "jp")
 
 options = DeckRecommendOptions()
 
+# optimizing target in ["score", "power", "skill"], default is "score"
+options.target = "score"
+
 # "ga" for genetic algorithm, "sa" for simulated annealing, "dfs" for brute-force search
 # default is "ga"
 options.algorithm = "ga"   

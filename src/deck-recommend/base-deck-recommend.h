@@ -36,6 +36,9 @@ struct DeckRecommendConfig {
     // 推荐算法
     RecommendAlgorithm algorithm = RecommendAlgorithm::SA; 
 
+    // 推荐优化目标
+    RecommendTarget target = RecommendTarget::Score;
+
     // 指定一定要包含的卡牌
     std::vector<int> fixedCards = {}; 
 
@@ -83,7 +86,7 @@ public:
     // 计算第一位+后几位顺序无关的哈希值
     long long calcDeckHash(const std::vector<const CardDetail*>& deck);
 
-    // 获取卡组的最佳排列
+    // 获取卡组的最佳排列并计算分数
     RecommendDeck getBestPermutation(
         DeckCalculator& deckCalculator,
         const std::vector<const CardDetail*> &deckCards,
@@ -91,7 +94,9 @@ public:
         const std::function<int(const DeckDetail &)> &scoreFunc,
         int honorBonus,
         std::optional<int> eventType,
-        std::optional<int> eventId
+        std::optional<int> eventId,
+        RecommendTarget target,
+        int liveType
     ) const;
 
     /**
@@ -110,6 +115,8 @@ public:
      * @param eventType （可选）活动类型
      */
     void findBestCardsDFS(
+        int liveType,
+        const DeckRecommendConfig& config,
         const std::vector<CardDetail>& cardDetails,
         const std::vector<CardDetail>& allCards,
         const std::function<int(const DeckDetail&)>& scoreFunc,
@@ -138,6 +145,7 @@ public:
      * @param eventType （可选）活动类型
      */
     void findBestCardsSA(
+        int liveType,
         const DeckRecommendConfig& config,
         Rng& rng,
         const std::vector<CardDetail>& cardDetails,
@@ -168,6 +176,7 @@ public:
      * @param eventType （可选）活动类型
      */
     void findBestCardsGA(
+        int liveType,
         const DeckRecommendConfig& config,
         Rng& rng,
         const std::vector<CardDetail>& cardDetails,

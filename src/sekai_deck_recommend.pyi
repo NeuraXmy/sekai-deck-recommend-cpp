@@ -73,6 +73,7 @@ class DeckRecommendOptions:
     """
     Deck recommend options
     Attributes:
+        target (str): Target of the recommendation in ["score", "power", "skill"], default is "score"
         algorithm (str): "dfs" for brute force, "sa" for simulated annealing, "ga" for genetic algorithm, default is "ga"
         region (str): Region in ["jp", "en", "tw", "kr", "cn"]
         user_data_file_path (str): File path of user suite data
@@ -98,6 +99,7 @@ class DeckRecommendOptions:
         sa_options (DeckRecommendSaOptions): Simulated annealing options
         ga_options (DeckRecommendGaOptions): Genetic algorithm options
     """
+    target: Optional[str]
     algorithm: Optional[str]
     region: str
     user_data_file_path: str
@@ -136,6 +138,10 @@ class RecommendCard:
         skill_level (int): Skill level of the card
         skill_score_up (int): Skill score up of the card
         skill_life_recovery (int): Skill life recovery of the card
+        episode1_read (bool): Whether episode 1 is read
+        episode2_read (bool): Whether episode 2 is read
+        after_training (bool): Whether the card is after special training
+        default_image (str): Default image of the card in ["original", "special_training"]
     """
     card_id: int
     total_power: int
@@ -146,6 +152,10 @@ class RecommendCard:
     skill_level: int
     skill_score_up: int
     skill_life_recovery: int
+    episode1_read: bool
+    episode2_read: bool
+    after_training: bool
+    default_image: str
 
 
 class RecommendDeck:
@@ -162,6 +172,7 @@ class RecommendDeck:
         gate_bonus_power (int): Gate bonus power of the deck
         event_bonus_rate (float): Event bonus rate of the deck
         support_deck_bonus_rate (float): Support deck bonus rate of the deck
+        expect_skill_score_up (float): Expected skill score up of the deck
         cards (List[RecommendCard]): List of recommended cards in the deck
     """
     score: int
@@ -174,6 +185,7 @@ class RecommendDeck:
     gate_bonus_power: int
     event_bonus_rate: float
     support_deck_bonus_rate: float
+    expect_skill_score_up: float
     cards: List[RecommendCard]
 
 

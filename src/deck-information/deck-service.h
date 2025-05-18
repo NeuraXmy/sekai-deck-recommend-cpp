@@ -26,6 +26,10 @@ struct DeckCardDetail {
     DeckCardPowerDetail power;
     std::optional<double> eventBonus;
     DeckCardSkillDetail skill;
+    bool episode1Read;
+    bool episode2Read;
+    bool afterTraining;
+    int defaultImage;
 };
 
 struct DeckDetail {

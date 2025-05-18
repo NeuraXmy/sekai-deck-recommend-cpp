@@ -8,8 +8,28 @@
 
 int piapro_unit_enum = mapEnum(EnumMap::unit, "piapro");
 int challenge_live_type_enum = mapEnum(EnumMap::liveType, "challenge");
+int multi_live_type_enum = mapEnum(EnumMap::liveType, "multi");
+int cheerful_live_type_enum = mapEnum(EnumMap::liveType, "cheerful");
 
 int not_doing_special_training_status = mapEnum(EnumMap::specialTrainingStatus, "not_doing");
+
+
+// 计算技能实效
+double calcExpectSkillBonus(const DeckDetail& deckDetail, int liveType) {
+    double ret = 0;
+    auto& cards = deckDetail.cards;
+    if (liveType == multi_live_type_enum || liveType == cheerful_live_type_enum) {
+        // 多人Live实效
+        ret += cards[0].skill.scoreUp;
+        for (int i = 1; i < int(cards.size()); ++i) 
+            ret += cards[i].skill.scoreUp * 0.2;
+    } else {
+        // 单人Live实效
+        for (int i = 0; i < int(cards.size()); ++i) 
+            ret += cards[i].skill.scoreUp;
+    }
+    return ret;
+}
 
 
 long long BaseDeckRecommend::calcDeckHash(const std::vector<const CardDetail*>& deck) {
@@ -37,7 +57,9 @@ RecommendDeck BaseDeckRecommend::getBestPermutation(
     const std::function<int(const DeckDetail &)> &scoreFunc,
     int honorBonus,
     std::optional<int> eventType,
-    std::optional<int> eventId
+    std::optional<int> eventId,
+    RecommendTarget target,
+    int liveType
 ) const {
     auto deck = deckCards;
     // 后几位按照cardId从小到大排序
@@ -53,8 +75,10 @@ RecommendDeck BaseDeckRecommend::getBestPermutation(
         return std::tuple(a.skill.scoreUp, a.cardId) < std::tuple(b.skill.scoreUp, b.cardId);
     }) - cards.begin();
     // 如果现在C位已经对了（加分技能最高的卡牌在C位）
-    if (bestScoreIndex == 0) 
-        return RecommendDeck{ deckDetail, score };
+    if (bestScoreIndex == 0) {
+        double expectSkillBonus = calcExpectSkillBonus(deckDetail, liveType);
+        return RecommendDeck(deckDetail, target, score, expectSkillBonus);
+    }
     // 不然就重新算调整过C位后的分数
     std::swap(deck[0], deck[bestScoreIndex]);
     // 重新排序
@@ -63,7 +87,8 @@ RecommendDeck BaseDeckRecommend::getBestPermutation(
     });
     deckDetail = deckCalculator.getDeckDetailByCards(deck, allCards, honorBonus, eventType, eventId);
     score = scoreFunc(deckDetail);
-    return RecommendDeck{ deckDetail, score };
+    double expectSkillBonus = calcExpectSkillBonus(deckDetail, liveType);
+    return RecommendDeck(deckDetail, target, score, expectSkillBonus);
 }
 
 
@@ -191,7 +216,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
             auto rng = Rng(seed);
             for (int i = 0; i < config.saRunCount && !calcInfo.isTimeout(); i++) {
                 findBestCardsSA(
-                    config, rng, cards0, cards, sf,
+                    liveType, config, rng, cards0, cards, sf,
                     calcInfo,
                     config.limit, liveType == challenge_live_type_enum, config.member, honorBonus,
                     eventConfig.eventType, eventConfig.eventId, fixedCards
@@ -206,7 +231,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
 
             auto rng = Rng(seed);
             findBestCardsGA(
-                config, rng, cards0, cards, sf,
+                liveType, config, rng, cards0, cards, sf,
                 calcInfo,
                 config.limit, liveType == challenge_live_type_enum, config.member, honorBonus,
                 eventConfig.eventType, eventConfig.eventId, fixedCards
@@ -224,7 +249,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
             }
 
             findBestCardsDFS(
-                cards0, cards, sf,
+                liveType, config, cards0, cards, sf,
                 calcInfo,
                 config.limit, liveType == challenge_live_type_enum, config.member, honorBonus, 
                 eventConfig.eventType, eventConfig.eventId, fixedCards

@@ -4,7 +4,6 @@
 
 struct Individual {
     std::vector<const CardDetail*> deck;
-    int score;
     int deckHash;
     double fitness;
 
@@ -62,6 +61,7 @@ std::vector<int> randomSelectIndexByWeight(Rng& rng, const std::vector<double>& 
 
 
 void BaseDeckRecommend::findBestCardsGA(
+    int liveType,
     const DeckRecommendConfig& cfg,
     Rng& rng,
     const std::vector<CardDetail> &cardDetails,     // 所有参与组队的卡牌
@@ -102,21 +102,20 @@ void BaseDeckRecommend::findBestCardsGA(
     auto updateIndividualScore = [&](Individual& individual) {
         // 检查是否已经计算过这个组合
         auto deckHash = calcDeckHash(individual.deck);
-        int score = 0;
-        if (gaInfo.deckScoreMap.count(deckHash)) {
-            score = gaInfo.deckScoreMap[deckHash];
+        double targetValue = 0.0;
+        if (gaInfo.deckTargetValueMap.count(deckHash)) {
+            targetValue = gaInfo.deckTargetValueMap[deckHash];
         } else {
             // 计算当前综合力
             auto recDeck = getBestPermutation(
                 this->deckCalculator, individual.deck, allCards, scoreFunc, 
-                honorBonus, eventType, eventId
+                honorBonus, eventType, eventId, cfg.target, liveType
             );
-            score = recDeck.score;
+            targetValue = recDeck.targetValue;
             gaInfo.update(recDeck, limit);
-            gaInfo.deckScoreMap[deckHash] = score;
+            gaInfo.deckTargetValueMap[deckHash] = targetValue;
         }
-        individual.score = score;
-        individual.fitness = score; // 分数直接作为适应度
+        individual.fitness = targetValue; // 分数直接作为适应度
         individual.deckHash = deckHash;
     };
 
@@ -172,8 +171,8 @@ void BaseDeckRecommend::findBestCardsGA(
         return;
 
     int iter_num = 0;
-    int cur_max_score = 0;
-    int last_max_score = 0;
+    double cur_max_fitness = 0;
+    double last_max_fitness = 0;
     int no_improve_iter_num = 0;
     double cur_mutation_rate = 0.0;
 
@@ -273,7 +272,7 @@ void BaseDeckRecommend::findBestCardsGA(
     std::vector<Individual> newPopulation{};
     while (true) {
         std::sort(population.begin(), population.end(), std::greater<Individual>());
-        last_max_score = cur_max_score;
+        last_max_fitness = cur_max_fitness;
         cur_mutation_rate = cfg.gaBaseMutationRate + cfg.gaNoImproveIterToMutationRate * (double)no_improve_iter_num;
 
         // 生成新种群
@@ -294,7 +293,7 @@ void BaseDeckRecommend::findBestCardsGA(
             mutate(child);
             updateIndividualScore(child);
             newPopulation.push_back(child);
-            cur_max_score = std::max(cur_max_score, child.score);
+            cur_max_fitness = std::max(cur_max_fitness, child.fitness);
         }
 
         // 去重
@@ -308,7 +307,7 @@ void BaseDeckRecommend::findBestCardsGA(
         }
 
         if (cfg.gaDebug) {
-            std::cout << "iter: " << iter_num << ", max score: " << cur_max_score << ", mutation rate: " << cur_mutation_rate << ", population size: " << population.size() << '\n';
+            std::cout << "iter: " << iter_num << ", max fitness: " << cur_max_fitness << ", mutation rate: " << cur_mutation_rate << ", population size: " << population.size() << '\n';
         }
         
         // 超出次数限制
@@ -316,7 +315,7 @@ void BaseDeckRecommend::findBestCardsGA(
             break;
         }
         // 超出未改进次数限制
-        if (cur_max_score <= last_max_score) {
+        if (cur_max_fitness <= last_max_fitness) {
             if (++no_improve_iter_num > cfg.gaMaxIterNoImprove) {
                 break;
             }

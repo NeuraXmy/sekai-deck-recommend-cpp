@@ -35,6 +35,16 @@ std::optional<CardDetail> CardCalculator::getCardDetail(
             userCard0, eventConfig->eventId, eventConfig->specialCharacterId
         );
     }
+
+    bool episode1Read = false;
+    if (userCard0.episodes.size() > 0) 
+        episode1Read = userCard0.episodes[0].scenarioStatus == mapEnum(EnumMap::scenarioStatus, "already_read");
+    bool episode2Read = false;
+    if (userCard0.episodes.size() > 1) 
+        episode2Read = userCard0.episodes[1].scenarioStatus == mapEnum(EnumMap::scenarioStatus, "already_read");
+
+    bool afterTraining = userCard0.specialTrainingStatus == mapEnum(EnumMap::specialTrainingStatus, "done");
+
     return CardDetail{
         card.id,
         userCard0.level,
@@ -48,7 +58,11 @@ std::optional<CardDetail> CardCalculator::getCardDetail(
         skill,
         eventBonus,
         supportDeckBonus,
-        hasCanvasBonus
+        hasCanvasBonus,
+        episode1Read,
+        episode2Read,
+        afterTraining,
+        userCard.defaultImage
     };
 }
 

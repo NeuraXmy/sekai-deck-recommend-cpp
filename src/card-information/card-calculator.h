@@ -30,6 +30,10 @@ struct CardDetail {
     std::optional<double> eventBonus;
     std::optional<double> supportDeckBonus;
     bool hasCanvasBonus;
+    bool episode1Read;
+    bool episode2Read;
+    bool afterTraining;
+    int defaultImage;
 };
 
 class CardCalculator {

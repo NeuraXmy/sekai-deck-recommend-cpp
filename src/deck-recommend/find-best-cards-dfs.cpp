@@ -13,6 +13,8 @@ bool containsAny(const std::vector<T>& collection, const std::vector<T>& contain
 
 
 void BaseDeckRecommend::findBestCardsDFS(
+    int liveType,
+    const DeckRecommendConfig& cfg,
     const std::vector<CardDetail> &cardDetails, 
     const std::vector<CardDetail> &allCards, 
     const std::function<int(const DeckDetail &)> &scoreFunc, 
@@ -38,7 +40,7 @@ void BaseDeckRecommend::findBestCardsDFS(
         dfsInfo.update(
             getBestPermutation(
                 this->deckCalculator, deckCards, allCards, scoreFunc, 
-                honorBonus, eventType, eventId
+                honorBonus, eventType, eventId, cfg.target, liveType
             ), limit
         );
         return;
@@ -74,21 +76,49 @@ void BaseDeckRecommend::findBestCardsDFS(
             continue;
         }
 
-        // 要求生成的卡组后面4个位置按强弱排序、同强度按卡牌ID排序
-        // 如果上一张卡肯定小，那就不符合顺序；在旗鼓相当的前提下（因为两两组合有四种情况，再排除掉这张卡肯定小的情况，就是旗鼓相当），要ID大
-        if (deckCards.size() >= cIndex + 2 && this->cardCalculator.isCertainlyLessThan(*deckCards.back(), card)) continue;
-        if (deckCards.size() >= cIndex + 2 && !this->cardCalculator.isCertainlyLessThan(card, *deckCards.back()) && card.cardId < deckCards.back()->cardId) {
-            continue;
+        if (deckCards.size() >= cIndex + 2) {
+            auto& last = *deckCards.back();
+            bool lessThan = false;
+            bool greaterThan = false;
+            if (cfg.target == RecommendTarget::Score) {
+                lessThan = this->cardCalculator.isCertainlyLessThan(card, last);
+                greaterThan = this->cardCalculator.isCertainlyLessThan(last, card);
+            } else if(cfg.target == RecommendTarget::Power) {
+                lessThan = card.power.isCertainlyLessThan(last.power);
+                greaterThan = last.power.isCertainlyLessThan(card.power);
+            } else if (cfg.target == RecommendTarget::Skill) {
+                lessThan = card.skill.isCertainlyLessThan(last.skill);
+                greaterThan = last.skill.isCertainlyLessThan(card.skill);
+            }
+            // 要求生成的卡组后面4个位置按强弱排序、同强度按卡牌ID排序
+            // 如果上一张卡肯定小，那就不符合顺序；在旗鼓相当的前提下（因为两两组合有四种情况，再排除掉这张卡肯定小的情况，就是旗鼓相当），要ID大
+            if (lessThan || (!greaterThan && card.cardId > last.cardId)) {
+                continue;
+            }
         }
-        // 如果肯定比上一次选定的卡牌要弱，那么舍去，让这张卡去后面再选
-        if (preCard.has_value() && this->cardCalculator.isCertainlyLessThan(card, preCard.value())) continue;
+        
+        if (preCard.has_value()) {
+            auto& pre = preCard.value();
+            bool lessThan = false;
+            if (cfg.target == RecommendTarget::Score) {
+                lessThan = this->cardCalculator.isCertainlyLessThan(card, pre);
+            } else if (cfg.target == RecommendTarget::Power) {
+                lessThan = card.power.isCertainlyLessThan(pre.power);
+            } else if (cfg.target == RecommendTarget::Skill) {
+                lessThan = card.skill.isCertainlyLessThan(pre.skill);
+            }
+            // 如果肯定比上一次选定的卡牌要弱，那么舍去，让这张卡去后面再选
+            if (lessThan) {
+                continue;
+            }
+        }
         preCard = card;
 
         // 递归，寻找所有情况
         deckCards.push_back(&card);
         deckCharacters.insert(card.characterId);
         findBestCardsDFS(
-            cardDetails, allCards, scoreFunc, dfsInfo,
+            liveType, cfg, cardDetails, allCards, scoreFunc, dfsInfo,
             limit, isChallengeLive, member, honorBonus, eventType, eventId, fixedCards
         );
         deckCards.pop_back();

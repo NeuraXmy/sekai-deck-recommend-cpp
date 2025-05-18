@@ -3,11 +3,9 @@
 
 bool RecommendDeck::operator>(const RecommendDeck &other) const
 {
-    // 先按分数
-    if (score != other.score) return score > other.score;
-    // 分数一样，按综合
-    if (power.total != other.power.total) return power.total > other.power.total;
-    // 分数、综合一样，按C位CardID
+    // 先按目标值
+    if (targetValue != other.targetValue) return targetValue > other.targetValue;
+    // 目标值一样，按C位CardID
     return cards[0].cardId < other.cards[0].cardId;
 }
 

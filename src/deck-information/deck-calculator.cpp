@@ -136,14 +136,18 @@ DeckDetail DeckCalculator::getDeckDetailByCards(
             auto current = cardDetail.skill.get(unit, unit_map[unit], 1);
             skill = current.scoreUp > skill.scoreUp ? current : skill;
         }
-        cards.push_back({ 
+        cards.push_back(DeckCardDetail{ 
             cardDetail.cardId, 
             cardDetail.level, 
             cardDetail.skillLevel, 
             cardDetail.masterRank, 
             cardPower.at(i),
             cardDetail.eventBonus, 
-            skill 
+            skill,
+            cardDetail.episode1Read,
+            cardDetail.episode2Read,
+            cardDetail.afterTraining,
+            cardDetail.defaultImage
         });
     }
 
