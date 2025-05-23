@@ -30,11 +30,11 @@ int EventCalculator::getEventPoint(int liveType, int eventType, int selfScore, d
     double lifeRate = 0;
 
     if (liveType == solo_enum || liveType == auto_enum) {
-        baseScore = 100 + selfScore / 20000.;
+        baseScore = 100 + int(selfScore / 20000);
         return int(baseScore * musicRate0 * deckRate) * boostRate;
     } 
     else if (liveType == challenge_enum) {
-        baseScore = 100 + selfScore / 20000.;
+        baseScore = 100 + int(selfScore / 20000);
         return baseScore * 120;
     } 
     else if (liveType == multi_enum) {

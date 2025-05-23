@@ -16,12 +16,17 @@ struct Individual {
 };
 
 
-// 计算随机选择权重（综合力越大越容易被选中）
-std::vector<double> calcRandomSelectWeights(const std::vector<CardDetail>& cards) {
+// 计算随机选择权重（综合力/技能加成越大越容易被选中）
+std::vector<double> calcRandomSelectWeights(const std::vector<CardDetail>& cards, RecommendTarget target) {
     std::vector<double> weights{};
     for (const auto& card : cards) {
-        // 以综合力的平方为权重以扩大差距
-        weights.push_back((double)card.power.max * card.power.max);
+        if (target == RecommendTarget::Skill) {
+            // 以技能加成的平方为权重以扩大差距
+            weights.push_back((double)card.skill.max * card.skill.max);
+        } else {
+            // 以综合力的平方为权重以扩大差距
+            weights.push_back((double)card.power.max * card.power.max);
+        }
     }
     // 归一化 & 计算前缀和
     double sum = std::accumulate(weights.begin(), weights.end(), 0.0);
@@ -119,7 +124,7 @@ void BaseDeckRecommend::findBestCardsGA(
         individual.deckHash = deckHash;
     };
 
-    auto cardWeights = calcRandomSelectWeights(cardDetails);
+    auto cardWeights = calcRandomSelectWeights(cardDetails, cfg.target);
 
     // 根据卡的角色map参与组队的卡牌
     constexpr int MAX_CID = 27;
@@ -128,7 +133,7 @@ void BaseDeckRecommend::findBestCardsGA(
     for (const auto& card : cardDetails) 
         charaCardDetails[card.characterId].push_back(card);
     for (int i = 0; i < MAX_CID; ++i) 
-        charaCardWeights[i] = calcRandomSelectWeights(charaCardDetails[i]);
+        charaCardWeights[i] = calcRandomSelectWeights(charaCardDetails[i], cfg.target);
 
     // 生成初始种群
     std::vector<Individual> population;

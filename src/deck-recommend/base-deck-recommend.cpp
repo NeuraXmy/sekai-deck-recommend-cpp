@@ -119,6 +119,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
         cards = std::move(newCards);
     }
 
+    // 获取固定卡牌
     std::vector<CardDetail> fixedCards{};
     for (auto card_id : config.fixedCards) {
         // 从当前卡牌中找到对应的卡牌
@@ -135,6 +136,12 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
             uc.skillLevel = 1;
             uc.masterRank = 0;
             uc.specialTrainingStatus = not_doing_special_training_status;
+            
+            auto& c = findOrThrow(this->dataProvider.masterData->cards, [&](const Card& c) {return c.id == card_id;});
+            bool hasSpecialTraining = c.cardRarityType == mapEnum(EnumMap::cardRarityType, "rarity_3")
+                                    || c.cardRarityType == mapEnum(EnumMap::cardRarityType, "rarity_4");
+            uc.defaultImage = mapEnum(EnumMap::defaultImage, hasSpecialTraining ? "special_training" : "original");
+
             for (auto& ep : cardEpisodes) 
                 if (ep.cardId == card_id) {
                     UserCardEpisodes uce{};
@@ -150,7 +157,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
             }
         }
     }
-    // 检查是否有效
+    // 检查固定卡牌是否有效
     if (fixedCards.size()) {
         std::set<int> fixedCardIds{};
         std::set<int> fixedCardCharacterIds{};
@@ -202,10 +209,17 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
         }
         preCardDetails = cardDetails;
         auto cards0 = cardDetails;
+
         // 卡牌大致按强度排序，保证dfs先遍历强度高的卡组
-        std::sort(cards0.begin(), cards0.end(), [](const CardDetail& a, const CardDetail& b) { 
-            return std::make_tuple(a.power.max, a.power.min, a.cardId) > std::make_tuple(b.power.max, b.power.min, b.cardId);
-        });
+        if (config.target == RecommendTarget::Skill) {
+            std::sort(cards0.begin(), cards0.end(), [](const CardDetail& a, const CardDetail& b) { 
+                return std::make_tuple(a.skill.max, a.skill.min, a.cardId) > std::make_tuple(b.skill.max, b.skill.min, b.cardId);
+            });
+        } else {
+            std::sort(cards0.begin(), cards0.end(), [](const CardDetail& a, const CardDetail& b) { 
+                return std::make_tuple(a.power.max, a.power.min, a.cardId) > std::make_tuple(b.power.max, b.power.min, b.cardId);
+            });
+        }
 
         if (config.algorithm == RecommendAlgorithm::SA) {
             // 使用模拟退火
