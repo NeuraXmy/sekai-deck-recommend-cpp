@@ -193,6 +193,29 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
     calcInfo.start_ts = std::chrono::high_resolution_clock::now().time_since_epoch().count();
     calcInfo.timeout = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::milliseconds(config.timeout_ms)).count();
 
+    // 指定活动加成组卡
+    if (config.target == RecommendTarget::Bonus) {
+        if (eventConfig.eventType == 0) 
+            throw std::runtime_error("Bonus target requires event");
+        if (config.algorithm != RecommendAlgorithm::DFS) 
+            throw std::runtime_error("Bonus target only supports DFS algorithm");
+
+        findTargetBonusCardsDFS(
+            liveType, config, cards, sf, calcInfo,
+            config.limit, config.member, eventConfig.eventType, eventConfig.eventId
+        );
+        while (calcInfo.deckQueue.size()) {
+            ans.emplace_back(calcInfo.deckQueue.top());
+            calcInfo.deckQueue.pop();
+        }
+        // 按照活动加成从小到大排序，同加成按分数从小到大排序
+        std::sort(ans.begin(), ans.end(), [](const RecommendDeck& a, const RecommendDeck& b) {
+            return std::tuple(-a.eventBonus.value_or(0), a.targetValue) > std::tuple(-b.eventBonus.value_or(0), b.targetValue);
+        });
+        return ans;
+    }
+
+    // 最优化组卡
     while (true) {
         if (config.algorithm == RecommendAlgorithm::DFS) {
             // DFS 为了优化性能，会根据活动加成和卡牌稀有度优先级筛选卡牌

@@ -23,6 +23,7 @@ static const std::set<std::string> VALID_TARGETS = {
     "score",
     "skill",
     "power",
+    "bonus",
 };
 
 static const std::string DEFAULT_ALGORITHM = "ga";
@@ -135,6 +136,7 @@ struct PyDeckRecommendOptions {
     std::optional<PyCardConfig> rarity_4_config;
     std::optional<bool> filter_other_unit;
     std::optional<std::vector<int>> fixed_cards;
+    std::optional<std::vector<int>> target_bonus_list;
     std::optional<PySaOptions> sa_options;
     std::optional<PyGaOptions> ga_options;
 };
@@ -301,6 +303,19 @@ class SekaiDeckRecommend {
                 config.target = RecommendTarget::Skill;
             else if (target == "power")
                 config.target = RecommendTarget::Power;
+            else if (target == "bonus")
+                config.target = RecommendTarget::Bonus;
+
+            // bonus list for target == bonus
+            if (pyoptions.target_bonus_list.value_or(std::vector<int>{}).size()) {
+                if (config.target != RecommendTarget::Bonus)
+                    throw std::invalid_argument("target_bonus_list is only valid for bonus target.");
+                config.bonusList = pyoptions.target_bonus_list.value();
+            } else {
+                if (config.target == RecommendTarget::Bonus)
+                    throw std::invalid_argument("target_bonus_list is required for bonus target.");
+                config.bonusList = {};
+            }
 
             // algorithm
             std::string algorithm = pyoptions.algorithm.value_or(DEFAULT_ALGORITHM);
@@ -641,6 +656,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("rarity_4_config", &PyDeckRecommendOptions::rarity_4_config)
         .def_readwrite("filter_other_unit", &PyDeckRecommendOptions::filter_other_unit)
         .def_readwrite("fixed_cards", &PyDeckRecommendOptions::fixed_cards)
+        .def_readwrite("target_bonus_list", &PyDeckRecommendOptions::target_bonus_list)
         .def_readwrite("sa_options", &PyDeckRecommendOptions::sa_options)
         .def_readwrite("ga_options", &PyDeckRecommendOptions::ga_options);
 

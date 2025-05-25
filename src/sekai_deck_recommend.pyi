@@ -73,7 +73,7 @@ class DeckRecommendOptions:
     """
     Deck recommend options
     Attributes:
-        target (str): Target of the recommendation in ["score", "power", "skill"], default is "score"
+        target (str): Target of the recommendation in ["score", "power", "skill", "bonus"], default is "score"
         algorithm (str): "dfs" for brute force, "sa" for simulated annealing, "ga" for genetic algorithm, default is "ga"
         region (str): Region in ["jp", "en", "tw", "kr", "cn"]
         user_data_file_path (str): File path of user suite data
@@ -96,6 +96,7 @@ class DeckRecommendOptions:
         rarity_4_config (DeckRecommendCardConfig): Card config for rarity 4
         filter_other_unit (bool): Whether to filter out other units for banner event, default is False
         fixed_cards (List[int]): List of card IDs that always included in the deck, default is None
+        target_bonus_list (List[int]): List of target event bonus, required when target is "bonus"
         sa_options (DeckRecommendSaOptions): Simulated annealing options
         ga_options (DeckRecommendGaOptions): Genetic algorithm options
     """
@@ -122,7 +123,9 @@ class DeckRecommendOptions:
     rarity_4_config: Optional[DeckRecommendCardConfig]
     filter_other_unit: Optional[bool]
     fixed_cards: Optional[List[int]]
+    target_bonus_list: Optional[List[int]]
     sa_options: Optional[DeckRecommendSaOptions]
+    ga_options: Optional[DeckRecommendGaOptions]
 
 
 class RecommendCard:

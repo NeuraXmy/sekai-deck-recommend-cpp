@@ -26,8 +26,7 @@ pip install -e . -v
 from sekai_deck_recommend import (
     SekaiDeckRecommend, 
     DeckRecommendOptions,
-    DeckRecommendCardConfig,
-    PySaOptions
+    DeckRecommendCardConfig
 )
    
 sekai_deck_recommend = SekaiDeckRecommend()
@@ -37,7 +36,7 @@ sekai_deck_recommend.update_musicmetas("file/path/of/musicmetas.json", "jp")
 
 options = DeckRecommendOptions()
 
-# optimizing target in ["score", "power", "skill"], default is "score"
+# optimizing target in ["score", "power", "skill", "bonus"], default is "score"
 options.target = "score"
 
 # "ga" for genetic algorithm, "sa" for simulated annealing, "dfs" for brute-force search

@@ -9,6 +9,7 @@ enum class RecommendTarget {
     Score,
     Power,
     Skill,
+    Bonus,
 };
 
 constexpr double SCORE_MAX = 3000000;
@@ -29,11 +30,7 @@ struct RecommendDeck : DeckDetail {
         : DeckDetail(deckDetail), score(score), expectSkillBonus(expectSkillBonus) {
             int power = deckDetail.power.total;
             // 根据不同优化目标计算目标值
-            if (target == RecommendTarget::Score) {
-                targetValue = score
-                    + double(power) / POWER_MAX 
-                    + double(expectSkillBonus) / (POWER_MAX * SKILL_MAX);
-            } else if (target == RecommendTarget::Power) {
+            if (target == RecommendTarget::Power) {
                 targetValue = power
                     + double(score) / SCORE_MAX
                     + double(expectSkillBonus) / (SCORE_MAX * SKILL_MAX);
@@ -41,6 +38,10 @@ struct RecommendDeck : DeckDetail {
                 targetValue = expectSkillBonus
                     + double(score) / SCORE_MAX
                     + double(power) / (SCORE_MAX * POWER_MAX);
+            } else {
+                targetValue = score
+                    + double(power) / POWER_MAX 
+                    + double(expectSkillBonus) / (POWER_MAX * SKILL_MAX);
             }
         }
 
