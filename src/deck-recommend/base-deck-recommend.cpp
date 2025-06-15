@@ -6,12 +6,14 @@
 #include "base-deck-recommend.h"
 
 
-int piapro_unit_enum = mapEnum(EnumMap::unit, "piapro");
-int challenge_live_type_enum = mapEnum(EnumMap::liveType, "challenge");
-int multi_live_type_enum = mapEnum(EnumMap::liveType, "multi");
-int cheerful_live_type_enum = mapEnum(EnumMap::liveType, "cheerful");
+static int piapro_unit_enum = mapEnum(EnumMap::unit, "piapro");
+static int challenge_live_type_enum = mapEnum(EnumMap::liveType, "challenge");
+static int multi_live_type_enum = mapEnum(EnumMap::liveType, "multi");
+static int cheerful_live_type_enum = mapEnum(EnumMap::liveType, "cheerful");
 
-int not_doing_special_training_status = mapEnum(EnumMap::specialTrainingStatus, "not_doing");
+static int not_doing_special_training_status = mapEnum(EnumMap::specialTrainingStatus, "not_doing");
+
+static int world_bloom_type_enum = mapEnum(EnumMap::eventType, "world_bloom");
 
 
 // 计算技能实效
@@ -200,10 +202,20 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
         if (config.algorithm != RecommendAlgorithm::DFS) 
             throw std::runtime_error("Bonus target only supports DFS algorithm");
 
-        findTargetBonusCardsDFS(
-            liveType, config, cards, sf, calcInfo,
-            config.limit, config.member, eventConfig.eventType, eventConfig.eventId
-        );
+        // WL和普通活动采用不同代码
+        if (eventConfig.eventType != world_bloom_type_enum) {
+            findTargetBonusCardsDFS(
+                liveType, config, cards, sf, calcInfo,
+                config.limit, config.member, eventConfig.eventType, eventConfig.eventId
+            );
+        }
+        else {
+            findWorldBloomTargetBonusCardsDFS(
+                liveType, config, cards, sf, calcInfo,
+                config.limit, config.member, eventConfig.eventType, eventConfig.eventId
+            );
+        }
+
         while (calcInfo.deckQueue.size()) {
             ans.emplace_back(calcInfo.deckQueue.top());
             calcInfo.deckQueue.pop();

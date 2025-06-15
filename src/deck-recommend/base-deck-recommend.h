@@ -196,7 +196,7 @@ public:
     );
 
     /**
-     * 使用递归寻找指定活动加成卡组
+     * 使用递归寻找指定非WL活动加成卡组
      * @param cardDetails 参与计算的卡牌
      * @param scoreFunc 获得分数的公式
      * @param dfsInfo DFS信息
@@ -205,6 +205,27 @@ public:
      * @param eventType （可选）活动类型
      */
     void findTargetBonusCardsDFS(
+        int liveType,
+        const DeckRecommendConfig& config,
+        const std::vector<CardDetail>& cardDetails,
+        const std::function<int(const DeckDetail&)>& scoreFunc,
+        RecommendCalcInfo& dfsInfo,
+        int limit = 1,
+        int member = 5,
+        std::optional<int> eventType = std::nullopt,
+        std::optional<int> eventId = std::nullopt
+    );
+
+    /**
+     * 使用递归寻找指定WL活动加成卡组
+     * @param cardDetails 参与计算的卡牌
+     * @param scoreFunc 获得分数的公式
+     * @param dfsInfo DFS信息
+     * @param limit 需要推荐的卡组数量
+     * @param member 人数限制（2-5、默认5）
+     * @param eventType （可选）活动类型
+     */
+    void findWorldBloomTargetBonusCardsDFS(
         int liveType,
         const DeckRecommendConfig& config,
         const std::vector<CardDetail>& cardDetails,

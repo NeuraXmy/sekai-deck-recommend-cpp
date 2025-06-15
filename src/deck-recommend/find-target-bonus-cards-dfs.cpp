@@ -1,18 +1,18 @@
 #include "deck-recommend/base-deck-recommend.h"
 
-int world_bloom_type_enum = mapEnum(EnumMap::eventType, "world_bloom");
+static int world_bloom_type_enum = mapEnum(EnumMap::eventType, "world_bloom");
 
 
-int getBonusCharaKey(int chara, int bonus) {
+static int getCharaBonusKey(int chara, int bonus) {
     return bonus * 100 + chara;
 }
-int getBonus(int key) {
+static int getBonus(int key) {
     return key / 100;
 }
-int getChara(int key) {
+static int getChara(int key) {
     return key % 100;
 }
-std::pair<int, int> getBonusChara(int key) {
+static std::pair<int, int> getBonusChara(int key) {
     return {getBonus(key), getChara(key)};
 }
 
@@ -112,8 +112,8 @@ void BaseDeckRecommend::findTargetBonusCardsDFS(
         throw std::runtime_error("Bonus list is empty");
 
     if (eventType.value_or(0) == world_bloom_type_enum) {
-        // 暂时不支持wl
-        throw std::runtime_error("bonus target for World Bloom is not supported currently");
+        // 该函数只用于非WL活动
+        throw std::runtime_error("this func is not used for world bloom event");
     }
 
     // 按照加成*2和角色类型归类
@@ -123,7 +123,7 @@ void BaseDeckRecommend::findTargetBonusCardsDFS(
         if (card.eventBonus.has_value() && card.eventBonus.value() > 0) {
             int bonus = std::round(card.eventBonus.value() * 2);
             int chara = card.characterId;
-            int key = getBonusCharaKey(chara, bonus);
+            int key = getCharaBonusKey(chara, bonus);
             bonusCharaCards[key].push_back(&card);
             hasBonusCharaCards[key] = true;
         }
@@ -153,8 +153,12 @@ void BaseDeckRecommend::findTargetBonusCardsDFS(
                 0, eventType, eventId, config.target, liveType
             );
             // 需要验证加成正确
-            if(std::floor(deckRes.eventBonus.value_or(0) * 2) == bonus) 
+            if(std::round(deckRes.eventBonus.value_or(0) * 2) == bonus) 
                 dfsInfo.update(deckRes, 1e9);
+            else
+                std::cerr << "Warning: Event bonus mismatch, expected " 
+                          << bonus / 2.0 << ", got " 
+                          << deckRes.eventBonus.value_or(0) << std::endl;
         }
     }
 }
