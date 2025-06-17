@@ -18,6 +18,12 @@ class DeckRecommendCardConfig:
     master_max: Optional[bool]
     skill_max: Optional[bool]
 
+    def to_dict(self) -> Dict[str, Any]:
+        ...
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'DeckRecommendCardConfig':
+        ...
+
 
 class DeckRecommendSaOptions:
     """
@@ -40,6 +46,12 @@ class DeckRecommendSaOptions:
     start_temprature: Optional[float]
     cooling_rate: Optional[float]
     debug: Optional[bool]
+
+    def to_dict(self) -> Dict[str, Any]:
+        ...
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'DeckRecommendSaOptions':
+        ...
 
 
 class DeckRecommendGaOptions:
@@ -67,6 +79,13 @@ class DeckRecommendGaOptions:
     crossover_rate: Optional[float]
     base_mutation_rate: Optional[float]
     no_improve_iter_to_mutation_rate: Optional[float]
+
+    def to_dict(self) -> Dict[str, Any]:
+        ...
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'DeckRecommendGaOptions':
+        ...
+
 
 
 class DeckRecommendOptions:
@@ -127,6 +146,12 @@ class DeckRecommendOptions:
     sa_options: Optional[DeckRecommendSaOptions]
     ga_options: Optional[DeckRecommendGaOptions]
 
+    def to_dict(self) -> Dict[str, Any]:
+        ...
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'DeckRecommendOptions':
+        ...
+
 
 class RecommendCard:
     """
@@ -160,6 +185,12 @@ class RecommendCard:
     after_training: bool
     default_image: str
 
+    def to_dict(self) -> Dict[str, Any]:
+        ...
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'RecommendCard':
+        ...
+
 
 class RecommendDeck:
     """
@@ -191,6 +222,12 @@ class RecommendDeck:
     expect_skill_score_up: float
     cards: List[RecommendCard]
 
+    def to_dict(self) -> Dict[str, Any]:
+        ...
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'RecommendDeck':
+        ...
+
 
 class DeckRecommendResult:
     """
@@ -199,6 +236,12 @@ class DeckRecommendResult:
         decks (List[RecommendDeck]): List of recommended decks
     """
     decks: List[RecommendDeck]
+
+    def to_dict(self) -> Dict[str, Any]:
+        ...
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'DeckRecommendResult':
+        ...
 
 
 class SekaiDeckRecommend:

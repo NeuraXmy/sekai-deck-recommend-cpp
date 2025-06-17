@@ -83,6 +83,25 @@ struct PyCardConfig {
     std::optional<bool> episode_read;
     std::optional<bool> master_max;
     std::optional<bool> skill_max;
+
+    py::dict to_dict() const {
+        py::dict result;
+        if (disable.has_value())        result["disable"] = disable.value();
+        if (level_max.has_value())      result["level_max"] = level_max.value();
+        if (episode_read.has_value())   result["episode_read"] = episode_read.value();
+        if (master_max.has_value())     result["master_max"] = master_max.value();
+        if (skill_max.has_value())      result["skill_max"] = skill_max.value();
+        return result;
+    }
+    static PyCardConfig from_dict(const py::dict& dict) {
+        PyCardConfig config;
+        if (dict.contains("disable"))        config.disable = dict["disable"].cast<bool>();
+        if (dict.contains("level_max"))      config.level_max = dict["level_max"].cast<bool>();
+        if (dict.contains("episode_read"))   config.episode_read = dict["episode_read"].cast<bool>();
+        if (dict.contains("master_max"))     config.master_max = dict["master_max"].cast<bool>();
+        if (dict.contains("skill_max"))      config.skill_max = dict["skill_max"].cast<bool>();
+        return config;
+    }
 };
 
 // python传入的模拟退火参数
@@ -95,6 +114,31 @@ struct PySaOptions {
     std::optional<double> start_temprature;
     std::optional<double> cooling_rate;
     std::optional<bool> debug;
+
+    py::dict to_dict() const {
+        py::dict result;
+        if (run_num.has_value())                result["run_num"] = run_num.value();
+        if (seed.has_value())                   result["seed"] = seed.value();
+        if (max_iter.has_value())               result["max_iter"] = max_iter.value();
+        if (max_no_improve_iter.has_value())    result["max_no_improve_iter"] = max_no_improve_iter.value();
+        if (time_limit_ms.has_value())          result["time_limit_ms"] = time_limit_ms.value();
+        if (start_temprature.has_value())       result["start_temprature"] = start_temprature.value();
+        if (cooling_rate.has_value())           result["cooling_rate"] = cooling_rate.value();
+        if (debug.has_value())                  result["debug"] = debug.value();
+        return result;
+    }
+    static PySaOptions from_dict(const py::dict& dict) {
+        PySaOptions options;
+        if (dict.contains("run_num"))                options.run_num = dict["run_num"].cast<int>();
+        if (dict.contains("seed"))                   options.seed = dict["seed"].cast<int>();
+        if (dict.contains("max_iter"))               options.max_iter = dict["max_iter"].cast<int>();
+        if (dict.contains("max_no_improve_iter"))    options.max_no_improve_iter = dict["max_no_improve_iter"].cast<int>();
+        if (dict.contains("time_limit_ms"))          options.time_limit_ms = dict["time_limit_ms"].cast<int>();
+        if (dict.contains("start_temprature"))       options.start_temprature = dict["start_temprature"].cast<double>();
+        if (dict.contains("cooling_rate"))           options.cooling_rate = dict["cooling_rate"].cast<double>();
+        if (dict.contains("debug"))                  options.debug = dict["debug"].cast<bool>();
+        return options;
+    }
 };
 
 // python传入的遗传算法参数
@@ -109,6 +153,37 @@ struct PyGaOptions {
     std::optional<double> crossover_rate;
     std::optional<double> base_mutation_rate;
     std::optional<double> no_improve_iter_to_mutation_rate;
+
+    py::dict to_dict() const {
+        py::dict result;
+        if (seed.has_value())                        result["seed"] = seed.value();
+        if (debug.has_value())                       result["debug"] = debug.value();
+        if (max_iter.has_value())                    result["max_iter"] = max_iter.value();
+        if (max_no_improve_iter.has_value())         result["max_no_improve_iter"] = max_no_improve_iter.value();
+        if (pop_size.has_value())                    result["pop_size"] = pop_size.value();
+        if (parent_size.has_value())                 result["parent_size"] = parent_size.value();
+        if (elite_size.has_value())                  result["elite_size"] = elite_size.value();
+        if (crossover_rate.has_value())              result["crossover_rate"] = crossover_rate.value();
+        if (base_mutation_rate.has_value())          result["base_mutation_rate"] = base_mutation_rate.value();
+        if (no_improve_iter_to_mutation_rate.has_value())
+            result["no_improve_iter_to_mutation_rate"] = no_improve_iter_to_mutation_rate.value();
+        return result;
+    }
+    static PyGaOptions from_dict(const py::dict& dict) {
+        PyGaOptions options;
+        if (dict.contains("seed"))                        options.seed = dict["seed"].cast<int>();
+        if (dict.contains("debug"))                       options.debug = dict["debug"].cast<bool>();
+        if (dict.contains("max_iter"))                    options.max_iter = dict["max_iter"].cast<int>();
+        if (dict.contains("max_no_improve_iter"))         options.max_no_improve_iter = dict["max_no_improve_iter"].cast<int>();
+        if (dict.contains("pop_size"))                    options.pop_size = dict["pop_size"].cast<int>();
+        if (dict.contains("parent_size"))                 options.parent_size = dict["parent_size"].cast<int>();
+        if (dict.contains("elite_size"))                  options.elite_size = dict["elite_size"].cast<int>();
+        if (dict.contains("crossover_rate"))              options.crossover_rate = dict["crossover_rate"].cast<double>();
+        if (dict.contains("base_mutation_rate"))          options.base_mutation_rate = dict["base_mutation_rate"].cast<double>();
+        if (dict.contains("no_improve_iter_to_mutation_rate"))
+            options.no_improve_iter_to_mutation_rate = dict["no_improve_iter_to_mutation_rate"].cast<double>();
+        return options;
+    }
 };
 
 // python传入的推荐参数
@@ -139,6 +214,93 @@ struct PyDeckRecommendOptions {
     std::optional<std::vector<int>> target_bonus_list;
     std::optional<PySaOptions> sa_options;
     std::optional<PyGaOptions> ga_options;
+
+    py::dict to_dict() const {
+        py::dict result;
+        if (target.has_value())                result["target"] = target.value();
+        if (algorithm.has_value())             result["algorithm"] = algorithm.value();
+        if (region.has_value())                result["region"] = region.value();
+        if (user_data_file_path.has_value())   result["user_data_file_path"] = user_data_file_path.value();
+        if (live_type.has_value())             result["live_type"] = live_type.value();
+        if (music_id.has_value())              result["music_id"] = music_id.value();
+        if (music_diff.has_value())            result["music_diff"] = music_diff.value();
+        if (event_id.has_value())              result["event_id"] = event_id.value();
+        if (event_attr.has_value())            result["event_attr"] = event_attr.value();
+        if (event_unit.has_value())            result["event_unit"] = event_unit.value();
+        if (event_type.has_value())            result["event_type"] = event_type.value();
+        if (world_bloom_character_id.has_value())
+            result["world_bloom_character_id"] = world_bloom_character_id.value();
+        if (challenge_live_character_id.has_value())
+            result["challenge_live_character_id"] = challenge_live_character_id.value();
+        if (limit.has_value())                 result["limit"] = limit.value();
+        if (member.has_value())                result["member"] = member.value();
+        if (timeout_ms.has_value())            result["timeout_ms"] = timeout_ms.value();
+        if (rarity_1_config.has_value())
+            result["rarity_1_config"] = rarity_1_config->to_dict();
+        if (rarity_2_config.has_value())
+            result["rarity_2_config"] = rarity_2_config->to_dict();
+        if (rarity_3_config.has_value())
+            result["rarity_3_config"] = rarity_3_config->to_dict();
+        if (rarity_birthday_config.has_value())
+            result["rarity_birthday_config"] = rarity_birthday_config->to_dict();
+        if (rarity_4_config.has_value())
+            result["rarity_4_config"] = rarity_4_config->to_dict();
+        if (filter_other_unit.has_value())
+            result["filter_other_unit"] = filter_other_unit.value();
+        if (fixed_cards.has_value())
+            result["fixed_cards"] = fixed_cards.value();
+        if (target_bonus_list.has_value())
+            result["target_bonus_list"] = target_bonus_list.value();
+        if (sa_options.has_value())
+            result["sa_options"] = sa_options->to_dict();
+        if (ga_options.has_value())
+            result["ga_options"] = ga_options->to_dict();
+        return result;
+    }
+    static PyDeckRecommendOptions from_dict(const py::dict& dict) {
+        PyDeckRecommendOptions options;
+        if (dict.contains("target"))                options.target = dict["target"].cast<std::string>();
+        if (dict.contains("algorithm"))             options.algorithm = dict["algorithm"].cast<std::string>();
+        if (dict.contains("region"))                options.region = dict["region"].cast<std::string>();
+        if (dict.contains("user_data_file_path"))   options.user_data_file_path = dict["user_data_file_path"].cast<std::string>();
+        if (dict.contains("live_type"))             options.live_type = dict["live_type"].cast<std::string>();
+        if (dict.contains("music_id"))              options.music_id = dict["music_id"].cast<int>();
+        if (dict.contains("music_diff"))            options.music_diff = dict["music_diff"].cast<std::string>();
+        if (dict.contains("event_id"))              options.event_id = dict["event_id"].cast<int>();
+        if (dict.contains("event_attr"))            options.event_attr = dict["event_attr"].cast<std::string>();
+        if (dict.contains("event_unit"))            options.event_unit = dict["event_unit"].cast<std::string>();
+        if (dict.contains("event_type"))            options.event_type = dict["event_type"].cast<std::string>();
+        if (dict.contains("world_bloom_character_id"))
+            options.world_bloom_character_id = dict["world_bloom_character_id"].cast<int>();
+        if (dict.contains("challenge_live_character_id"))
+            options.challenge_live_character_id = dict["challenge_live_character_id"].cast<int>();
+        if (dict.contains("limit"))                 options.limit = dict["limit"].cast<int>();
+        if (dict.contains("member"))                options.member = dict["member"].cast<int>();
+        if (dict.contains("timeout_ms"))            options.timeout_ms = dict["timeout_ms"].cast<int>();
+
+        if (dict.contains("rarity_1_config"))
+            options.rarity_1_config = PyCardConfig::from_dict(dict["rarity_1_config"].cast<py::dict>());
+        if (dict.contains("rarity_2_config"))
+            options.rarity_2_config = PyCardConfig::from_dict(dict["rarity_2_config"].cast<py::dict>());
+        if (dict.contains("rarity_3_config"))
+            options.rarity_3_config = PyCardConfig::from_dict(dict["rarity_3_config"].cast<py::dict>());
+        if (dict.contains("rarity_birthday_config"))
+            options.rarity_birthday_config = PyCardConfig::from_dict(dict["rarity_birthday_config"].cast<py::dict>());
+        if (dict.contains("rarity_4_config"))
+            options.rarity_4_config = PyCardConfig::from_dict(dict["rarity_4_config"].cast<py::dict>());
+        
+        if (dict.contains("filter_other_unit"))
+            options.filter_other_unit = dict["filter_other_unit"].cast<bool>();
+        if (dict.contains("fixed_cards"))
+            options.fixed_cards = dict["fixed_cards"].cast<std::vector<int>>();
+        if (dict.contains("target_bonus_list"))
+            options.target_bonus_list = dict["target_bonus_list"].cast<std::vector<int>>();
+        if (dict.contains("sa_options"))
+            options.sa_options = PySaOptions::from_dict(dict["sa_options"].cast<py::dict>());
+        if (dict.contains("ga_options"))
+            options.ga_options = PyGaOptions::from_dict(dict["ga_options"].cast<py::dict>());
+        return options;
+    }
 };
 
 // 单个Card推荐结果
@@ -156,6 +318,41 @@ struct PyRecommendCard {
     bool episode2_read;
     bool after_training;
     std::string default_image;
+
+    py::dict to_dict() const {
+        py::dict result;
+        result["card_id"] = card_id;
+        result["total_power"] = total_power;
+        result["base_power"] = base_power;
+        result["event_bonus_rate"] = event_bonus_rate;
+        result["master_rank"] = master_rank;
+        result["level"] = level;
+        result["skill_level"] = skill_level;
+        result["skill_score_up"] = skill_score_up;
+        result["skill_life_recovery"] = skill_life_recovery;
+        result["episode1_read"] = episode1_read;
+        result["episode2_read"] = episode2_read;
+        result["after_training"] = after_training;
+        result["default_image"] = default_image;
+        return result;
+    }
+    static PyRecommendCard from_dict(const py::dict& dict) {
+        PyRecommendCard card;
+        card.card_id = dict["card_id"].cast<int>();
+        card.total_power = dict["total_power"].cast<int>();
+        card.base_power = dict["base_power"].cast<int>();
+        card.event_bonus_rate = dict["event_bonus_rate"].cast<double>();
+        card.master_rank = dict["master_rank"].cast<int>();
+        card.level = dict["level"].cast<int>();
+        card.skill_level = dict["skill_level"].cast<int>();
+        card.skill_score_up = dict["skill_score_up"].cast<int>();
+        card.skill_life_recovery = dict["skill_life_recovery"].cast<int>();
+        card.episode1_read = dict["episode1_read"].cast<bool>();
+        card.episode2_read = dict["episode2_read"].cast<bool>();
+        card.after_training = dict["after_training"].cast<bool>();
+        card.default_image = dict["default_image"].cast<std::string>();
+        return card;
+    }
 };
 
 // 单个Deck推荐结果
@@ -172,11 +369,73 @@ struct PyRecommendDeck {
     double support_deck_bonus_rate;
     double expect_skill_score_up;
     std::vector<PyRecommendCard> cards;
+
+    py::dict to_dict() const {
+        py::dict result;
+        result["score"] = score;
+        result["total_power"] = total_power;
+        result["base_power"] = base_power;
+        result["area_item_bonus_power"] = area_item_bonus_power;
+        result["character_bonus_power"] = character_bonus_power;
+        result["honor_bonus_power"] = honor_bonus_power;
+        result["fixture_bonus_power"] = fixture_bonus_power;
+        result["gate_bonus_power"] = gate_bonus_power;
+        result["event_bonus_rate"] = event_bonus_rate;
+        result["support_deck_bonus_rate"] = support_deck_bonus_rate;
+        result["expect_skill_score_up"] = expect_skill_score_up;
+
+        py::list card_list;
+        for (const auto& card : cards) {
+            card_list.append(card.to_dict());
+        }
+        result["cards"] = card_list;
+
+        return result;
+    }
+    static PyRecommendDeck from_dict(const py::dict& dict) {
+        PyRecommendDeck deck;
+        deck.score = dict["score"].cast<int>();
+        deck.total_power = dict["total_power"].cast<int>();
+        deck.base_power = dict["base_power"].cast<int>();
+        deck.area_item_bonus_power = dict["area_item_bonus_power"].cast<int>();
+        deck.character_bonus_power = dict["character_bonus_power"].cast<int>();
+        deck.honor_bonus_power = dict["honor_bonus_power"].cast<int>();
+        deck.fixture_bonus_power = dict["fixture_bonus_power"].cast<int>();
+        deck.gate_bonus_power = dict["gate_bonus_power"].cast<int>();
+        deck.event_bonus_rate = dict["event_bonus_rate"].cast<double>();
+        deck.support_deck_bonus_rate = dict["support_deck_bonus_rate"].cast<double>();
+        deck.expect_skill_score_up = dict["expect_skill_score_up"].cast<double>();
+
+        auto card_list = dict["cards"].cast<py::list>();
+        for (const auto& item : card_list) {
+            deck.cards.push_back(PyRecommendCard::from_dict(item.cast<py::dict>()));
+        }
+        
+        return deck;
+    }
 };
 
 // 返回python的推荐结果
 struct PyDeckRecommendResult {
     std::vector<PyRecommendDeck> decks;
+
+    py::dict to_dict() const {
+        py::dict result;
+        py::list deck_list;
+        for (const auto& deck : decks) {
+            deck_list.append(deck.to_dict());
+        }
+        result["decks"] = deck_list;
+        return result;
+    }
+    static PyDeckRecommendResult from_dict(const py::dict& dict) {
+        PyDeckRecommendResult result;
+        auto deck_list = dict["decks"].cast<py::list>();
+        for (const auto& item : deck_list) {
+            result.decks.push_back(PyRecommendDeck::from_dict(item.cast<py::dict>()));
+        }
+        return result;
+    }
 };
 
 
@@ -598,6 +857,8 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
     py::class_<PyCardConfig>(m, "DeckRecommendCardConfig")
         .def(py::init<>())
         .def(py::init<const PyCardConfig&>())
+        .def("to_dict", &PyCardConfig::to_dict)
+        .def_static("from_dict", &PyCardConfig::from_dict)
         .def_readwrite("disable", &PyCardConfig::disable)
         .def_readwrite("level_max", &PyCardConfig::level_max)
         .def_readwrite("episode_read", &PyCardConfig::episode_read)
@@ -607,6 +868,8 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
     py::class_<PySaOptions>(m, "DeckRecommendSaOptions")
         .def(py::init<>())
         .def(py::init<const PySaOptions&>())
+        .def("to_dict", &PySaOptions::to_dict)
+        .def_static("from_dict", &PySaOptions::from_dict)
         .def_readwrite("run_num", &PySaOptions::run_num)
         .def_readwrite("seed", &PySaOptions::seed)
         .def_readwrite("max_iter", &PySaOptions::max_iter)
@@ -619,6 +882,8 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
     py::class_<PyGaOptions>(m, "DeckRecommendGaOptions")
         .def(py::init<>())
         .def(py::init<const PyGaOptions&>())
+        .def("to_dict", &PyGaOptions::to_dict)
+        .def_static("from_dict", &PyGaOptions::from_dict)
         .def_readwrite("seed", &PyGaOptions::seed)
         .def_readwrite("debug", &PyGaOptions::debug)
         .def_readwrite("max_iter", &PyGaOptions::max_iter)
@@ -633,6 +898,8 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
     py::class_<PyDeckRecommendOptions>(m, "DeckRecommendOptions")
         .def(py::init<>())
         .def(py::init<const PyDeckRecommendOptions&>())
+        .def("to_dict", &PyDeckRecommendOptions::to_dict)
+        .def_static("from_dict", &PyDeckRecommendOptions::from_dict)
         .def_readwrite("target", &PyDeckRecommendOptions::target)
         .def_readwrite("algorithm", &PyDeckRecommendOptions::algorithm)
         .def_readwrite("region", &PyDeckRecommendOptions::region)
@@ -663,6 +930,8 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
     py::class_<PyRecommendCard>(m, "RecommendCard")
         .def(py::init<>())
         .def(py::init<const PyRecommendCard&>())
+        .def("to_dict", &PyRecommendCard::to_dict)
+        .def_static("from_dict", &PyRecommendCard::from_dict)
         .def_readwrite("card_id", &PyRecommendCard::card_id)
         .def_readwrite("total_power", &PyRecommendCard::total_power)
         .def_readwrite("base_power", &PyRecommendCard::base_power)
@@ -680,6 +949,8 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
     py::class_<PyRecommendDeck>(m, "RecommendDeck")
         .def(py::init<>())
         .def(py::init<const PyRecommendDeck&>())
+        .def("to_dict", &PyRecommendDeck::to_dict)
+        .def_static("from_dict", &PyRecommendDeck::from_dict)
         .def_readwrite("score", &PyRecommendDeck::score)
         .def_readwrite("total_power", &PyRecommendDeck::total_power)
         .def_readwrite("base_power", &PyRecommendDeck::base_power)
@@ -696,6 +967,8 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
     py::class_<PyDeckRecommendResult>(m, "DeckRecommendResult")
         .def(py::init<>())
         .def(py::init<const PyDeckRecommendResult&>())
+        .def("to_dict", &PyDeckRecommendResult::to_dict)
+        .def_static("from_dict", &PyDeckRecommendResult::from_dict)
         .def_readwrite("decks", &PyDeckRecommendResult::decks);
 
     py::class_<SekaiDeckRecommend>(m, "SekaiDeckRecommend")
