@@ -17,6 +17,44 @@ static std::pair<int, int> getBonusChara(int key) {
 }
 
 
+// 分层过滤加成
+using BonusFilter = std::function<bool(int key)>;
+static const std::vector<BonusFilter> bonusFilters = {
+    // 各个组合各自组卡
+    [](int key) {
+        int chara = getChara(key);
+        return (chara - 1) / 4 == 0 || chara > 20;
+    },
+    [](int key) {
+        int chara = getChara(key);
+        return (chara - 1) / 4 == 1 || chara > 20;
+    },
+    [](int key) {
+        int chara = getChara(key);
+        return (chara - 1) / 4 == 2 || chara > 20;
+    },
+    [](int key) {
+        int chara = getChara(key);
+        return (chara - 1) / 4 == 3 || chara > 20;
+    },
+    [](int key) {
+        int chara = getChara(key);
+        return (chara - 1) / 4 == 4 || chara > 20;
+    },
+    // 最后一级：全部
+    [](int key) { 
+        return true; 
+    },
+};
+static std::map<int, bool> applyFilter(const BonusFilter& filter, std::map<int, bool>& hasBonusCharaCards) {
+    std::map<int, bool> ret{};
+    for (const auto& [key, hasCard] : hasBonusCharaCards) 
+        if (filter(key)) 
+            ret[key] = hasCard;
+    return ret;
+}
+
+
 bool dfsBonus(
     const DeckRecommendConfig &config, 
     RecommendCalcInfo &dfsInfo, 
@@ -62,11 +100,12 @@ bool dfsBonus(
         lowestBonus += bonus, --rest;
     }
     it = hasBonusCharaCards.end(), --it;
-    for (int rest = config.member - (int)current.size(); rest > 0 && it != start_it; --it) {
+    for (int rest = config.member - (int)current.size(); rest > 0; --it) {
         auto [bonus, chara] = getBonusChara(it->first);
         if (charaVis.find(chara) != charaVis.end()) continue; // 跳过重复角色
         if (!it->second) continue; // 跳过没有卡牌
         highestBonus += bonus, --rest;
+        if (it == start_it) break;  // 需要包含start_it（还没取）
     }
     if(currentBonus + lowestBonus > *targets.rbegin() || currentBonus + highestBonus < *targets.begin()) 
         return true;
@@ -134,31 +173,42 @@ void BaseDeckRecommend::findTargetBonusCardsDFS(
         });
     }
 
-    // 搜索
-    std::vector<int> current;
-    std::map<int, std::vector<std::vector<int>>> result; 
-    std::set<int> charaVis; 
+    // 剩余的组卡目标
     std::set<int> targets(bonusList.begin(), bonusList.end());
-    dfsBonus(config, dfsInfo, targets, 0, current, result, hasBonusCharaCards, charaVis);
 
-    // 取卡
-    for (auto& [bonus, bonusResult] : result) {
-        for (auto &resultKeys : bonusResult) {
-            std::vector<const CardDetail *> deckCards{};
-            for (auto key : resultKeys) 
-                deckCards.push_back(bonusCharaCards[key].front()); 
-            // 计算卡组详情
-            auto deckRes = getBestPermutation(
-                deckCalculator, deckCards, {}, scoreFunc,
-                0, eventType, eventId, config.target, liveType
-            );
-            // 需要验证加成正确
-            if(std::round(deckRes.eventBonus.value_or(0) * 2) == bonus) 
-                dfsInfo.update(deckRes, 1e9);
-            else
-                std::cerr << "Warning: Event bonus mismatch, expected " 
-                          << bonus / 2.0 << ", got " 
-                          << deckRes.eventBonus.value_or(0) << std::endl;
+    // 按照不同层级过滤进行分层搜索
+    for(auto& filter : bonusFilters) {
+        auto filteredHasBonusCharaCards = applyFilter(filter, hasBonusCharaCards);
+
+        std::vector<int> current;
+        std::map<int, std::vector<std::vector<int>>> result; 
+        std::set<int> charaVis; 
+        dfsBonus(config, dfsInfo, targets, 0, current, result, filteredHasBonusCharaCards, charaVis);
+
+        // 取卡
+        for (auto& [bonus, bonusResult] : result) {
+            for (auto &resultKeys : bonusResult) {
+                std::vector<const CardDetail *> deckCards{};
+                for (auto key : resultKeys) 
+                    deckCards.push_back(bonusCharaCards[key].front()); 
+                // 计算卡组详情
+                auto deckRes = getBestPermutation(
+                    deckCalculator, deckCards, {}, scoreFunc,
+                    0, eventType, eventId, config.target, liveType
+                );
+                // 需要验证加成正确
+                if(std::round(deckRes.eventBonus.value_or(0) * 2) == bonus) 
+                    dfsInfo.update(deckRes, 1e9);
+                else
+                    std::cerr << "Warning: Event bonus mismatch, expected " 
+                            << bonus / 2.0 << ", got " 
+                            << deckRes.eventBonus.value_or(0) << std::endl;
+            }
+        }
+
+        if (targets.empty()) {
+            // 如果已经找到所有目标，退出
+            break;
         }
     }
 }

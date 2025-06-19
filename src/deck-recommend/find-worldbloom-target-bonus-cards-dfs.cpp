@@ -20,41 +20,39 @@ static std::tuple<int, int, int> getCharaAttrBonus(int key) {
 }
 
 // 分层过滤加成
-using BonusFilter = std::function<bool(int bonus, int index)>;
+using BonusFilter = std::function<bool(int key)>;
 static const std::vector<BonusFilter> bonusFilters = {
-    // // 第一级: 删除.5 随机选择1/4
-    // [](int bonus, int index) { 
-    //     if (bonus % 2) return false; 
-    //     return index % 4 == 0;
-    // },
-    // // 第二级：删除.5 随机选择1/2
-    // [](int bonus, int index) { 
-    //     if (bonus % 2) return false; 
-    //     return index % 2 == 0;
-    // },
-    // // 第三级：删除.5
-    // [](int bonus, int index) { 
-    //     return bonus % 2 == 0;
-    // },
+    // 各个组合各自组卡
+    [](int key) {
+        int chara = getChara(key);
+        return (chara - 1) / 4 == 0 || chara > 20;
+    },
+    [](int key) {
+        int chara = getChara(key);
+        return (chara - 1) / 4 == 1 || chara > 20;
+    },
+    [](int key) {
+        int chara = getChara(key);
+        return (chara - 1) / 4 == 2 || chara > 20;
+    },
+    [](int key) {
+        int chara = getChara(key);
+        return (chara - 1) / 4 == 3 || chara > 20;
+    },
+    [](int key) {
+        int chara = getChara(key);
+        return (chara - 1) / 4 == 4 || chara > 20;
+    },
     // 最后一级：全部
-    [](int bonus, int index) { 
+    [](int key) { 
         return true; 
     },
 };
 static std::map<int, bool> applyFilter(const BonusFilter& filter, std::map<int, bool>& hasBonusCharaCards) {
-    std::set<int> bonuses, keepBonuses;
+    std::map<int, bool> ret{};
     for (const auto& [key, hasCard] : hasBonusCharaCards) 
-        bonuses.insert(getBonus(key));
-    int index = 0;
-    for (const auto& bonus : bonuses) 
-        if (filter(bonus, ++index)) 
-            keepBonuses.insert(bonus);
-    std::map<int, bool> ret;
-    for (const auto& [key, hasCard] : hasBonusCharaCards) {
-        int bonus = getBonus(key);
-        if (keepBonuses.count(bonus)) 
-            ret[key] = hasCard; // 保留符合条件的卡牌
-    }
+        if (filter(key)) 
+            ret[key] = hasCard;
     return ret;
 }
 
@@ -113,11 +111,12 @@ bool dfsWorldBloomBonus(
         lowestBonus += bonus, --rest;
     }
     it = hasBonusCharaCards.end(), --it;
-    for (int rest = config.member - (int)current.size(); rest > 0 && it != start_it; --it) {
+    for (int rest = config.member - (int)current.size(); rest > 0; --it) {
         auto [chara, attr, bonus] = getCharaAttrBonus(it->first);
         if (charaVis.find(chara) != charaVis.end()) continue; // 跳过重复角色
         if (!it->second) continue; // 跳过没有卡牌
         highestBonus += bonus, --rest;
+        if (it == start_it) break;  // 需要包含start_it（还没取）
     }
     // 最低加成假设为当前异色数（因为加入新卡异色数只会变多），最高加成假设为全异色
     if(currentBonus + currentDiffAttrBonus + lowestBonus  > *targets.rbegin() 
