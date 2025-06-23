@@ -116,6 +116,7 @@ class DeckRecommendOptions:
         filter_other_unit (bool): Whether to filter out other units for banner event, default is False
         fixed_cards (List[int]): List of card IDs that always included in the deck, default is None
         target_bonus_list (List[int]): List of target event bonus, required when target is "bonus"
+        force_canvas_bonus (bool): Whether to assume all cards have canvas bonus, default is False
         sa_options (DeckRecommendSaOptions): Simulated annealing options
         ga_options (DeckRecommendGaOptions): Genetic algorithm options
     """
@@ -143,6 +144,7 @@ class DeckRecommendOptions:
     filter_other_unit: Optional[bool]
     fixed_cards: Optional[List[int]]
     target_bonus_list: Optional[List[int]]
+    force_canvas_bonus: Optional[bool]
     sa_options: Optional[DeckRecommendSaOptions]
     ga_options: Optional[DeckRecommendGaOptions]
 
@@ -170,6 +172,7 @@ class RecommendCard:
         episode2_read (bool): Whether episode 2 is read
         after_training (bool): Whether the card is after special training
         default_image (str): Default image of the card in ["original", "special_training"]
+        has_canvas_bonus (bool): Whether the card has canvas bonus
     """
     card_id: int
     total_power: int
@@ -184,6 +187,7 @@ class RecommendCard:
     episode2_read: bool
     after_training: bool
     default_image: str
+    has_canvas_bonus: bool
 
     def to_dict(self) -> Dict[str, Any]:
         ...

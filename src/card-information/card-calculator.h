@@ -88,7 +88,8 @@ public:
         const std::vector<UserCard>& userCards,
         const std::unordered_map<int, CardConfig>& config,
         const std::optional<EventConfig>& eventConfig = std::nullopt,
-        const std::vector<AreaItemLevel>& areaItemLevels = std::vector<AreaItemLevel>()
+        const std::vector<AreaItemLevel>& areaItemLevels = std::vector<AreaItemLevel>(),
+        bool forceCanvasBonus = false
     );
 
     /**

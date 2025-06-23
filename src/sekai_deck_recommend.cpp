@@ -212,6 +212,7 @@ struct PyDeckRecommendOptions {
     std::optional<bool> filter_other_unit;
     std::optional<std::vector<int>> fixed_cards;
     std::optional<std::vector<int>> target_bonus_list;
+    std::optional<bool> force_canvas_bonus;
     std::optional<PySaOptions> sa_options;
     std::optional<PyGaOptions> ga_options;
 
@@ -251,6 +252,8 @@ struct PyDeckRecommendOptions {
             result["fixed_cards"] = fixed_cards.value();
         if (target_bonus_list.has_value())
             result["target_bonus_list"] = target_bonus_list.value();
+        if (force_canvas_bonus.has_value())
+            result["force_canvas_bonus"] = force_canvas_bonus.value();
         if (sa_options.has_value())
             result["sa_options"] = sa_options->to_dict();
         if (ga_options.has_value())
@@ -295,6 +298,9 @@ struct PyDeckRecommendOptions {
             options.fixed_cards = dict["fixed_cards"].cast<std::vector<int>>();
         if (dict.contains("target_bonus_list"))
             options.target_bonus_list = dict["target_bonus_list"].cast<std::vector<int>>();
+        if (dict.contains("force_canvas_bonus"))
+            options.force_canvas_bonus = dict["force_canvas_bonus"].cast<bool>();
+
         if (dict.contains("sa_options"))
             options.sa_options = PySaOptions::from_dict(dict["sa_options"].cast<py::dict>());
         if (dict.contains("ga_options"))
@@ -318,6 +324,7 @@ struct PyRecommendCard {
     bool episode2_read;
     bool after_training;
     std::string default_image;
+    bool has_canvas_bonus;
 
     py::dict to_dict() const {
         py::dict result;
@@ -334,6 +341,7 @@ struct PyRecommendCard {
         result["episode2_read"] = episode2_read;
         result["after_training"] = after_training;
         result["default_image"] = default_image;
+        result["has_canvas_bonus"] = has_canvas_bonus;
         return result;
     }
     static PyRecommendCard from_dict(const py::dict& dict) {
@@ -351,6 +359,7 @@ struct PyRecommendCard {
         card.episode2_read = dict["episode2_read"].cast<bool>();
         card.after_training = dict["after_training"].cast<bool>();
         card.default_image = dict["default_image"].cast<std::string>();
+        card.has_canvas_bonus = dict["has_canvas_bonus"].cast<bool>();
         return card;
     }
 };
@@ -641,6 +650,9 @@ class SekaiDeckRecommend {
                 config.fixedCards = fixed_cards;
             }
 
+            // force canvas bonus
+            config.forceCanvasBonus = pyoptions.force_canvas_bonus.value_or(false);
+
             // timeout
             if (pyoptions.timeout_ms.has_value()) {
                 config.timeout_ms = pyoptions.timeout_ms.value();
@@ -799,6 +811,7 @@ class SekaiDeckRecommend {
                 py_card.episode2_read = card.episode2Read;
                 py_card.after_training = card.afterTraining;
                 py_card.default_image = mappedEnumToString(EnumMap::defaultImage, card.defaultImage);
+                py_card.has_canvas_bonus = card.hasCanvasBonus;
                 py_deck.cards.push_back(py_card);
             }
 
@@ -924,6 +937,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("filter_other_unit", &PyDeckRecommendOptions::filter_other_unit)
         .def_readwrite("fixed_cards", &PyDeckRecommendOptions::fixed_cards)
         .def_readwrite("target_bonus_list", &PyDeckRecommendOptions::target_bonus_list)
+        .def_readwrite("force_canvas_bonus", &PyDeckRecommendOptions::force_canvas_bonus)
         .def_readwrite("sa_options", &PyDeckRecommendOptions::sa_options)
         .def_readwrite("ga_options", &PyDeckRecommendOptions::ga_options);
 
@@ -944,7 +958,8 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("episode1_read", &PyRecommendCard::episode1_read)
         .def_readwrite("episode2_read", &PyRecommendCard::episode2_read)
         .def_readwrite("after_training", &PyRecommendCard::after_training)
-        .def_readwrite("default_image", &PyRecommendCard::default_image);
+        .def_readwrite("default_image", &PyRecommendCard::default_image)
+        .def_readwrite("has_canvas_bonus", &PyRecommendCard::has_canvas_bonus);
 
     py::class_<PyRecommendDeck>(m, "RecommendDeck")
         .def(py::init<>())

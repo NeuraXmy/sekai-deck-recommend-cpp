@@ -70,7 +70,8 @@ std::vector<CardDetail> CardCalculator::batchGetCardDetail(
     const std::vector<UserCard>& userCards,
     const std::unordered_map<int, CardConfig>& config,
     const std::optional<EventConfig>& eventConfig,
-    const std::vector<AreaItemLevel>& areaItemLevels
+    const std::vector<AreaItemLevel>& areaItemLevels,
+    bool forceCanvasBonus
 )
 {
     std::vector<CardDetail> ret{};
@@ -82,7 +83,7 @@ std::vector<CardDetail> CardCalculator::batchGetCardDetail(
     for (const auto &userCard : userCards) {
         auto cardDetail = this->getCardDetail(
             userCard, areaItemLevels0, config, eventConfig, 
-            userCanvasBonusCards.find(userCard.cardId) != userCanvasBonusCards.end(),
+            forceCanvasBonus || userCanvasBonusCards.find(userCard.cardId) != userCanvasBonusCards.end(),
             userGateBonuses
         );
         if (cardDetail.has_value()) {

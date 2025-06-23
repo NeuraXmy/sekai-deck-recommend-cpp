@@ -147,7 +147,8 @@ DeckDetail DeckCalculator::getDeckDetailByCards(
             cardDetail.episode1Read,
             cardDetail.episode2Read,
             cardDetail.afterTraining,
-            cardDetail.defaultImage
+            cardDetail.defaultImage,
+            cardDetail.hasCanvasBonus,
         });
     }
 

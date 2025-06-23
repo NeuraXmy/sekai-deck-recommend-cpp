@@ -105,7 +105,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
 
     auto areaItemLevels = areaItemService.getAreaItemLevels();
 
-    auto cards = cardCalculator.batchGetCardDetail(userCards, config.cardConfig, eventConfig, areaItemLevels);
+    auto cards = cardCalculator.batchGetCardDetail(userCards, config.cardConfig, eventConfig, areaItemLevels, config.forceCanvasBonus);
 
     auto& cardEpisodes = this->dataProvider.masterData->cardEpisodes;
 

@@ -30,6 +30,7 @@ struct DeckCardDetail {
     bool episode2Read;
     bool afterTraining;
     int defaultImage;
+    bool hasCanvasBonus;
 };
 
 struct DeckDetail {

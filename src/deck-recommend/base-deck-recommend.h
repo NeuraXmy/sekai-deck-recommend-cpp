@@ -45,6 +45,9 @@ struct DeckRecommendConfig {
     // 指定一定要包含的卡牌
     std::vector<int> fixedCards = {}; 
 
+    // 强制满画布加成
+    bool forceCanvasBonus = false;
+
     // 模拟退火参数
     int saRunCount = 20; // 运行次数
     int saSeed = -1; // 随机数种子 -1 代表使用当前时间
