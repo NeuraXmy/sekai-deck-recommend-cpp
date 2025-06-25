@@ -1,9 +1,10 @@
 #include "deck-information/deck-calculator.h"
 #include "common/timer.h"
+#include "deck-calculator.h"
 
 static int world_bloom_enum = mapEnum(EnumMap::eventType, "world_bloom");
 
-std::optional<double> DeckCalculator::getDeckBonus(const std::vector<const CardDetail*> &deckCards, std::optional<int> eventType)
+std::optional<double> DeckCalculator::getDeckBonus(const std::vector<const CardDetail *> &deckCards, std::optional<int> eventType) 
 {
     // 如果没有预处理好活动加成，则返回空
     for (const auto &card : deckCards) 
@@ -155,12 +156,8 @@ DeckDetail DeckCalculator::getDeckDetailByCards(
     // 计算卡组活动加成（与顺序无关，不用考虑deckCardOrder）
     auto eventBonus = getDeckBonus(cardDetails, eventType);
 
-    // 旧WL和新WL不同的支援卡组数量
-    int supportDeckCount = 20;
-    if (eventId.has_value() && 0 < eventId.value() && eventId.value() <= 140)
-        supportDeckCount = 12;
     // （与顺序无关，不用考虑deckCardOrder）
-    auto supportDeckBonus = this->getSupportDeckBonus(cardDetails, allCards, supportDeckCount); 
+    auto supportDeckBonus = this->getSupportDeckBonus(cardDetails, allCards, this->getWorldBloomSupportDeckCount(eventId.value_or(0)));
 
     return DeckDetail{ 
         power, 
@@ -171,3 +168,10 @@ DeckDetail DeckCalculator::getDeckDetailByCards(
     };
 }
 
+
+int DeckCalculator::getWorldBloomSupportDeckCount(int eventId) const
+{
+    int turn = this->dataProvider.masterData->getWorldBloomEventTurn(eventId);
+    // wl1 12 wl2 20
+    return turn == 1 ? 12 : 20;
+}

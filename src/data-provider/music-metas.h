@@ -9,7 +9,11 @@ public:
 
     std::vector<MusicMeta> metas;
 
-    MusicMetas(const std::string& path);
+    void loadFromJson(const json& j);
+
+    void loadFromFile(const std::string& path);
+
+    void loadFromString(const std::string& s);
 };
 
 #endif // MUSIC_METAS_H    

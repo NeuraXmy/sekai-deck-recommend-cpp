@@ -20,7 +20,11 @@ public:
     std::vector<UserMysekaiGate> userMysekaiGates;
     std::vector<UserWorldBloomSupportDeck> userWorldBloomSupportDecks;
 
-    UserData(const std::string& path);
+    void loadFromJson(const json& j);
+
+    void loadFromFile(const std::string& path);
+
+    void loadFromString(const std::string& s);
 };
 
 

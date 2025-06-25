@@ -5,7 +5,7 @@
 
 
 template<typename T>
-T loadUserDataFromJson(const json& j, const std::string& key, bool required = true) {
+T loadUserDataJson(const json& j, const std::string& key, bool required = true) {
     if (j.contains(key)) {
         return T::fromJson(j[key]);
     } 
@@ -17,7 +17,7 @@ T loadUserDataFromJson(const json& j, const std::string& key, bool required = tr
 }
 
 template<typename T>
-std::vector<T> loadUserDataFromJsonList(const json& j, const std::string& key, bool required = true) {
+std::vector<T> loadUserDataJsonList(const json& j, const std::string& key, bool required = true) {
     if (j.contains(key)) {
         return T::fromJsonList(j[key]);
     } 
@@ -28,28 +28,42 @@ std::vector<T> loadUserDataFromJsonList(const json& j, const std::string& key, b
     return {};
 }
 
+void UserData::loadFromJson(const json& j) {
+    this->userGamedata = loadUserDataJson<UserGameData>(j, "userGamedata");
+    this->userAreas = loadUserDataJsonList<UserArea>(j, "userAreas");
+    this->userCards = loadUserDataJsonList<UserCard>(j, "userCards");
+    this->userCharacters = loadUserDataJsonList<UserCharacter>(j, "userCharacters");
+    this->userDecks = loadUserDataJsonList<UserDeck>(j, "userDecks");
+    this->userHonors = loadUserDataJsonList<UserHonor>(j, "userHonors");
 
-UserData::UserData(const std::string& path) {
-    this->path = path;
-    std::ifstream file(path);
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to open user data file: " + path);
-    }
+    this->userMysekaiCanvases = loadUserDataJsonList<UserMysekaiCanvas>(j, "userMysekaiCanvases", false);
+    this->userMysekaiFixtureGameCharacterPerformanceBonuses = loadUserDataJsonList<UserMysekaiFixtureGameCharacterPerformanceBonus>(j, "userMysekaiFixtureGameCharacterPerformanceBonuses", false);
+    this->userMysekaiGates = loadUserDataJsonList<UserMysekaiGate>(j, "userMysekaiGates", false);
+}
+
+void UserData::loadFromFile(const std::string& path) {
     json j;
-    file >> j;
-    file.close();
+    try {
+        this->path = path;
+        std::ifstream file(path);
+        if (!file.is_open()) {
+            throw std::runtime_error("Failed to open user data file: " + path);
+        }
+        file >> j;
+        file.close();
+    } catch (const std::exception& e) {
+        throw std::runtime_error("Failed to load user data from file: " + path + ", error: " + e.what());
+    }
+    this->loadFromJson(j);
+}
 
-    this->userGamedata = loadUserDataFromJson<UserGameData>(j, "userGamedata");
-    this->userAreas = loadUserDataFromJsonList<UserArea>(j, "userAreas");
-    this->userCards = loadUserDataFromJsonList<UserCard>(j, "userCards");
-    this->userCharacters = loadUserDataFromJsonList<UserCharacter>(j, "userCharacters");
-    this->userDecks = loadUserDataFromJsonList<UserDeck>(j, "userDecks");
-    this->userHonors = loadUserDataFromJsonList<UserHonor>(j, "userHonors");
-
-    // this->userChallengeLiveSoloDecks = loadUserDataFromJsonList<UserChallengeLiveSoloDeck>(j, "userChallengeLiveSoloDecks", false);
-
-    this->userMysekaiCanvases = loadUserDataFromJsonList<UserMysekaiCanvas>(j, "userMysekaiCanvases", false);
-    this->userMysekaiFixtureGameCharacterPerformanceBonuses = loadUserDataFromJsonList<UserMysekaiFixtureGameCharacterPerformanceBonus>(j, "userMysekaiFixtureGameCharacterPerformanceBonuses", false);
-    this->userMysekaiGates = loadUserDataFromJsonList<UserMysekaiGate>(j, "userMysekaiGates", false);
-    // this->userWorldBloomSupportDecks = loadUserDataFromJsonList<UserWorldBloomSupportDeck>(j, "userWorldBloomSupportDecks", false);
+void UserData::loadFromString(const std::string& s) {
+    json j;
+    try {
+        this->path.clear();
+        j = json::parse(s);
+    } catch (const std::exception& e) {
+        throw std::runtime_error("Failed to load user data from bytes, error: " + std::string(e.what()));
+    }
+    this->loadFromJson(j);
 }

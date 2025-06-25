@@ -9,7 +9,6 @@
 #include <pybind11/stl.h>
 namespace py = pybind11;
 
-
 static const std::map<std::string, Region> REGION_ENUM_MAP = {
     {"jp", Region::JP},
     {"tw", Region::TW},
@@ -192,6 +191,7 @@ struct PyDeckRecommendOptions {
     std::optional<std::string> algorithm;
     std::optional<std::string> region;
     std::optional<std::string> user_data_file_path;
+    std::optional<std::string> user_data_str;
     std::optional<std::string> live_type;
     std::optional<int> music_id;
     std::optional<std::string> music_diff;
@@ -222,6 +222,7 @@ struct PyDeckRecommendOptions {
         if (algorithm.has_value())             result["algorithm"] = algorithm.value();
         if (region.has_value())                result["region"] = region.value();
         if (user_data_file_path.has_value())   result["user_data_file_path"] = user_data_file_path.value();
+        if (user_data_str.has_value())         result["user_data_str"] = user_data_str.value();
         if (live_type.has_value())             result["live_type"] = live_type.value();
         if (music_id.has_value())              result["music_id"] = music_id.value();
         if (music_diff.has_value())            result["music_diff"] = music_diff.value();
@@ -266,6 +267,7 @@ struct PyDeckRecommendOptions {
         if (dict.contains("algorithm"))             options.algorithm = dict["algorithm"].cast<std::string>();
         if (dict.contains("region"))                options.region = dict["region"].cast<std::string>();
         if (dict.contains("user_data_file_path"))   options.user_data_file_path = dict["user_data_file_path"].cast<std::string>();
+        if (dict.contains("user_data_str"))         options.user_data_str = dict["user_data_str"].cast<py::bytes>();
         if (dict.contains("live_type"))             options.live_type = dict["live_type"].cast<std::string>();
         if (dict.contains("music_id"))              options.music_id = dict["music_id"].cast<int>();
         if (dict.contains("music_diff"))            options.music_diff = dict["music_diff"].cast<std::string>();
@@ -472,11 +474,16 @@ class SekaiDeckRecommend {
             throw std::invalid_argument("Invalid region: " + pyoptions.region.value());
         Region region = REGION_ENUM_MAP.at(pyoptions.region.value());
 
-        // data_provider
-        if (!pyoptions.user_data_file_path.has_value())
-            throw std::invalid_argument("user_data_file_path is required.");
-        auto userdata = std::make_shared<UserData>(pyoptions.user_data_file_path.value());
+        // user data
+        auto userdata = std::make_shared<UserData>();
+        if (pyoptions.user_data_file_path.has_value())
+            userdata->loadFromFile(pyoptions.user_data_file_path.value());
+        else if (pyoptions.user_data_str.has_value()) 
+            userdata->loadFromString(pyoptions.user_data_str.value());
+        else 
+            throw std::invalid_argument("user_data_file_path or user_data_bytes is required.");
 
+        // region master data and music metas
         if (!region_masterdata.count(region))
             throw std::invalid_argument("Master data not found for region: " + pyoptions.region.value());
         auto masterdata = region_masterdata[region];
@@ -485,6 +492,7 @@ class SekaiDeckRecommend {
             throw std::invalid_argument("Music metas not found for region: " + pyoptions.region.value());
         auto musicmetas = region_musicmetas[region];
 
+        // dataProvider
         options.dataProvider = DataProvider{
             region,
             masterdata,
@@ -826,14 +834,37 @@ public:
     void update_masterdata(const std::string& base_dir, const std::string& region) {
         if (!REGION_ENUM_MAP.count(region)) 
             throw std::invalid_argument("Invalid region: " + region);
-        region_masterdata[REGION_ENUM_MAP.at(region)] = std::make_shared<MasterData>(base_dir);
+        region_masterdata[REGION_ENUM_MAP.at(region)] = std::make_shared<MasterData>();
+        region_masterdata[REGION_ENUM_MAP.at(region)]->loadFromFiles(base_dir);
+    }
+
+    // 从指定string的dict更新区服masterdata数据
+    void update_masterdata_from_strings(const py::dict& dict, const std::string& region) {
+        if (!REGION_ENUM_MAP.count(region)) 
+            throw std::invalid_argument("Invalid region: " + region);
+        std::map<std::string, std::string> data;
+        for (const auto& item : dict) {
+            std::string key = item.first.cast<std::string>();
+            data[key] = item.second.cast<std::string>();
+        }
+        region_masterdata[REGION_ENUM_MAP.at(region)] = std::make_shared<MasterData>();
+        region_masterdata[REGION_ENUM_MAP.at(region)]->loadFromStrings(data);
     }
 
     // 从指定文件更新区服musicmetas数据
     void update_musicmetas(const std::string& file_path, const std::string& region) {
         if (!REGION_ENUM_MAP.count(region)) 
             throw std::invalid_argument("Invalid region: " + region);
-        region_musicmetas[REGION_ENUM_MAP.at(region)] = std::make_shared<MusicMetas>(file_path);
+        region_musicmetas[REGION_ENUM_MAP.at(region)] = std::make_shared<MusicMetas>();
+        region_musicmetas[REGION_ENUM_MAP.at(region)]->loadFromFile(file_path);
+    }
+
+    // 从指定string更新区服musicmetas数据
+    void update_musicmetas_from_string(const std::string& s, const std::string& region) {
+        if (!REGION_ENUM_MAP.count(region)) 
+            throw std::invalid_argument("Invalid region: " + region);
+        region_musicmetas[REGION_ENUM_MAP.at(region)] = std::make_shared<MusicMetas>();
+        region_musicmetas[REGION_ENUM_MAP.at(region)]->loadFromString(s);
     }
 
     // 推荐卡组
@@ -917,6 +948,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("algorithm", &PyDeckRecommendOptions::algorithm)
         .def_readwrite("region", &PyDeckRecommendOptions::region)
         .def_readwrite("user_data_file_path", &PyDeckRecommendOptions::user_data_file_path)
+        .def_readwrite("user_data_str", &PyDeckRecommendOptions::user_data_str)
         .def_readwrite("live_type", &PyDeckRecommendOptions::live_type)
         .def_readwrite("music_id", &PyDeckRecommendOptions::music_id)
         .def_readwrite("music_diff", &PyDeckRecommendOptions::music_diff)
@@ -990,7 +1022,9 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def(py::init<>())
         .def(py::init<const SekaiDeckRecommend&>())
         .def("update_masterdata", &SekaiDeckRecommend::update_masterdata)
+        .def("update_masterdata_from_strings", &SekaiDeckRecommend::update_masterdata_from_strings)
         .def("update_musicmetas", &SekaiDeckRecommend::update_musicmetas)
+        .def("update_musicmetas_from_string", &SekaiDeckRecommend::update_musicmetas_from_string)
         .def("recommend", &SekaiDeckRecommend::recommend);
 }
 

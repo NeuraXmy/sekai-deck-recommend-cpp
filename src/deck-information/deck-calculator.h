@@ -24,6 +24,11 @@ public:
           cardCalculator(CardCalculator(dataProvider)) {}
 
     /**
+     * 获取worldBloom活动的支援卡牌数量
+     */
+    int getWorldBloomSupportDeckCount(int eventId) const;
+
+    /**
      * 这个函数原本在 EventCalculator 中，为防止循环引用移动到这里
      * 获取卡组活动加成
      * @param deckCards 卡组

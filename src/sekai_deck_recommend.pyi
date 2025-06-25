@@ -95,7 +95,8 @@ class DeckRecommendOptions:
         target (str): Target of the recommendation in ["score", "power", "skill", "bonus"], default is "score"
         algorithm (str): "dfs" for brute force, "sa" for simulated annealing, "ga" for genetic algorithm, default is "ga"
         region (str): Region in ["jp", "en", "tw", "kr", "cn"]
-        user_data_file_path (str): File path of user suite data
+        user_data_file_path (str): File path of user suite json
+        user_data_str (str | bytes): String or bytes of user suite json
         live_type (str): Live type in ["multi", "solo", "auto", "challenge"]
         music_id (int): Music ID
         music_diff (str): Music difficulty in ["easy", "normal", "hard", "expert", "master", "append"]
@@ -123,7 +124,8 @@ class DeckRecommendOptions:
     target: Optional[str]
     algorithm: Optional[str]
     region: str
-    user_data_file_path: str
+    user_data_file_path: Optional[str]
+    user_data_str: Optional[Union[str, bytes]]
     live_type: str
     music_id: int
     music_diff: str
@@ -288,11 +290,33 @@ class SekaiDeckRecommend:
         """
         ...
 
+    def update_masterdata_from_strings(self, data: Dict[str, Union[str, bytes]], region: str) -> None:
+        """
+        Update master data of the specific region from dictionary of string or bytes
+        Args:
+            data (Dict[str, bytes]): Dictionary of master data jsons in string or bytes
+                example: data = {
+                    "cards": "...",
+                    "events": "...",
+                }
+            region (str): Region in ["jp", "en", "tw", "kr", "cn"]
+        """
+        ...
+
     def update_musicmetas(self, file_path: str, region: str) -> None:
         """
-        Update music metas of the specific region  from a local file
+        Update music metas of the specific region from a local file
         Args:
             file_path (str): File path of music metas
+            region (str): Region in ["jp", "en", "tw", "kr", "cn"]
+        """
+        ...
+
+    def update_musicmetas_from_string(self, data: Union[str, bytes], region: str) -> None:
+        """
+        Update music metas of the specific region from string or bytes
+        Args:
+            data (bytes): String or bytes of music metas json
             region (str): Region in ["jp", "en", "tw", "kr", "cn"]
         """
         ...

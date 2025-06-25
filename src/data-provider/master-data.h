@@ -44,11 +44,19 @@ public:
     std::vector<WorldBloomSupportDeckBonus> worldBloomSupportDeckBonuses;
     std::vector<WorldBloomSupportDeckUnitEventLimitedBonus> worldBloomSupportDeckUnitEventLimitedBonuses;
 
-    MasterData(const std::string& baseDir);
+    void loadFromJsons(std::map<std::string, json>& jsons);
+
+    void loadFromFiles(const std::string& baseDir);
+
+    void loadFromStrings(std::map<std::string, std::string>& data);
 
     int getNoEventFakeEventId(int eventType) const;
 
     int getUnitAttrFakeEventId(int eventType, int unit, int attr) const;
+
+    int getWorldBloomFakeEventId(int worldBloomTurn, int characterId) const;
+
+    int getWorldBloomEventTurn(int eventId) const;
 
 };
 
