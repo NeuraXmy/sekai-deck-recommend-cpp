@@ -202,7 +202,8 @@ class RecommendDeck:
     """
     Deck recommendation result
     Attributes:
-        score (int): Score of the deck
+        score (int): event point or challenge score of the deck
+        live_score (int): Live score of the deck
         total_power (int): Total power of the deck
         base_power (int): Base power of the deck
         area_item_bonus_power (int): Area item bonus power of the deck
@@ -216,6 +217,7 @@ class RecommendDeck:
         cards (List[RecommendCard]): List of recommended cards in the deck
     """
     score: int
+    live_score: int
     total_power: int
     base_power: int
     area_item_bonus_power: int

@@ -369,6 +369,7 @@ struct PyRecommendCard {
 // 单个Deck推荐结果
 struct PyRecommendDeck {
     int score;
+    int live_score;
     int total_power;
     int base_power;
     int area_item_bonus_power;
@@ -384,6 +385,7 @@ struct PyRecommendDeck {
     py::dict to_dict() const {
         py::dict result;
         result["score"] = score;
+        result["live_score"] = live_score;
         result["total_power"] = total_power;
         result["base_power"] = base_power;
         result["area_item_bonus_power"] = area_item_bonus_power;
@@ -406,6 +408,7 @@ struct PyRecommendDeck {
     static PyRecommendDeck from_dict(const py::dict& dict) {
         PyRecommendDeck deck;
         deck.score = dict["score"].cast<int>();
+        deck.live_score = dict["live_score"].cast<int>();
         deck.total_power = dict["total_power"].cast<int>();
         deck.base_power = dict["base_power"].cast<int>();
         deck.area_item_bonus_power = dict["area_item_bonus_power"].cast<int>();
@@ -793,6 +796,7 @@ class SekaiDeckRecommend {
         for (const auto& deck : result) {
             auto py_deck = PyRecommendDeck();
             py_deck.score = deck.score;
+            py_deck.live_score = deck.liveScore;
             py_deck.total_power = deck.power.total;
             py_deck.base_power = deck.power.base;
             py_deck.area_item_bonus_power = deck.power.areaItemBonus;
@@ -999,6 +1003,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def("to_dict", &PyRecommendDeck::to_dict)
         .def_static("from_dict", &PyRecommendDeck::from_dict)
         .def_readwrite("score", &PyRecommendDeck::score)
+        .def_readwrite("live_score", &PyRecommendDeck::live_score)
         .def_readwrite("total_power", &PyRecommendDeck::total_power)
         .def_readwrite("base_power", &PyRecommendDeck::base_power)
         .def_readwrite("area_item_bonus_power", &PyRecommendDeck::area_item_bonus_power)

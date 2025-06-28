@@ -240,7 +240,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
             if (ans.empty())    // 如果所有卡牌都上阵了还是组不出队伍，就报错
                 throw std::runtime_error("Cannot recommend any deck in " + std::to_string(cards.size()) + " cards");
             else    // 返回上次组出的队伍
-                return ans; 
+                break;
         }
         preCardDetails = cardDetails;
         auto cards0 = cardDetails;
@@ -316,6 +316,11 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
         }
         std::reverse(ans.begin(), ans.end());
         if (int(ans.size()) >= config.limit || calcInfo.isTimeout()) 
-            return ans;
+            break;
     }
+
+    // 获取live分数
+    for (auto& deck : ans) 
+        deck.liveScore = liveCalculator.getLiveScoreByDeck(deck, musicMeta, liveType);
+    return ans;
 }

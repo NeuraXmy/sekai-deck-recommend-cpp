@@ -17,12 +17,15 @@ constexpr double POWER_MAX = 500000;
 constexpr double SKILL_MAX = 500 * 10;  // 实效可能有一位小数点
 
 struct RecommendDeck : DeckDetail {
-    // 实际分数
+    // 实际分数或pt
     int score;
     // 期望技能加成（实效）
     double expectSkillBonus;
     // 优化目标值（不一定是分数）
     double targetValue;
+
+    // 游玩歌曲分数
+    int liveScore = 0;
 
     RecommendDeck() = default;
 
