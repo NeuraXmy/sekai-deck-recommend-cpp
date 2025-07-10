@@ -77,7 +77,7 @@ void BaseDeckRecommend::findBestCardsSA(
         // 计算当前综合力
         auto recDeck = getBestPermutation(
             this->deckCalculator, deck, allCards, scoreFunc, 
-            honorBonus, eventType, eventId, cfg.target, liveType
+            honorBonus, eventType, eventId, liveType, cfg
         );
         // 记录当前卡组
         for (const auto& card : deck) {
@@ -99,7 +99,7 @@ void BaseDeckRecommend::findBestCardsSA(
     if (member == 0) {
         saInfo.update(getBestPermutation(
             this->deckCalculator, deck, allCards, scoreFunc, 
-            honorBonus, eventType, eventId, cfg.target, liveType
+            honorBonus, eventType, eventId, liveType, cfg
         ), limit);
         return;
     }
@@ -144,7 +144,7 @@ void BaseDeckRecommend::findBestCardsSA(
         else {
             auto recDeck = getBestPermutation(
                 this->deckCalculator, deck, allCards, scoreFunc, 
-                honorBonus, eventType, eventId, cfg.target, liveType
+                honorBonus, eventType, eventId, liveType, cfg
             );
             new_score = recDeck.targetValue;
             saInfo.deckTargetValueMap[hash] = new_score;

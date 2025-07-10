@@ -60,8 +60,8 @@ RecommendDeck BaseDeckRecommend::getBestPermutation(
     int honorBonus,
     std::optional<int> eventType,
     std::optional<int> eventId,
-    RecommendTarget target,
-    int liveType
+    int liveType,
+    const DeckRecommendConfig& config
 ) const {
     auto deck = deckCards;
     // 后几位按照cardId从小到大排序
@@ -69,7 +69,7 @@ RecommendDeck BaseDeckRecommend::getBestPermutation(
         return a->cardId < b->cardId;
     });
     // 计算当前卡组的分数
-    auto deckDetail = deckCalculator.getDeckDetailByCards(deck, allCards, honorBonus, eventType, eventId);
+    auto deckDetail = deckCalculator.getDeckDetailByCards(deck, allCards, honorBonus, eventType, eventId, config.skillReferenceChooseStrategy);
     auto score = scoreFunc(deckDetail);
     auto cards = deckDetail.cards;
     // 寻找加分效果最高的卡牌
@@ -79,7 +79,7 @@ RecommendDeck BaseDeckRecommend::getBestPermutation(
     // 如果现在C位已经对了（加分技能最高的卡牌在C位）
     if (bestScoreIndex == 0) {
         double expectSkillBonus = calcExpectSkillBonus(deckDetail, liveType);
-        return RecommendDeck(deckDetail, target, score, expectSkillBonus);
+        return RecommendDeck(deckDetail, config.target, score, expectSkillBonus);
     }
     // 不然就重新算调整过C位后的分数
     std::swap(deck[0], deck[bestScoreIndex]);
@@ -87,10 +87,10 @@ RecommendDeck BaseDeckRecommend::getBestPermutation(
     std::sort(deck.begin() + 1, deck.end(), [&](const CardDetail* a, const CardDetail* b) {
         return a->cardId < b->cardId;
     });
-    deckDetail = deckCalculator.getDeckDetailByCards(deck, allCards, honorBonus, eventType, eventId);
+    deckDetail = deckCalculator.getDeckDetailByCards(deck, allCards, honorBonus, eventType, eventId, config.skillReferenceChooseStrategy);
     score = scoreFunc(deckDetail);
     double expectSkillBonus = calcExpectSkillBonus(deckDetail, liveType);
-    return RecommendDeck(deckDetail, target, score, expectSkillBonus);
+    return RecommendDeck(deckDetail, config.target, score, expectSkillBonus);
 }
 
 

@@ -40,7 +40,7 @@ void BaseDeckRecommend::findBestCardsDFS(
         dfsInfo.update(
             getBestPermutation(
                 this->deckCalculator, deckCards, allCards, scoreFunc, 
-                honorBonus, eventType, eventId, cfg.target, liveType
+                honorBonus, eventType, eventId, liveType, cfg
             ), limit
         );
         return;

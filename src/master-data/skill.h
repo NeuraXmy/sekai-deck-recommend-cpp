@@ -9,6 +9,7 @@ struct SkillEffectDetail {
     double activateEffectDuration = 0;
     int activateEffectValueType = 0;
     double activateEffectValue = 0;
+    double activateEffectValue2 = 0;
 
     static inline std::vector<SkillEffectDetail> fromJsonList(const json& jsonData) {
         std::vector<SkillEffectDetail> skillEffectDetails;
@@ -19,6 +20,7 @@ struct SkillEffectDetail {
             skillEffectDetail.activateEffectDuration = item.value("activateEffectDuration", 0.0);
             skillEffectDetail.activateEffectValueType = mapEnum(EnumMap::activateEffectValueType, item.value("activateEffectValueType", ""));
             skillEffectDetail.activateEffectValue = item.value("activateEffectValue", 0.0);
+            skillEffectDetail.activateEffectValue2 = item.value("activateEffectValue2", 0.0);
             skillEffectDetails.push_back(skillEffectDetail);
         }
         return skillEffectDetails;

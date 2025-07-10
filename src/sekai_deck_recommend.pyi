@@ -118,6 +118,7 @@ class DeckRecommendOptions:
         fixed_cards (List[int]): List of card IDs that always included in the deck, default is None
         target_bonus_list (List[int]): List of target event bonus, required when target is "bonus"
         force_canvas_bonus (bool): Whether to assume all cards have canvas bonus, default is False
+        skill_reference_choose_strategy (str): Strategy for bfes skill reference choose in ["average", "max", "min"], default is "average"
         sa_options (DeckRecommendSaOptions): Simulated annealing options
         ga_options (DeckRecommendGaOptions): Genetic algorithm options
     """
@@ -147,6 +148,7 @@ class DeckRecommendOptions:
     fixed_cards: Optional[List[int]]
     target_bonus_list: Optional[List[int]]
     force_canvas_bonus: Optional[bool]
+    skill_reference_choose_strategy: Optional[str]
     sa_options: Optional[DeckRecommendSaOptions]
     ga_options: Optional[DeckRecommendGaOptions]
 

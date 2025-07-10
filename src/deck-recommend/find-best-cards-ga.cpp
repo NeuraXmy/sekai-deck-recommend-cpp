@@ -114,7 +114,7 @@ void BaseDeckRecommend::findBestCardsGA(
             // 计算当前综合力
             auto recDeck = getBestPermutation(
                 this->deckCalculator, individual.deck, allCards, scoreFunc, 
-                honorBonus, eventType, eventId, cfg.target, liveType
+                honorBonus, eventType, eventId, liveType, cfg
             );
             targetValue = recDeck.targetValue;
             gaInfo.update(recDeck, limit);

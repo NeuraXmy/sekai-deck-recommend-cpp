@@ -6,6 +6,11 @@
 #include "event-point/event-service.h"
 #include "card-information/card-calculator.h"
 
+enum class SkillReferenceChooseStrategy {
+    Max,
+    Min,
+    Average,
+};
 
 struct SupportDeckBonus {
     double bonus;
@@ -58,13 +63,15 @@ public:
      * @param honorBonus 称号加成
      * @param eventType 活动类型（用于算加成）
      * @param eventId 活动ID（用于算加成）
+     * @param skillReferenceChooseStrategy bfes花前技能参考选择策略
      */
     DeckDetail getDeckDetailByCards(
         const std::vector<const CardDetail*>& cardDetails,
         const std::vector<CardDetail>& allCards,
         int honorBonus = 0,
         std::optional<int> eventType = std::nullopt,
-        std::optional<int> eventId = std::nullopt
+        std::optional<int> eventId = std::nullopt,
+        SkillReferenceChooseStrategy skillReferenceChooseStrategy = SkillReferenceChooseStrategy::Average
     );
 };
    

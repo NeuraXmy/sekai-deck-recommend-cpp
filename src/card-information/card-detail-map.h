@@ -24,9 +24,12 @@ class CardDetailMap {
     }
 
 public:
+    std::optional<T> values[MAX_UNIT_NUM * MAX_UNIT_MEMBER_NUM * MAX_ATTR_MEMBER_NUM] = {};
     int min = std::numeric_limits<int>::max();
     int max = std::numeric_limits<int>::min();
-    std::optional<T> values[MAX_UNIT_NUM * MAX_UNIT_MEMBER_NUM * MAX_ATTR_MEMBER_NUM] = {};
+
+    // 用于特殊判断的meta数据（例如bfes花前技能等需要打补丁计算的情况）
+    mutable std::map<std::string, std::any> meta; 
 
     /**
      * 设定给定情况下的值

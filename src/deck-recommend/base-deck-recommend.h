@@ -48,6 +48,9 @@ struct DeckRecommendConfig {
     // 强制满画布加成
     bool forceCanvasBonus = false;
 
+    // bfes花前技能选择策略
+    SkillReferenceChooseStrategy skillReferenceChooseStrategy = SkillReferenceChooseStrategy::Average;
+
     // 模拟退火参数
     int saRunCount = 20; // 运行次数
     int saSeed = -1; // 随机数种子 -1 代表使用当前时间
@@ -101,8 +104,8 @@ public:
         int honorBonus,
         std::optional<int> eventType,
         std::optional<int> eventId,
-        RecommendTarget target,
-        int liveType
+        int liveType,
+        const DeckRecommendConfig& config
     ) const;
 
     /**

@@ -3,6 +3,10 @@
 #include "deck-calculator.h"
 
 static int world_bloom_enum = mapEnum(EnumMap::eventType, "world_bloom");
+static int piapro_unit_enum = mapEnum(EnumMap::unit, "piapro");
+
+static int other_member_score_up_reference_rate_enum    = mapEnum(EnumMap::skillEffectType, "other_member_score_up_reference_rate");
+static int score_up_unit_count_enum                     = mapEnum(EnumMap::skillEffectType, "score_up_unit_count");
 
 std::optional<double> DeckCalculator::getDeckBonus(const std::vector<const CardDetail *> &deckCards, std::optional<int> eventType) 
 {
@@ -78,7 +82,8 @@ DeckDetail DeckCalculator::getDeckDetailByCards(
     const std::vector<CardDetail> &allCards, 
     int honorBonus, 
     std::optional<int> eventType,
-    std::optional<int> eventId
+    std::optional<int> eventId,
+    SkillReferenceChooseStrategy skillReferenceChooseStrategy
 )
 {
     // 预处理队伍和属性，存储每个队伍或属性出现的次数
@@ -137,6 +142,49 @@ DeckDetail DeckCalculator::getDeckDetailByCards(
             auto current = cardDetail.skill.get(unit, unit_map[unit], 1);
             skill = current.scoreUp > skill.scoreUp ? current : skill;
         }
+
+        // 打补丁计算某些技能
+        auto& skillMeta = cardDetail.skill.meta;
+        if (skillMeta.count("type")) {
+            int type = std::any_cast<int>(skillMeta["type"]);
+            if (type == other_member_score_up_reference_rate_enum) {
+                // oc bfes花前（随机取一个成员的最大加成乘比例）
+                double rate = std::any_cast<double>(skillMeta["rate"]);
+                double maxValue = std::any_cast<double>(skillMeta["max"]);
+                std::vector<double> memberSkillMaxs = {};
+                for (int j = 0; j < int(cardDetails.size()); ++j) if (i != j) {
+                    double m = cardDetails[j]->skill.max;
+                    m = std::min(m * rate / 100., maxValue);
+                    memberSkillMaxs.push_back(m);
+                }
+                double chosenSkillMax = 0;
+                // 不同选择策略
+                if (skillReferenceChooseStrategy == SkillReferenceChooseStrategy::Max) 
+                    chosenSkillMax = *std::max_element(memberSkillMaxs.begin(), memberSkillMaxs.end());
+                else if (skillReferenceChooseStrategy == SkillReferenceChooseStrategy::Min)
+                    chosenSkillMax = *std::min_element(memberSkillMaxs.begin(), memberSkillMaxs.end());
+                else if (skillReferenceChooseStrategy == SkillReferenceChooseStrategy::Average)
+                    chosenSkillMax = std::accumulate(memberSkillMaxs.begin(), memberSkillMaxs.end(), 0.0) / memberSkillMaxs.size();
+                skill.scoreUp += chosenSkillMax;
+            } 
+            else if (type == score_up_unit_count_enum) {
+                // vs bfes花前技能（按照不同团数量）
+                int unitCount = 0;
+                for(int i = 0; i < 10; i++)
+                    if (unit_map[i] > 0 && i != piapro_unit_enum)
+                        unitCount++;
+                auto& valuesMap = std::any_cast<std::map<int, double>&>(skillMeta["value"]);
+                double value = 0;
+                if (unitCount < valuesMap.begin()->first) 
+                    value = 0;
+                else if (unitCount >= valuesMap.rbegin()->first) 
+                    value = valuesMap.rbegin()->second;
+                else 
+                    value = valuesMap[unitCount];
+                skill.scoreUp += value;
+            }
+        }
+
         cards.push_back(DeckCardDetail{ 
             cardDetail.cardId, 
             cardDetail.level, 

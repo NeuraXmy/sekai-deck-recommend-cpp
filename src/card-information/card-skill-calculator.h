@@ -4,12 +4,15 @@
 #include "data-provider/data-provider.h"
 #include "card-information/card-detail-map.h"
 
+
 struct SkillDetail {
     double scoreUp;
     double lifeRecovery;
     bool hasScoreUpEnhance;
     int scoreUpEnhanceUnit;
     double scoreUpEnhanceValue;
+    // 用于特殊判断的meta数据（例如bfes花前技能等需要打补丁计算的情况）
+    std::map<std::string, std::any> meta; 
 };
 
 struct DeckCardSkillDetail {

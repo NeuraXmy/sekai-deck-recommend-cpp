@@ -1,11 +1,14 @@
 #include "card-information/card-skill-calculator.h"
 
 
-static int score_up_enum = mapEnum(EnumMap::skillEffectType, "score_up");
-static int score_up_condition_life_enum = mapEnum(EnumMap::skillEffectType, "score_up_condition_life");
-static int score_up_keep_enum = mapEnum(EnumMap::skillEffectType, "score_up_keep");
-static int life_recovery_enum = mapEnum(EnumMap::skillEffectType, "life_recovery");
-static int score_up_character_rank_enum = mapEnum(EnumMap::skillEffectType, "score_up_character_rank");
+static int score_up_enum                                = mapEnum(EnumMap::skillEffectType, "score_up");
+static int score_up_condition_life_enum                 = mapEnum(EnumMap::skillEffectType, "score_up_condition_life");
+static int score_up_keep_enum                           = mapEnum(EnumMap::skillEffectType, "score_up_keep");
+static int life_recovery_enum                           = mapEnum(EnumMap::skillEffectType, "life_recovery");
+static int score_up_character_rank_enum                 = mapEnum(EnumMap::skillEffectType, "score_up_character_rank");
+static int other_member_score_up_reference_rate_enum    = mapEnum(EnumMap::skillEffectType, "other_member_score_up_reference_rate");
+static int score_up_unit_count_enum                     = mapEnum(EnumMap::skillEffectType, "score_up_unit_count");
+
 static int special_training_enum = mapEnum(EnumMap::defaultImage, "special_training");
 
 
@@ -23,12 +26,19 @@ CardDetailMap<DeckCardSkillDetail> CardSkillCalculator::getCardSkill(const UserC
     }
     // 固定加成，即便是组分也有个保底加成
     skillMap.set(any_unit_enum, 1, 1, detail.scoreUp, {detail.scoreUp, detail.lifeRecovery});
+
+    skillMap.meta = detail.meta;
+    // 打补丁需要额外设置map的最大值，避免错误剪枝
+    if (detail.meta.count("max")) {
+        skillMap.max += std::any_cast<double>(detail.meta["max"]);
+    }
+
     return skillMap;
 }
 
 SkillDetail CardSkillCalculator::getSkillDetail(const UserCard &userCard, const Card &card)
 {
-    SkillDetail ret = {0, 0, false, 0, 0};
+    SkillDetail ret = {0, 0, false, 0, 0, {}};
     auto skill = getSkill(userCard, card);
     auto characterRank = getCharacterRank(card.characterId);
     double characterRankBonus = 0;
@@ -59,8 +69,28 @@ SkillDetail CardSkillCalculator::getSkillDetail(const UserCard &userCard, const 
             if (skillEffect.activateCharacterRank != 0 && skillEffect.activateCharacterRank <= characterRank) {
                 characterRankBonus = std::max(characterRankBonus, skillEffectDetail.activateEffectValue);
             }
+        } else if (skillEffect.skillEffectType == other_member_score_up_reference_rate_enum) {
+            // oc bfes花前
+            ret.meta["type"] = skillEffect.skillEffectType;
+            ret.meta["rate"] = skillEffectDetail.activateEffectValue;
+            ret.meta["max"] = skillEffectDetail.activateEffectValue2;
+        } else if (skillEffect.skillEffectType == score_up_unit_count_enum) {
+            // vs bfes花前
+            int unitCount = skillEffect.activateUnitCount;
+            double value = skillEffectDetail.activateEffectValue;
+            ret.meta["type"] = skillEffect.skillEffectType;
+            if (!ret.meta.count("value")) {
+                ret.meta["value"] = std::map<int, double>{};
+                ret.meta["max"] = 0.0;
+            }
+            auto& values = std::any_cast<std::map<int, double>&>(ret.meta["value"]);
+            values[unitCount] = value;
+            ret.meta["max"] = std::max(std::any_cast<double>(ret.meta["max"]), value);
+        } else {
+            // std::cerr << "[sekai-deck-recommend-cpp] warning: Unhandled skill effect type: " 
+            //           << mappedEnumToString(EnumMap::skillEffectType, skillEffect.skillEffectType) 
+            //           << " for card: " << card.id << std::endl;
         }
-        // TODO 新FES卡觉醒前只能说根本没法算，有待支持
     }
     // 新FES卡角色等级额外加成
     ret.scoreUp += characterRankBonus;

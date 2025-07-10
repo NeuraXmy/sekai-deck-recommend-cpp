@@ -75,6 +75,14 @@ static const std::set<std::string> VALID_EVENT_TYPES = {
     "world_bloom",
 };
 
+static const std::string DEFAULT_SKILL_REFERENCE_CHOOSE_STRATEGY = "average";
+static const std::set<std::string> VALID_SKILL_REFERENCE_CHOOSE_STRATEGIES = {
+    "average",
+    "max",
+    "min",
+};
+
+
 // python传入的card config
 struct PyCardConfig {
     std::optional<bool> disable;
@@ -213,6 +221,7 @@ struct PyDeckRecommendOptions {
     std::optional<std::vector<int>> fixed_cards;
     std::optional<std::vector<int>> target_bonus_list;
     std::optional<bool> force_canvas_bonus;
+    std::optional<std::string> skill_reference_choose_strategy;
     std::optional<PySaOptions> sa_options;
     std::optional<PyGaOptions> ga_options;
 
@@ -255,6 +264,8 @@ struct PyDeckRecommendOptions {
             result["target_bonus_list"] = target_bonus_list.value();
         if (force_canvas_bonus.has_value())
             result["force_canvas_bonus"] = force_canvas_bonus.value();
+        if (skill_reference_choose_strategy.has_value())
+            result["skill_reference_choose_strategy"] = skill_reference_choose_strategy.value();
         if (sa_options.has_value())
             result["sa_options"] = sa_options->to_dict();
         if (ga_options.has_value())
@@ -302,6 +313,8 @@ struct PyDeckRecommendOptions {
             options.target_bonus_list = dict["target_bonus_list"].cast<std::vector<int>>();
         if (dict.contains("force_canvas_bonus"))
             options.force_canvas_bonus = dict["force_canvas_bonus"].cast<bool>();
+        if (dict.contains("skill_reference_choose_strategy"))
+            options.skill_reference_choose_strategy = dict["skill_reference_choose_strategy"].cast<std::string>();
 
         if (dict.contains("sa_options"))
             options.sa_options = PySaOptions::from_dict(dict["sa_options"].cast<py::dict>());
@@ -664,6 +677,17 @@ class SekaiDeckRecommend {
             // force canvas bonus
             config.forceCanvasBonus = pyoptions.force_canvas_bonus.value_or(false);
 
+            // skill reference choose strategy
+            std::string skill_reference_choose_strategy = pyoptions.skill_reference_choose_strategy.value_or(DEFAULT_SKILL_REFERENCE_CHOOSE_STRATEGY);
+            if (!VALID_SKILL_REFERENCE_CHOOSE_STRATEGIES.count(skill_reference_choose_strategy))
+                throw std::invalid_argument("Invalid skill reference choose strategy: " + skill_reference_choose_strategy);
+            if (skill_reference_choose_strategy == "average")
+                config.skillReferenceChooseStrategy = SkillReferenceChooseStrategy::Average;
+            else if (skill_reference_choose_strategy == "max")
+                config.skillReferenceChooseStrategy = SkillReferenceChooseStrategy::Max;
+            else if (skill_reference_choose_strategy == "min")
+                config.skillReferenceChooseStrategy = SkillReferenceChooseStrategy::Min;
+
             // timeout
             if (pyoptions.timeout_ms.has_value()) {
                 config.timeout_ms = pyoptions.timeout_ms.value();
@@ -974,6 +998,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("fixed_cards", &PyDeckRecommendOptions::fixed_cards)
         .def_readwrite("target_bonus_list", &PyDeckRecommendOptions::target_bonus_list)
         .def_readwrite("force_canvas_bonus", &PyDeckRecommendOptions::force_canvas_bonus)
+        .def_readwrite("skill_reference_choose_strategy", &PyDeckRecommendOptions::skill_reference_choose_strategy)
         .def_readwrite("sa_options", &PyDeckRecommendOptions::sa_options)
         .def_readwrite("ga_options", &PyDeckRecommendOptions::ga_options);
 
