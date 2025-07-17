@@ -10,6 +10,7 @@ class DeckRecommendCardConfig:
         episode_read (bool): Always use read episode, default is False
         master_max (bool): Always use max master rank, default is False
         skill_max (bool): Always use max skill level, default is False
+        canvas (bool): Always use canvas bonus, default is False
     """
     
     disable: Optional[bool]
@@ -17,6 +18,35 @@ class DeckRecommendCardConfig:
     episode_read: Optional[bool]
     master_max: Optional[bool]
     skill_max: Optional[bool]
+    canvas: Optional[bool]
+
+    def to_dict(self) -> Dict[str, Any]:
+        ...
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'DeckRecommendCardConfig':
+        ...
+
+
+class DeckRecommendSingleCardConfig:
+    """
+    Card config for single card
+    Attributes:
+        card_id (int): Card ID
+        disable (bool): Disable this card, default is False
+        level_max (bool): Always use max level, default is False
+        episode_read (bool): Always use read episode, default is False
+        master_max (bool): Always use max master rank, default is False
+        skill_max (bool): Always use max skill level, default is False
+        canvas (bool): Always use canvas bonus, default is False
+    """
+    
+    card_id: int
+    disable: Optional[bool]
+    level_max: Optional[bool]
+    episode_read: Optional[bool]
+    master_max: Optional[bool]
+    skill_max: Optional[bool]
+    canvas: Optional[bool]
 
     def to_dict(self) -> Dict[str, Any]:
         ...
@@ -87,7 +117,6 @@ class DeckRecommendGaOptions:
         ...
 
 
-
 class DeckRecommendOptions:
     """
     Deck recommend options
@@ -114,10 +143,10 @@ class DeckRecommendOptions:
         rarity_3_config (DeckRecommendCardConfig): Card config for rarity 3
         rarity_birthday_config (DeckRecommendCardConfig): Card config for birthday cards
         rarity_4_config (DeckRecommendCardConfig): Card config for rarity 4
+        single_card_configs (List[DeckRecommendSingleCardConfig]): Card config for single cards that will override rarity configs.
         filter_other_unit (bool): Whether to filter out other units for banner event, default is False
         fixed_cards (List[int]): List of card IDs that always included in the deck, default is None
         target_bonus_list (List[int]): List of target event bonus, required when target is "bonus"
-        force_canvas_bonus (bool): Whether to assume all cards have canvas bonus, default is False
         skill_reference_choose_strategy (str): Strategy for bfes skill reference choose in ["average", "max", "min"], default is "average"
         sa_options (DeckRecommendSaOptions): Simulated annealing options
         ga_options (DeckRecommendGaOptions): Genetic algorithm options
@@ -144,10 +173,10 @@ class DeckRecommendOptions:
     rarity_3_config: Optional[DeckRecommendCardConfig]
     rarity_birthday_config: Optional[DeckRecommendCardConfig]
     rarity_4_config: Optional[DeckRecommendCardConfig]
+    single_card_configs: Optional[List[DeckRecommendSingleCardConfig]]
     filter_other_unit: Optional[bool]
     fixed_cards: Optional[List[int]]
     target_bonus_list: Optional[List[int]]
-    force_canvas_bonus: Optional[bool]
     skill_reference_choose_strategy: Optional[str]
     sa_options: Optional[DeckRecommendSaOptions]
     ga_options: Optional[DeckRecommendGaOptions]

@@ -29,6 +29,8 @@ struct DeckRecommendConfig {
     int timeout_ms = std::numeric_limits<int>::max();
     // 卡牌设置
     std::unordered_map<int, CardConfig> cardConfig = {};
+    // 单独卡牌设置
+    std::unordered_map<int, CardConfig> singleCardConfig = {};
 
     // 箱活是否过滤掉其他组合成员
     bool filterOtherUnit = false; 
@@ -44,9 +46,6 @@ struct DeckRecommendConfig {
 
     // 指定一定要包含的卡牌
     std::vector<int> fixedCards = {}; 
-
-    // 强制满画布加成
-    bool forceCanvasBonus = false;
 
     // bfes花前技能选择策略
     SkillReferenceChooseStrategy skillReferenceChooseStrategy = SkillReferenceChooseStrategy::Average;

@@ -72,6 +72,7 @@ public:
         const UserCard& userCard,
         const std::vector<AreaItemLevel>& userAreaItemLevels,
         const std::unordered_map<int, CardConfig>& config,
+        const std::unordered_map<int, CardConfig>& singleCardConfig,
         const std::optional<EventConfig>& eventConfig = std::nullopt,
         bool hasCanvasBonus = false,
         const std::vector<MysekaiGateBonus>& userGateBonuses = std::vector<MysekaiGateBonus>()
@@ -87,9 +88,9 @@ public:
     std::vector<CardDetail> batchGetCardDetail(
         const std::vector<UserCard>& userCards,
         const std::unordered_map<int, CardConfig>& config,
+        const std::unordered_map<int, CardConfig>& singleCardConfig,
         const std::optional<EventConfig>& eventConfig = std::nullopt,
-        const std::vector<AreaItemLevel>& areaItemLevels = std::vector<AreaItemLevel>(),
-        bool forceCanvasBonus = false
+        const std::vector<AreaItemLevel>& areaItemLevels = std::vector<AreaItemLevel>()
     );
 
     /**

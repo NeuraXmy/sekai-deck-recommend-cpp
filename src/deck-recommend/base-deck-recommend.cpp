@@ -105,7 +105,10 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
 
     auto areaItemLevels = areaItemService.getAreaItemLevels();
 
-    auto cards = cardCalculator.batchGetCardDetail(userCards, config.cardConfig, eventConfig, areaItemLevels, config.forceCanvasBonus);
+    auto cards = cardCalculator.batchGetCardDetail(
+        userCards, config.cardConfig, config.singleCardConfig, 
+        eventConfig, areaItemLevels
+    );
 
     auto& cardEpisodes = this->dataProvider.masterData->cardEpisodes;
 
@@ -151,7 +154,10 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
                     uce.scenarioStatus = 0;
                     uc.episodes.push_back(uce);
                 }
-            auto card = cardCalculator.batchGetCardDetail({uc}, config.cardConfig, eventConfig, areaItemLevels);
+            auto card = cardCalculator.batchGetCardDetail(
+                {uc}, config.cardConfig, config.singleCardConfig, 
+                eventConfig, areaItemLevels
+            );
             if (card.size() > 0) {
                 fixedCards.push_back(card[0]);
             } else {

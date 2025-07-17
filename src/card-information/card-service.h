@@ -9,6 +9,7 @@ struct CardConfig {
     bool episodeRead = false;   // 前后篇剧情是否已读
     bool masterMax = false;     // 强制满破
     bool skillMax = false;      // 强制满技能
+    bool canvas = false;        // 强制使用画布加成
 };
 
 class CardService {

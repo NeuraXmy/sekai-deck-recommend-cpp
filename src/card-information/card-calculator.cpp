@@ -4,6 +4,7 @@ std::optional<CardDetail> CardCalculator::getCardDetail(
     const UserCard& userCard,
     const std::vector<AreaItemLevel>& userAreaItemLevels,
     const std::unordered_map<int, CardConfig>& config,
+    const std::unordered_map<int, CardConfig>& singleCardConfig,
     const std::optional<EventConfig>& eventConfig,
     bool hasCanvasBonus,
     const std::vector<MysekaiGateBonus>& userGateBonuses
@@ -14,12 +15,21 @@ std::optional<CardDetail> CardCalculator::getCardDetail(
         return it.id == userCard.cardId; 
     });
 
-    auto it1 = config.find(card.cardRarityType);
-    if (it1 != config.end() && it1->second.disable) 
-        return std::nullopt; // 忽略被禁用的稀有度卡牌
-    auto config0 = it1->second;
+    CardConfig cfg{};
+    // 单独卡配置覆盖稀有度卡配置
+    if (singleCardConfig.count(card.id))
+        cfg = singleCardConfig.at(card.id);
+    else if (config.count(card.cardRarityType))
+        cfg = config.at(card.cardRarityType);
+    
+    // 判断禁用
+    if (cfg.disable)
+        return std::nullopt;
 
-    auto userCard0 = this->cardService.applyCardConfig(userCard, card, config0);
+    // 判断强制使用画布
+    hasCanvasBonus |= cfg.canvas;
+
+    auto userCard0 = this->cardService.applyCardConfig(userCard, card, cfg);
     auto units = this->cardService.getCardUnits(card);
     auto skill = this->skillCalculator.getCardSkill(userCard0, card);
     auto power = this->powerCalculator.getCardPower(
@@ -69,9 +79,9 @@ std::optional<CardDetail> CardCalculator::getCardDetail(
 std::vector<CardDetail> CardCalculator::batchGetCardDetail(
     const std::vector<UserCard>& userCards,
     const std::unordered_map<int, CardConfig>& config,
+    const std::unordered_map<int, CardConfig>& singleCardConfig,
     const std::optional<EventConfig>& eventConfig,
-    const std::vector<AreaItemLevel>& areaItemLevels,
-    bool forceCanvasBonus
+    const std::vector<AreaItemLevel>& areaItemLevels
 )
 {
     std::vector<CardDetail> ret{};
@@ -82,8 +92,8 @@ std::vector<CardDetail> CardCalculator::batchGetCardDetail(
     // 每张卡单独计算
     for (const auto &userCard : userCards) {
         auto cardDetail = this->getCardDetail(
-            userCard, areaItemLevels0, config, eventConfig, 
-            forceCanvasBonus || userCanvasBonusCards.find(userCard.cardId) != userCanvasBonusCards.end(),
+            userCard, areaItemLevels0, config, singleCardConfig, eventConfig, 
+            userCanvasBonusCards.find(userCard.cardId) != userCanvasBonusCards.end(),
             userGateBonuses
         );
         if (cardDetail.has_value()) {
