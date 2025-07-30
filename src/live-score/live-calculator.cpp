@@ -40,11 +40,27 @@ std::vector<double> LiveCalculator::getSkillScore(const MusicMeta &musicMeta, in
     }
 }
 
-SortedSkillDetails LiveCalculator::getSortedSkillDetails(const DeckDetail &deckDetail, int liveType, const std::optional<std::vector<DeckCardSkillDetail>> &skillDetails)
+SortedSkillDetails LiveCalculator::getSortedSkillDetails(
+    const DeckDetail &deckDetail, 
+    int liveType, 
+    const std::optional<std::vector<DeckCardSkillDetail>> &skillDetails,
+    std::optional<int> multiTeammateScoreUp
+)
 {
     // 如果已经给定合法有效的技能数据，按给定的技能数据执行
     if (skillDetails.has_value() && skillDetails->size() == 6 && skillDetails->at(5).scoreUp > 0) {
         return SortedSkillDetails{*skillDetails, false};
+    }
+    // 如果指定队友实效 计算期望（前5次为 自己*0.2+队友*0.8，最后一次为自己）
+    if (multiTeammateScoreUp.has_value()) {
+        auto selfSkill = getMultiLiveSkill(deckDetail);
+        std::vector<DeckCardSkillDetail> skills(5, DeckCardSkillDetail{
+            .scoreUp = selfSkill.scoreUp * 0.2 + multiTeammateScoreUp.value() * 0.8,
+        });
+        skills[0].lifeRecovery = selfSkill.lifeRecovery; 
+        // 最后一个技能为自己技能
+        skills.push_back(selfSkill);
+        return SortedSkillDetails{skills, false};
     }
     // 如果是多人联机，复制6次当前卡组的效果
     if (liveType == enum_multi) {
@@ -53,7 +69,6 @@ SortedSkillDetails LiveCalculator::getSortedSkillDetails(const DeckDetail &deckD
             false 
         };
     }
-
     // 单人，按效果正序排序技能
     std::vector<DeckCardSkillDetail> sortedSkill{};
     for (const auto &card : deckDetail.cards) {
@@ -63,7 +78,7 @@ SortedSkillDetails LiveCalculator::getSortedSkillDetails(const DeckDetail &deckD
         return a.scoreUp < b.scoreUp;
     });
     // 如果卡牌数量不足5张，中间技能需要留空
-    DeckCardSkillDetail emptySkill{0, 0};
+    DeckCardSkillDetail emptySkill{};
     std::vector<DeckCardSkillDetail> emptySkills(5 - sortedSkill.size(), emptySkill);
     // 将有效技能填充到前面、中间留空、第6个固定为C位
     sortedSkill.insert(sortedSkill.end(), emptySkills.begin(), emptySkills.end());
@@ -82,10 +97,18 @@ void LiveCalculator::sortSkillRate(bool sorted, int cardLength, std::vector<doub
     std::sort(skillScores.begin(), skillScores.begin() + cardLength);
 }
 
-LiveDetail LiveCalculator::getLiveDetailByDeck(const DeckDetail &deckDetail, const MusicMeta &musicMeta, int liveType, const std::optional<std::vector<DeckCardSkillDetail>> &skillDetails, int multiPowerSum)
+LiveDetail LiveCalculator::getLiveDetailByDeck(
+    const DeckDetail &deckDetail, 
+    const MusicMeta &musicMeta, 
+    int liveType, 
+    const std::optional<std::vector<DeckCardSkillDetail>> &skillDetails, 
+    int multiPowerSum,
+    std::optional<int> multiTeammateScoreUp,
+    std::optional<int> multiTeammatePower
+)
 {
     // 确定技能发动顺序，未指定则直接按效果排序或多人重复当前技能
-    auto skills = this->getSortedSkillDetails(deckDetail, liveType, skillDetails);
+    auto skills = this->getSortedSkillDetails(deckDetail, liveType, skillDetails, multiTeammateScoreUp);
     // 与技能无关的分数比例
     auto baseRate = this->getBaseScore(musicMeta, liveType);
     // 技能分数比例，如果是最佳技能计算则按加成排序（复制一下防止影响原数组顺序）
@@ -102,7 +125,11 @@ LiveDetail LiveCalculator::getLiveDetailByDeck(const DeckDetail &deckDetail, con
         life += it.lifeRecovery;
     }
     // 活跃加分
-    double powerSum = multiPowerSum == 0 ? 5 * deckDetail.power.total : multiPowerSum;
+    double powerSum = 5 * deckDetail.power.total;   // 默认复制5份自己
+    if (multiPowerSum)
+        powerSum = multiPowerSum;   // 指定总和
+    if (multiTeammatePower.has_value())
+        powerSum = deckDetail.power.total + multiTeammatePower.value() * 4; // 指定队友综合力 自己+4*队友
     double activeBonus = liveType == enum_multi ? 5 * 0.015 * powerSum : 0;
     return LiveDetail{
         int(rate * deckDetail.power.total * 4 + activeBonus),
@@ -122,8 +149,8 @@ DeckCardSkillDetail LiveCalculator::getMultiLiveSkill(const DeckDetail &deckDeta
     // 奶判只看C位
     double lifeRecovery = deckDetail.cards[0].skill.lifeRecovery;
     return DeckCardSkillDetail{
-        scoreUp,
-        lifeRecovery
+        .scoreUp=scoreUp,
+        .lifeRecovery=lifeRecovery,
     };
 }
 
@@ -139,7 +166,7 @@ std::optional<std::vector<DeckCardSkillDetail>> LiveCalculator::getSoloLiveSkill
 
     std::vector<DeckCardSkillDetail> ret{};
     // 因为可能会有技能空缺，先将无任何效果的技能放入6个位置
-    ret = std::vector<DeckCardSkillDetail>(6, DeckCardSkillDetail{0, 0});
+    ret = std::vector<DeckCardSkillDetail>(6, DeckCardSkillDetail{});
     // 将C位重复技能以外的技能分配到合适的位置
     for (size_t i = 0; i < skills.size() - 1; ++i) {
         ret[i] = skills[i];
@@ -149,14 +176,24 @@ std::optional<std::vector<DeckCardSkillDetail>> LiveCalculator::getSoloLiveSkill
     return ret;
 }
 
-int LiveCalculator::getLiveScoreByDeck(const DeckDetail &deckDetail, const MusicMeta &musicMeta, int liveType)
+int LiveCalculator::getLiveScoreByDeck(
+    const DeckDetail &deckDetail, 
+    const MusicMeta &musicMeta, 
+    int liveType,
+    std::optional<int> multiTeammateScoreUp,
+    std::optional<int> multiTeammatePower
+)
 {
-    return this->getLiveDetailByDeck(deckDetail, musicMeta, liveType).score;
+    return this->getLiveDetailByDeck(deckDetail, musicMeta, liveType, std::nullopt, 0, multiTeammateScoreUp, multiTeammatePower).score;
 }
 
-ScoreFunction LiveCalculator::getLiveScoreFunction(int liveType)
+ScoreFunction LiveCalculator::getLiveScoreFunction(
+    int liveType,
+    std::optional<int> multiTeammateScoreUp,
+    std::optional<int> multiTeammatePower
+)
 {
-    return [this, liveType](const MusicMeta &musicMeta, const DeckDetail &deckDetail) {
-        return this->getLiveScoreByDeck(deckDetail, musicMeta, liveType);
+    return [this, liveType, multiTeammateScoreUp, multiTeammatePower](const MusicMeta &musicMeta, const DeckDetail &deckDetail) {
+        return this->getLiveScoreByDeck(deckDetail, musicMeta, liveType, multiTeammateScoreUp, multiTeammatePower);
     };
 }

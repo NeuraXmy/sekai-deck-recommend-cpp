@@ -69,7 +69,10 @@ RecommendDeck BaseDeckRecommend::getBestPermutation(
         return a->cardId < b->cardId;
     });
     // 计算当前卡组的分数
-    auto deckDetail = deckCalculator.getDeckDetailByCards(deck, allCards, honorBonus, eventType, eventId, config.skillReferenceChooseStrategy);
+    auto deckDetail = deckCalculator.getDeckDetailByCards(
+        deck, allCards, honorBonus, eventType, eventId, 
+        config.skillReferenceChooseStrategy, config.keepAfterTrainingState
+    );
     auto score = scoreFunc(deckDetail);
     auto cards = deckDetail.cards;
     // 寻找加分效果最高的卡牌
@@ -87,7 +90,10 @@ RecommendDeck BaseDeckRecommend::getBestPermutation(
     std::sort(deck.begin() + 1, deck.end(), [&](const CardDetail* a, const CardDetail* b) {
         return a->cardId < b->cardId;
     });
-    deckDetail = deckCalculator.getDeckDetailByCards(deck, allCards, honorBonus, eventType, eventId, config.skillReferenceChooseStrategy);
+    deckDetail = deckCalculator.getDeckDetailByCards(
+        deck, allCards, honorBonus, eventType, eventId, 
+        config.skillReferenceChooseStrategy, config.keepAfterTrainingState
+    );
     score = scoreFunc(deckDetail);
     double expectSkillBonus = calcExpectSkillBonus(deckDetail, liveType);
     return RecommendDeck(deckDetail, config.target, score, expectSkillBonus);
@@ -327,6 +333,9 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
 
     // 获取live分数
     for (auto& deck : ans) 
-        deck.liveScore = liveCalculator.getLiveScoreByDeck(deck, musicMeta, liveType);
+        deck.liveScore = liveCalculator.getLiveScoreByDeck(
+            deck, musicMeta, liveType,
+            config.multiTeammateScoreUp, config.multiTeammatePower
+        );
     return ans;
 }

@@ -50,6 +50,14 @@ struct DeckRecommendConfig {
     // bfes花前技能选择策略
     SkillReferenceChooseStrategy skillReferenceChooseStrategy = SkillReferenceChooseStrategy::Average;
 
+    // 是否保持bfes花前花后状态
+    bool keepAfterTrainingState = false;
+
+    // 指定协力队友实效
+    std::optional<int> multiTeammateScoreUp = std::nullopt;
+    // 指定协力队友综合力
+    std::optional<int> multiTeammatePower = std::nullopt;
+
     // 模拟退火参数
     int saRunCount = 20; // 运行次数
     int saSeed = -1; // 随机数种子 -1 代表使用当前时间

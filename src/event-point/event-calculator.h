@@ -61,7 +61,9 @@ public:
         const DeckDetail& deckDetail,
         const MusicMeta& musicMeta,
         int liveType,
-        int eventType
+        int eventType,
+        std::optional<int> multiTeammateScoreUp = std::nullopt,
+        std::optional<int> multiTeammatePower = std::nullopt
     );
 
     /**
@@ -69,7 +71,12 @@ public:
      * @param liveType Live类型
      * @param eventType 活动类型
      */
-    ScoreFunction getEventPointFunction(int liveType, int eventType);
+    ScoreFunction getEventPointFunction(
+        int liveType, 
+        int eventType,
+        std::optional<int> multiTeammateScoreUp = std::nullopt,
+        std::optional<int> multiTeammatePower = std::nullopt
+    );
 
 };
 

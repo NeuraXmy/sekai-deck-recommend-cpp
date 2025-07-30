@@ -68,7 +68,8 @@ public:
     SortedSkillDetails getSortedSkillDetails(
         const DeckDetail &deckDetail, 
         int liveType, 
-        const std::optional<std::vector<DeckCardSkillDetail>>& skillDetails = std::nullopt
+        const std::optional<std::vector<DeckCardSkillDetail>>& skillDetails = std::nullopt,
+        std::optional<int> multiTeammateScoreUp = std::nullopt
     );
 
     /**
@@ -96,7 +97,9 @@ public:
         const MusicMeta &musicMeta, 
         int liveType, 
         const std::optional<std::vector<DeckCardSkillDetail>>& skillDetails = std::nullopt,
-        int multiPowerSum = 0
+        int multiPowerSum = 0,
+        std::optional<int> multiTeammateScoreUp = std::nullopt,
+        std::optional<int> multiTeammatePower = std::nullopt
     );
 
     /**
@@ -124,14 +127,20 @@ public:
     int getLiveScoreByDeck(
         const DeckDetail &deckDetail, 
         const MusicMeta &musicMeta, 
-        int liveType
+        int liveType,
+        std::optional<int> multiTeammateScoreUp = std::nullopt,
+        std::optional<int> multiTeammatePower = std::nullopt
     );
 
     /**
      * 获取计算歌曲分数的函数
      * @param liveType Live类型
      */
-    ScoreFunction getLiveScoreFunction(int liveType);
+    ScoreFunction getLiveScoreFunction(
+        int liveType,
+        std::optional<int> multiTeammateScoreUp = std::nullopt,
+        std::optional<int> multiTeammatePower = std::nullopt
+    );
     
 };
 

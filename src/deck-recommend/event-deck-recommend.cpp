@@ -17,7 +17,12 @@ std::vector<RecommendDeck> EventDeckRecommend::recommendEventDeck(int eventId, i
 
     auto userCards = dataProvider.userData->userCards;
     return baseRecommend.recommendHighScoreDeck(userCards,
-        this->eventCalculator.getEventPointFunction(liveType, eventConfig.eventType), 
+        this->eventCalculator.getEventPointFunction(
+            liveType, 
+            eventConfig.eventType,
+            config.multiTeammateScoreUp,
+            config.multiTeammatePower
+        ), 
         config, 
         liveType, 
         eventConfig

@@ -6,18 +6,38 @@
 
 
 struct SkillDetail {
-    double scoreUp;
-    double lifeRecovery;
-    bool hasScoreUpEnhance;
-    int scoreUpEnhanceUnit;
-    double scoreUpEnhanceValue;
-    // 用于特殊判断的meta数据（例如bfes花前技能等需要打补丁计算的情况）
-    std::map<std::string, std::any> meta; 
+    int skillId = 0;
+    bool isAfterTraining = false; 
+
+    // 单卡固定的信息
+    double scoreUp = 0;
+    double lifeRecovery = 0;
+
+    // 需要根据组合计算的信息
+    bool hasSameUnitScoreUp = false;
+    int sameUnitScoreUpUnit = 0;
+    double sameUnitScoreUp = 0;
+
+    bool hasScoreUpReference = false;
+    double scoreUpReferenceRate = 0;
+    double scoreUpReferenceMax = 0;
+
+    bool hasDifferentUnitCountScoreUp = false;
+    std::map<int, double> differentUnitCountScoreUpMap = {};
 };
 
 struct DeckCardSkillDetail {
-    double scoreUp;
-    double lifeRecovery;
+    int skillId = 0;
+    bool isAfterTraining = false;
+
+    // 固定组合固定的信息
+    double scoreUp = 0;
+    double lifeRecovery = 0;
+
+    // 需要根据组合详情计算的信息
+    bool hasScoreUpReference = false;
+    double scoreUpReferenceRate = 0;
+    double scoreUpReferenceMax = 0;
 };
 
 class CardSkillCalculator {
@@ -45,7 +65,8 @@ public:
      */
     SkillDetail getSkillDetail(
         const UserCard& userCard,
-        const Card& card
+        const Card& card,
+        bool afterTraining
     );
     
     /**
@@ -55,7 +76,8 @@ public:
      */
     Skill getSkill(
         const UserCard& userCard,
-        const Card& card
+        const Card& card,
+        bool afterTraining
     );
 
     /**

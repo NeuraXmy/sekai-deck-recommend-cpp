@@ -148,6 +148,9 @@ class DeckRecommendOptions:
         fixed_cards (List[int]): List of card IDs that always included in the deck, default is None
         target_bonus_list (List[int]): List of target event bonus, required when target is "bonus"
         skill_reference_choose_strategy (str): Strategy for bfes skill reference choose in ["average", "max", "min"], default is "average"
+        keep_after_training_state (bool): Whether to keep after-training state of bfes cards, default is False
+        multi_live_teammate_score_up (int): Score up of single multi-live teammate, default is None (None means copying self score up)
+        multi_live_teammate_power (int): Power of single multi-live teammate, default is None (None means copying self power)
         sa_options (DeckRecommendSaOptions): Simulated annealing options
         ga_options (DeckRecommendGaOptions): Genetic algorithm options
     """
@@ -178,6 +181,9 @@ class DeckRecommendOptions:
     fixed_cards: Optional[List[int]]
     target_bonus_list: Optional[List[int]]
     skill_reference_choose_strategy: Optional[str]
+    keep_after_training_state: Optional[bool]
+    multi_live_teammate_score_up: Optional[int]
+    multi_live_teammate_power: Optional[int]
     sa_options: Optional[DeckRecommendSaOptions]
     ga_options: Optional[DeckRecommendGaOptions]
 

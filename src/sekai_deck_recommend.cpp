@@ -259,6 +259,9 @@ struct PyDeckRecommendOptions {
     std::optional<std::vector<int>> fixed_cards;
     std::optional<std::vector<int>> target_bonus_list;
     std::optional<std::string> skill_reference_choose_strategy;
+    std::optional<bool> keep_after_training_state;
+    std::optional<int> multi_live_teammate_score_up;
+    std::optional<int> multi_live_teammate_power;
     std::optional<PySaOptions> sa_options;
     std::optional<PyGaOptions> ga_options;
 
@@ -307,6 +310,12 @@ struct PyDeckRecommendOptions {
             result["target_bonus_list"] = target_bonus_list.value();
         if (skill_reference_choose_strategy.has_value())
             result["skill_reference_choose_strategy"] = skill_reference_choose_strategy.value();
+        if (keep_after_training_state.has_value())
+            result["keep_after_training_state"] = keep_after_training_state.value();
+        if (multi_live_teammate_score_up.has_value())
+            result["multi_live_teammate_score_up"] = multi_live_teammate_score_up.value();
+        if (multi_live_teammate_power.has_value())
+            result["multi_live_teammate_power"] = multi_live_teammate_power.value();
         if (sa_options.has_value())
             result["sa_options"] = sa_options->to_dict();
         if (ga_options.has_value())
@@ -360,6 +369,12 @@ struct PyDeckRecommendOptions {
             options.target_bonus_list = dict["target_bonus_list"].cast<std::vector<int>>();
         if (dict.contains("skill_reference_choose_strategy"))
             options.skill_reference_choose_strategy = dict["skill_reference_choose_strategy"].cast<std::string>();
+        if (dict.contains("keep_after_training_state"))
+            options.keep_after_training_state = dict["keep_after_training_state"].cast<bool>();
+        if (dict.contains("multi_live_teammate_score_up"))
+            options.multi_live_teammate_score_up = dict["multi_live_teammate_score_up"].cast<int>();
+        if (dict.contains("multi_live_teammate_power"))
+            options.multi_live_teammate_power = dict["multi_live_teammate_power"].cast<int>();
 
         if (dict.contains("sa_options"))
             options.sa_options = PySaOptions::from_dict(dict["sa_options"].cast<py::dict>());
@@ -730,6 +745,29 @@ class SekaiDeckRecommend {
             else if (skill_reference_choose_strategy == "min")
                 config.skillReferenceChooseStrategy = SkillReferenceChooseStrategy::Min;
 
+            // keep after training state
+            if (pyoptions.keep_after_training_state.has_value()) {
+                config.keepAfterTrainingState = pyoptions.keep_after_training_state.value();
+            }
+
+            // multi live teammate score up
+            if (pyoptions.multi_live_teammate_score_up.has_value()) {
+                config.multiTeammateScoreUp = pyoptions.multi_live_teammate_score_up.value();
+                if (options.liveType != mapEnum(EnumMap::liveType, "multi"))
+                    throw std::invalid_argument("multi_live_teammate_score_up is only valid for multi live.");
+                if (config.multiTeammateScoreUp < 0 || config.multiTeammateScoreUp > 1000)
+                    throw std::invalid_argument("Invalid multi live teammate score up: " + std::to_string(config.multiTeammateScoreUp.value()));
+            }
+
+            // multi live teammate power
+            if (pyoptions.multi_live_teammate_power.has_value()) {
+                config.multiTeammatePower = pyoptions.multi_live_teammate_power.value();
+                if (options.liveType != mapEnum(EnumMap::liveType, "multi"))
+                    throw std::invalid_argument("multi_live_teammate_power is only valid for multi live.");
+                if (config.multiTeammatePower < 0 || config.multiTeammatePower > 10000000)
+                    throw std::invalid_argument("Invalid multi live teammate power: " + std::to_string(config.multiTeammatePower.value()));
+            }
+
             // timeout
             if (pyoptions.timeout_ms.has_value()) {
                 config.timeout_ms = pyoptions.timeout_ms.value();
@@ -1077,6 +1115,9 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("fixed_cards", &PyDeckRecommendOptions::fixed_cards)
         .def_readwrite("target_bonus_list", &PyDeckRecommendOptions::target_bonus_list)
         .def_readwrite("skill_reference_choose_strategy", &PyDeckRecommendOptions::skill_reference_choose_strategy)
+        .def_readwrite("keep_after_training_state", &PyDeckRecommendOptions::keep_after_training_state)
+        .def_readwrite("multi_live_teammate_score_up", &PyDeckRecommendOptions::multi_live_teammate_score_up)
+        .def_readwrite("multi_live_teammate_power", &PyDeckRecommendOptions::multi_live_teammate_power)
         .def_readwrite("sa_options", &PyDeckRecommendOptions::sa_options)
         .def_readwrite("ga_options", &PyDeckRecommendOptions::ga_options);
 
