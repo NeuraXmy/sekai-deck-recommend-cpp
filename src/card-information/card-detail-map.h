@@ -63,9 +63,9 @@ public:
         best = this->getValue(unit, unitMember == 5 ? 5 : 1, attrMember);
         if (best.has_value()) return best.value();
 
-        // (vsbf花前) 不同组数只能是1-2
+        // (vsbf花前) 不同组数只能是0-2
         if (unit == diff_unit_enum) {
-            best = this->getValue(diff_unit_enum, std::min(0, unitMember), 1);
+            best = this->getValue(diff_unit_enum, std::min(2, unitMember), 1);
             if (best.has_value()) return best.value();
         }
 

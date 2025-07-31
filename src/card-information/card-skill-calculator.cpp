@@ -53,10 +53,11 @@ CardDetailMap<DeckCardSkillDetail> CardSkillCalculator::getCardSkill(const UserC
 
         // 异团数量加分
         if (detail.hasDifferentUnitCountScoreUp) {
-            // 处理不同异团人数的情况（0的情况已经被固定加成覆盖）
-            for (int i = 1; i <= 2; ++i) {
+            // 处理不同异团人数的情况
+            for (int i = 0; i <= 2; ++i) {
                 auto dd = deckDetail;
-                dd.scoreUp += detail.differentUnitCountScoreUpMap[i];
+                if (i > 0)
+                    dd.scoreUp += detail.differentUnitCountScoreUpMap[i];
                 skillMap.set(diff_unit_enum, i, 1, dd.scoreUp, dd);
             }
         }
