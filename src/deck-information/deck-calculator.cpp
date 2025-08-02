@@ -79,7 +79,6 @@ int DeckCalculator::getHonorBonusPower()
     return bonus;
 }
 
-long long c[5] = {};
 
 DeckDetail DeckCalculator::getDeckDetailByCards(
     const std::vector<const CardDetail*> &cardDetails, 
@@ -108,6 +107,7 @@ DeckDetail DeckCalculator::getDeckDetailByCards(
 
     // 计算当前卡组的综合力，要加上称号的固定加成
     std::vector<DeckCardPowerDetail> cardPower{};
+    cardPower.reserve(card_num);
     for (auto p : cardDetails) {
         auto& cardDetail = *p;
         DeckCardPowerDetail powerDetail = {};
@@ -119,31 +119,18 @@ DeckDetail DeckCalculator::getDeckDetailByCards(
         cardPower.push_back(powerDetail);
     }
 
-    int base = 0;
-    for (const auto &p : cardPower) base += p.base;
-    int areaItemBonus = 0;
-    for (const auto &p : cardPower)  areaItemBonus += p.areaItemBonus;
-    int characterBonus = 0;
-    for (const auto &p : cardPower) characterBonus += p.characterBonus;
-    int fixtureBonus = 0;
-    for (const auto &p : cardPower) fixtureBonus += p.fixtureBonus;
-    int gateBonus = 0;
-    for (const auto &p : cardPower) gateBonus += p.gateBonus;
-    int total = 0;
-    for (const auto &p : cardPower) total += p.total;
-    total += honorBonus;
-    DeckPowerDetail power = { 
-        base, 
-        areaItemBonus, 
-        characterBonus, 
-        honorBonus, 
-        fixtureBonus, 
-        gateBonus, 
-        total 
-    };
+    DeckPowerDetail power{};
+    for (const auto &p : cardPower) power.base += p.base;
+    for (const auto &p : cardPower) power.areaItemBonus += p.areaItemBonus;
+    for (const auto &p : cardPower) power.characterBonus += p.characterBonus;
+    for (const auto &p : cardPower) power.fixtureBonus += p.fixtureBonus;
+    for (const auto &p : cardPower) power.gateBonus += p.gateBonus;
+    for (const auto &p : cardPower) power.total += p.total;
+    power.total += honorBonus;
 
     // 计算当前卡组每个卡牌的花前/花后固定技能效果（进Live之前）
     std::vector<std::array<DeckCardSkillDetail, 2>> prepareSkills{};
+    prepareSkills.reserve(card_num);
     int skill1LargerNum = 0;
     for (int i = 0; i < card_num; ++i) {
         auto& cardDetail = *cardDetails[i];
@@ -175,6 +162,7 @@ DeckDetail DeckCalculator::getDeckDetailByCards(
 
     // 计算当前卡组的实际技能效果（包括选择花前/花后技能），并归纳卡牌在队伍中的详情信息
     std::vector<DeckCardDetail> cards{};
+    cards.reserve(card_num);
     for (int i = 0; i < card_num; ++i) {
         auto& cardDetail = *cardDetails[i];
         auto& s1 = prepareSkills[i][0]; // 花前技能
