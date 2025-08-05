@@ -54,14 +54,7 @@ public:
     inline T get(int unit, int unitMember, int attrMember) const {
         // 所有情况下，属性实际只有混不混的区别
         attrMember = (attrMember == 5 ? 5 : 1);
-
-        // (组分) 受指定组合人数影响的情况 
-        auto best = this->getValue(unit, unitMember, attrMember);  
-        if (best.has_value()) return best.value();
-
-        // (综合力计算) 只考虑混不混组的情况
-        best = this->getValue(unit, unitMember == 5 ? 5 : 1, attrMember);
-        if (best.has_value()) return best.value();
+        std::optional<T> best{};
 
         // (vsbf花前) 不同组数只能是0-2
         if (unit == diff_unit_enum) {
@@ -74,6 +67,14 @@ public:
             best = this->getValue(ref_unit_enum, 1, 1);
             if (best.has_value()) return best.value();
         }
+
+        // (组分) 受指定组合人数影响的情况 
+        best = this->getValue(unit, unitMember, attrMember);  
+        if (best.has_value()) return best.value();
+
+        // (综合力计算) 只考虑混不混组的情况
+        best = this->getValue(unit, unitMember == 5 ? 5 : 1, attrMember);
+        if (best.has_value()) return best.value();
 
         // 技能为固定数值的情况（能够变化但取到保底固定数值的也会落到这里）
         best = this->getValue(any_unit_enum, 1, 1);

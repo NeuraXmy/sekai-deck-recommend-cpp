@@ -33,7 +33,7 @@ void UserData::loadFromJson(const json& j) {
     this->userAreas = loadUserDataJsonList<UserArea>(j, "userAreas");
     this->userCards = loadUserDataJsonList<UserCard>(j, "userCards");
     this->userCharacters = loadUserDataJsonList<UserCharacter>(j, "userCharacters");
-    this->userDecks = loadUserDataJsonList<UserDeck>(j, "userDecks");
+    // this->userDecks = loadUserDataJsonList<UserDeck>(j, "userDecks");
     this->userHonors = loadUserDataJsonList<UserHonor>(j, "userHonors");
 
     this->userMysekaiCanvases = loadUserDataJsonList<UserMysekaiCanvas>(j, "userMysekaiCanvases", false);
