@@ -80,18 +80,24 @@ int DeckCalculator::getHonorBonusPower()
 }
 
 
-DeckDetail DeckCalculator::getDeckDetailByCards(
+std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
     const std::vector<const CardDetail*> &cardDetails, 
     const std::vector<CardDetail> &allCards, 
     int honorBonus, 
     std::optional<int> eventType,
     std::optional<int> eventId,
     SkillReferenceChooseStrategy skillReferenceChooseStrategy,
-    bool keepAfterTrainingState
+    bool keepAfterTrainingState,
+    bool bestSkillAsLeader
 )
 {
-    int card_num = int(cardDetails.size());
+    // 活动加成（与顺序无关，不用考虑deckCardOrder）
+    auto eventBonus = getDeckBonus(cardDetails, eventType);
+    // 支援加成（与顺序无关，不用考虑deckCardOrder）
+    auto supportDeckBonus = this->getSupportDeckBonus(cardDetails, allCards, this->getWorldBloomSupportDeckCount(eventId.value_or(0)));
+
     // 预处理队伍和属性，存储每个队伍或属性出现的次数
+    int card_num = int(cardDetails.size());
     int attr_map[10] = {};
     int unit_map[10] = {};
     for (auto p : cardDetails) {
@@ -118,7 +124,6 @@ DeckDetail DeckCalculator::getDeckDetailByCards(
         }
         cardPower.push_back(powerDetail);
     }
-
     DeckPowerDetail power{};
     for (const auto &p : cardPower) power.base += p.base;
     for (const auto &p : cardPower) power.areaItemBonus += p.areaItemBonus;
@@ -131,7 +136,9 @@ DeckDetail DeckCalculator::getDeckDetailByCards(
     // 计算当前卡组每个卡牌的花前/花后固定技能效果（进Live之前）
     std::vector<std::array<DeckCardSkillDetail, 2>> prepareSkills{};
     prepareSkills.reserve(card_num);
-    int skill1LargerNum = 0;
+    int doubleSkillMask = 0;
+    int needEnumerateStatusMask = 0;  
+
     for (int i = 0; i < card_num; ++i) {
         auto& cardDetail = *cardDetails[i];
         // 获取普通技能效果（所有普通技能&bf花后）
@@ -142,134 +149,152 @@ DeckDetail DeckCalculator::getDeckDetailByCards(
             if (current.scoreUp > s2.scoreUp) s2 = current;
         }
 
-        // 获取bf花前技能效果
+        // 获取双技能的花前技能效果，以及判断是否需要枚举技能状态
         DeckCardSkillDetail s1 = {};
+        bool needEnumerate = false;
+
         // 吸分技能效果(max)
         auto current = cardDetail.skill.get(ref_unit_enum, 1, 1);
         current.scoreUp += current.scoreUpReferenceMax;   
-        if (current.skillId != s2.skillId && current.scoreUp > s1.scoreUp) s1 = current;
+        if (current.skillId != s2.skillId && current.scoreUp > s1.scoreUp) {
+            s1 = current;
+            needEnumerate = true;   // 吸分技能需要枚举
+        }
         // 异组技能效果
         current = cardDetail.skill.get(diff_unit_enum, unit_num - 1, 1);
-        if (current.skillId != s2.skillId && current.scoreUp > s1.scoreUp) s1 = current;
-        // 没有双技能则复制普通技能
-        if (s1.skillId == 0) s1 = s2;
+        if (current.skillId != s2.skillId && current.scoreUp > s1.scoreUp) {
+            s1 = current;
+            needEnumerate = false;  // 异组技能不需要枚举
+        }
 
-        // 统计 花后 < 花前max 的情况数量，后面会用到
-        skill1LargerNum += int(s2.scoreUp < s1.scoreUp);
-        
+        // 记录有双技能的位置
+        if(s1.skillId) doubleSkillMask |= (1 << i); 
+
+        if (keepAfterTrainingState) {
+            // 如果指定不改变状态，则无论如何都不枚举，并且根据用户选择的状态设置
+            if(cardDetail.defaultImage != default_image_special_training_enum)
+                s2 = s1; // 用户设置花前技能
+        } else {
+            if (needEnumerate) {
+                // 需要枚举则记录需要枚举的位置
+                needEnumerateStatusMask |= (1 << i);   
+            } else {
+                // 不需要枚举则花后设置为两个技能的最大 
+                s2 = (s2.scoreUp >= s1.scoreUp ? s2 : s1); 
+            }
+        }
+
         prepareSkills.push_back({ s1, s2 });
     }
 
-    // 计算当前卡组的实际技能效果（包括选择花前/花后技能），并归纳卡牌在队伍中的详情信息
+    // 枚举技能状态，计算当前卡组的实际技能效果（包括选择花前/花后技能），并归纳卡牌在队伍中的详情信息
+    std::vector<DeckDetail> ret{};
     std::vector<DeckCardDetail> cards{};
-    cards.reserve(card_num);
-    for (int i = 0; i < card_num; ++i) {
-        auto& cardDetail = *cardDetails[i];
-        auto& s1 = prepareSkills[i][0]; // 花前技能
-        auto& s2 = prepareSkills[i][1]; // 花后技能
-        DeckCardSkillDetail skill = {}; // 实际技能
-
-        // 计算花前技能的实际值
-        auto s = s1; // 实际花前技能
-        if (s.hasScoreUpReference) {
-            s.scoreUp -= s.scoreUpReferenceMax; // 从max回到还没吸的基础值
-            // 收集其他成员的技能最大值
-            std::vector<double> memberSkillMaxs = {};
-            for (int j = 0; j < card_num; ++j) if (i != j) {
-                double m = 0;
-                if (keepAfterTrainingState) {
-                    // 吸取对应花前花后状态的技能最大值
-                    m = cardDetails[j]->defaultImage == default_image_special_training_enum ? 
-                        prepareSkills[j][1].scoreUp : prepareSkills[j][0].scoreUp;
-                } else {
-                    /**
-                     * 这里能够直接吸取其他成员花前花后最大的一个，而不用考虑其他卡的实际状态
-                     * 因为其他卡如果是下文的 情况1 则取的确实是最大的花后
-                     * 情况2.b 其他卡取的确实是最大的花前
-                     * 情况2.a 不会进入该计算，因为全场只有一张卡为情况2，与i和j都是情况2矛盾
-                     */
-                    m = std::max(prepareSkills[j][0].scoreUp, prepareSkills[j][1].scoreUp);
-                }
-                m = std::min(std::floor(m * s.scoreUpReferenceRate / 100.), s.scoreUpReferenceMax);
-                memberSkillMaxs.push_back(m);
-            }
-            // 不同选择策略
-            double chosenSkillMax = 0;
-            if (skillReferenceChooseStrategy == SkillReferenceChooseStrategy::Max) 
-                chosenSkillMax = *std::max_element(memberSkillMaxs.begin(), memberSkillMaxs.end());
-            else if (skillReferenceChooseStrategy == SkillReferenceChooseStrategy::Min)
-                chosenSkillMax = *std::min_element(memberSkillMaxs.begin(), memberSkillMaxs.end());
-            else if (skillReferenceChooseStrategy == SkillReferenceChooseStrategy::Average)
-                chosenSkillMax = std::accumulate(memberSkillMaxs.begin(), memberSkillMaxs.end(), 0.0) / memberSkillMaxs.size();
-            s.scoreUp += chosenSkillMax; 
+    std::vector<DeckCardSkillDetail> skills{};
+    std::vector<int> order{};
+    std::vector<std::pair<int, int>> scoreUps{};
+    for (int mask = needEnumerateStatusMask; mask >= 0; mask = mask ? (mask - 1) & needEnumerateStatusMask : -1) {
+        // 根据mask枚举花前/花后技能状态，计算实际技能
+        skills.clear();
+        for (int i = 0; i < card_num; ++i) {
+            auto& cardDetail = *cardDetails[i];
+            auto& s1 = prepareSkills[i][0]; // 花前技能
+            auto& s2 = prepareSkills[i][1]; // 花后技能（或者已经被花前技能替换的技能）
+            auto& s = (mask & (1 << i)) ? s1 : s2; // 实际技能，0为花后技能，1为花前技能
+            s.scoreUpToReference = s.scoreUp; // 此时的值为吸分技能能吸取的值
+            skills.push_back(s);
         } 
 
-        if (keepAfterTrainingState) {
-            // 保持用户选择的花前花后状态技能
-            skill = cardDetail.defaultImage == default_image_special_training_enum ? s2 : s;
+        // 计算枚举状态的技能的实际值
+        for (int i = 0; i < card_num; ++i) {
+            auto& s = skills[i];
 
-        } else {
-            // 最优技能选择
-            if(s2.scoreUp >= s1.scoreUp) {
-                /**
-                 * 1. 花后 >= 花前max 的情况（由于花后只有固定值技能，因此这里花后实际=花后max）
-                 * 可以不管其他双技能卡牌的状态直接选花后技能 (因为选更高的总能让其他卡吸取的分更多)
-                 * 此外，如果没有双技能则s1s2是一样的技能，也会直接走这边
-                 */
-                skill = s2;
-            } else {
-                /**
-                 * 2. 花后 < 花前max 的情况
-                 *  a. 如果只有一张卡，直接计算实际值选取最大的一个
-                 *  b. 如果有多张卡，全取花前max即可最优
-                 *     原因: 对于非吸分花前技能(ocbf花前)，花前max就是实际值，max大实际就大
-                 *     对于吸分花前技能(vsbf花前)，多张卡全取花前，则吸取的数值可以让各自全都达到max
-                 */
-                if(skill1LargerNum > 1) {
-                    // 如果有多张卡，全取花前max即可最优   
-                    skill = s;
-                } else {
-                    // 考虑花前可能有随机性，相等优先选择花后
-                    skill = s2.scoreUp >= s.scoreUp ? s2 : s;   
+            // 吸分
+            if (s.hasScoreUpReference) {
+                s.scoreUp -= s.scoreUpReferenceMax; // 从max回到还没吸的基础值
+                // 收集其他成员的技能最大值
+                std::vector<double> memberSkillMaxs = {};
+                for (int j = 0; j < card_num; ++j) if (i != j) {
+                    double m = skills[j].scoreUpToReference;
+                    m = std::min(std::floor(m * s.scoreUpReferenceRate / 100.), s.scoreUpReferenceMax);
+                    memberSkillMaxs.push_back(m);
                 }
+                // 不同选择策略
+                double chosenSkillMax = 0;
+                if (skillReferenceChooseStrategy == SkillReferenceChooseStrategy::Max) 
+                    chosenSkillMax = *std::max_element(memberSkillMaxs.begin(), memberSkillMaxs.end());
+                else if (skillReferenceChooseStrategy == SkillReferenceChooseStrategy::Min)
+                    chosenSkillMax = *std::min_element(memberSkillMaxs.begin(), memberSkillMaxs.end());
+                else if (skillReferenceChooseStrategy == SkillReferenceChooseStrategy::Average)
+                    chosenSkillMax = std::accumulate(memberSkillMaxs.begin(), memberSkillMaxs.end(), 0.0) / memberSkillMaxs.size();
+                s.scoreUp += chosenSkillMax; 
+            } 
+        }
+
+        // 如果需要，调整最大技能的卡为队长
+        order.resize(card_num);
+        std::iota(order.begin(), order.end(), 0);
+        if (bestSkillAsLeader) {
+            int bestIndex = std::max_element(skills.begin(), skills.end(), [](const DeckCardSkillDetail& a, const DeckCardSkillDetail& b) {
+                return a.scoreUp < b.scoreUp;
+            }) - skills.begin();
+            if (bestIndex != 0) std::swap(order[0], order[bestIndex]);
+        }
+
+        // 检查当前队长技能/其他成员技能的总和，如果都劣于或等于之前某组，则不用考虑该组
+        // 分开考虑队长和其他成员，是考虑到协力和单人live技能机制不同
+        double leaderScoreUp = 0, otherScoreUpSum = 0;
+        for (auto i : order) {
+            if (i == 0) leaderScoreUp = skills[i].scoreUp;
+            else otherScoreUpSum += skills[i].scoreUp;
+        }
+        bool skip = false;
+        for (const auto& scoreUp : scoreUps) {
+            if (scoreUp.first >= leaderScoreUp && scoreUp.second >= otherScoreUpSum) {
+                skip = true;
+                break;
             }
         }
+        if (skip) continue;
+        scoreUps.push_back({ leaderScoreUp, otherScoreUpSum });
 
-        // 如果确实是双技能，根据技能调整卡面状态
-        int defaultImage = cardDetail.defaultImage;
-        if (s1.skillId != s2.skillId) {
-            defaultImage = skill.isAfterTraining ? default_image_special_training_enum : default_image_original_enum;
+        // 归纳卡牌在队伍中的详情信息
+        cards.clear();
+        for (auto i : order) {
+            auto& cardDetail = *cardDetails[i];
+
+            // 如果确实是双技能，根据技能调整卡面状态
+            int defaultImage = cardDetail.defaultImage;
+            if (doubleSkillMask & (1 << i)) {
+                defaultImage = skills[i].isAfterTraining ? default_image_special_training_enum : default_image_original_enum;
+            }
+
+            cards.push_back(DeckCardDetail{ 
+                cardDetail.cardId, 
+                cardDetail.level, 
+                cardDetail.skillLevel, 
+                cardDetail.masterRank, 
+                cardPower[i],
+                cardDetail.eventBonus, 
+                skills[i],
+                cardDetail.episode1Read,
+                cardDetail.episode2Read,
+                cardDetail.afterTraining,
+                defaultImage,
+                cardDetail.hasCanvasBonus,
+            });
         }
 
-        cards.push_back(DeckCardDetail{ 
-            cardDetail.cardId, 
-            cardDetail.level, 
-            cardDetail.skillLevel, 
-            cardDetail.masterRank, 
-            cardPower.at(i),
-            cardDetail.eventBonus, 
-            skill,
-            cardDetail.episode1Read,
-            cardDetail.episode2Read,
-            cardDetail.afterTraining,
-            defaultImage,
-            cardDetail.hasCanvasBonus,
+        ret.push_back(DeckDetail{ 
+            power, 
+            eventBonus, 
+            supportDeckBonus.bonus,
+            std::nullopt, // supportDeckBonus.cards
+            cards 
         });
     }
 
-    // 计算卡组活动加成（与顺序无关，不用考虑deckCardOrder）
-    auto eventBonus = getDeckBonus(cardDetails, eventType);
-
-    // （与顺序无关，不用考虑deckCardOrder）
-    auto supportDeckBonus = this->getSupportDeckBonus(cardDetails, allCards, this->getWorldBloomSupportDeckCount(eventId.value_or(0)));
-
-    return DeckDetail{ 
-        power, 
-        eventBonus, 
-        supportDeckBonus.bonus,
-        std::nullopt, // supportDeckBonus.cards, // for debug
-        cards 
-    };
+    return ret;
 }
 
 

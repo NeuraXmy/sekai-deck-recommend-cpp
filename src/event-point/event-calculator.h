@@ -51,13 +51,13 @@ public:
     );
 
     /**
-     * 获得卡组活动点数
+     * 获得卡组分数和活动点数
      * @param deckDetail 卡组
      * @param musicMeta 歌曲信息
      * @param liveType Live类型
      * @param eventType 活动类型
      */
-    int getDeckEventPoint(
+    Score getDeckScoreAndEventPoint(
         const DeckDetail& deckDetail,
         const MusicMeta& musicMeta,
         int liveType,

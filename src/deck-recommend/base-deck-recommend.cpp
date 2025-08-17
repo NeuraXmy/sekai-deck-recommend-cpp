@@ -17,7 +17,7 @@ static int world_bloom_type_enum = mapEnum(EnumMap::eventType, "world_bloom");
 
 
 // 计算技能实效
-double calcExpectSkillBonus(const DeckDetail& deckDetail, int liveType) {
+double calcMultiLiveScoreUp(const DeckDetail& deckDetail, int liveType) {
     double ret = 0;
     auto& cards = deckDetail.cards;
     if (liveType == multi_live_type_enum || liveType == cheerful_live_type_enum) {
@@ -26,7 +26,8 @@ double calcExpectSkillBonus(const DeckDetail& deckDetail, int liveType) {
         for (int i = 1; i < int(cards.size()); ++i) 
             ret += cards[i].skill.scoreUp * 0.2;
     } else {
-        // 单人Live实效
+        // 单人Live实效（没有实际作用）
+        ret += cards[0].skill.scoreUp;
         for (int i = 0; i < int(cards.size()); ++i) 
             ret += cards[i].skill.scoreUp;
     }
@@ -56,7 +57,7 @@ RecommendDeck BaseDeckRecommend::getBestPermutation(
     DeckCalculator& deckCalculator,
     const std::vector<const CardDetail*> &deckCards,
     const std::vector<CardDetail> &allCards,
-    const std::function<int(const DeckDetail &)> &scoreFunc,
+    const std::function<Score(const DeckDetail &)> &scoreFunc,
     int honorBonus,
     std::optional<int> eventType,
     std::optional<int> eventId,
@@ -68,35 +69,23 @@ RecommendDeck BaseDeckRecommend::getBestPermutation(
     std::sort(deck.begin() + 1, deck.end(), [&](const CardDetail* a, const CardDetail* b) {
         return a->cardId < b->cardId;
     });
-    // 计算当前卡组的分数
-    auto deckDetail = deckCalculator.getDeckDetailByCards(
+    // 获取当前卡组的详情
+    auto deckDetails = deckCalculator.getDeckDetailByCards(
         deck, allCards, honorBonus, eventType, eventId, 
-        config.skillReferenceChooseStrategy, config.keepAfterTrainingState
+        config.skillReferenceChooseStrategy, config.keepAfterTrainingState, true
     );
-    auto score = scoreFunc(deckDetail);
-    auto cards = deckDetail.cards;
-    // 寻找加分效果最高的卡牌
-    int bestScoreIndex = std::max_element(cards.begin(), cards.end(), [](const DeckCardDetail& a, const DeckCardDetail& b) {
-        return std::tuple(a.skill.scoreUp, a.cardId) < std::tuple(b.skill.scoreUp, b.cardId);
-    }) - cards.begin();
-    // 如果现在C位已经对了（加分技能最高的卡牌在C位）
-    if (bestScoreIndex == 0) {
-        double expectSkillBonus = calcExpectSkillBonus(deckDetail, liveType);
-        return RecommendDeck(deckDetail, config.target, score, expectSkillBonus);
+    // 获取最高分的卡组
+    double maxValue{};
+    RecommendDeck bestDeck{};
+    for (auto& deckDetail : deckDetails) {
+        auto score = scoreFunc(deckDetail);
+        double value = score.score + score.liveScore * 1e-7;
+        if (value > maxValue) {
+            maxValue = value;
+            bestDeck = RecommendDeck(deckDetail, config.target, score, calcMultiLiveScoreUp(deckDetail, liveType));
+        }
     }
-    // 不然就重新算调整过C位后的分数
-    std::swap(deck[0], deck[bestScoreIndex]);
-    // 重新排序
-    std::sort(deck.begin() + 1, deck.end(), [&](const CardDetail* a, const CardDetail* b) {
-        return a->cardId < b->cardId;
-    });
-    deckDetail = deckCalculator.getDeckDetailByCards(
-        deck, allCards, honorBonus, eventType, eventId, 
-        config.skillReferenceChooseStrategy, config.keepAfterTrainingState
-    );
-    score = scoreFunc(deckDetail);
-    double expectSkillBonus = calcExpectSkillBonus(deckDetail, liveType);
-    return RecommendDeck(deckDetail, config.target, score, expectSkillBonus);
+    return bestDeck;
 }
 
 
@@ -331,11 +320,5 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
             break;
     }
 
-    // 获取live分数
-    for (auto& deck : ans) 
-        deck.liveScore = liveCalculator.getLiveScoreByDeck(
-            deck, musicMeta, liveType,
-            config.multiTeammateScoreUp, config.multiTeammatePower
-        );
     return ans;
 }

@@ -7,12 +7,20 @@ int done_enum = mapEnum(EnumMap::specialTrainingStatus, "done");
 int already_read_enum = mapEnum(EnumMap::scenarioStatus, "already_read");
 int any_attr_enum = mapEnum(EnumMap::attr, "any");
 
-CardDetailMap<DeckCardPowerDetail> CardPowerCalculator::getCardPower(const UserCard &userCard, const Card &card, const std::vector<int> &cardUnits, const std::vector<AreaItemLevel> &userAreaItemLevels, bool hasCanvasBonus, const std::vector<MysekaiGateBonus> &userGateBonuses)
+CardDetailMap<DeckCardPowerDetail> CardPowerCalculator::getCardPower(
+    const UserCard &userCard, 
+    const Card &card, 
+    const std::vector<int> &cardUnits, 
+    const std::vector<AreaItemLevel> &userAreaItemLevels, 
+    bool hasCanvasBonus, 
+    const std::vector<MysekaiGateBonus> &userGateBonuses,
+    std::optional<int> fixtureBonusLimit
+)
 {
     auto ret = CardDetailMap<DeckCardPowerDetail>();
     BasePower basePower = getBasePower(userCard, card, hasCanvasBonus);
     int characterBonus = getCharacterBonusPower(basePower, card.characterId);
-    int fixtureBonus = getFixtureBonusPower(basePower, card.characterId);
+    int fixtureBonus = getFixtureBonusPower(basePower, card.characterId, fixtureBonusLimit);
     int gateBonus = getGateBonusPower(basePower, userGateBonuses, cardUnits);
     for (auto unit : cardUnits) {
         // 同组合、同属性
@@ -157,7 +165,7 @@ int CardPowerCalculator::getCharacterBonusPower(const BasePower &basePower, int 
     return total;
 }
 
-int CardPowerCalculator::getFixtureBonusPower(const BasePower &basePower, int characterId)
+int CardPowerCalculator::getFixtureBonusPower(const BasePower &basePower, int characterId, std::optional<int> limit)
 {
     auto& userFixtureBonuses = dataProvider.userData->userMysekaiFixtureGameCharacterPerformanceBonuses;
     if (userFixtureBonuses.empty()) {
@@ -168,8 +176,11 @@ int CardPowerCalculator::getFixtureBonusPower(const BasePower &basePower, int ch
         auto& fixtureBonus = findOrThrow(userFixtureBonuses, [&](auto& it) {
             return it.gameCharacterId == characterId;
         });
+        double rate = fixtureBonus.totalBonusRate;
+        if (limit.has_value()) 
+            rate = std::min(rate, double(limit.value()));
         // 按各个综合分别计算加成，其中totalBonusRate单位是0.1%
-        int total = sumPower(basePower) * fixtureBonus.totalBonusRate * 0.001;
+        int total = sumPower(basePower) * rate * 0.001;
         return std::floor(total);
     } catch (std::exception &e) {
         return 0;

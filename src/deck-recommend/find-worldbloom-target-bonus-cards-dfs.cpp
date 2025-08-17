@@ -154,7 +154,7 @@ void BaseDeckRecommend::findWorldBloomTargetBonusCardsDFS(
     int liveType, 
     const DeckRecommendConfig &config, 
     const std::vector<CardDetail> &cardDetails, 
-    const std::function<int(const DeckDetail &)> &scoreFunc, 
+    const std::function<Score(const DeckDetail &)> &scoreFunc, 
     RecommendCalcInfo &dfsInfo, 
     int limit, 
     int member, 

@@ -52,7 +52,8 @@ public:
         const std::vector<int>& cardUnits,
         const std::vector<AreaItemLevel>& userAreaItemLevels,
         bool hasCanvasBonus,
-        const std::vector<MysekaiGateBonus>& userGateBonuses
+        const std::vector<MysekaiGateBonus>& userGateBonuses,
+        std::optional<int> fixtureBonusLimit = std::nullopt
     );
     
     /**
@@ -129,7 +130,8 @@ public:
      */
     int getFixtureBonusPower(
         const BasePower& basePower,
-        int characterId
+        int characterId,
+        std::optional<int> limit = std::nullopt
     );
 
     /**

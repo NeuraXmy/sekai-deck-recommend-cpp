@@ -64,15 +64,18 @@ public:
      * @param eventType 活动类型（用于算加成）
      * @param eventId 活动ID（用于算加成）
      * @param skillReferenceChooseStrategy bfes花前技能参考选择策略
+     * @param keepAfterTrainingState 双技能卡是否保留设置状态
+     * @param bestSkillAsLeader 是否自动将技能最大值作为队长
      */
-    DeckDetail getDeckDetailByCards(
+    std::vector<DeckDetail> getDeckDetailByCards(
         const std::vector<const CardDetail*>& cardDetails,
         const std::vector<CardDetail>& allCards,
         int honorBonus = 0,
         std::optional<int> eventType = std::nullopt,
         std::optional<int> eventId = std::nullopt,
         SkillReferenceChooseStrategy skillReferenceChooseStrategy = SkillReferenceChooseStrategy::Average,
-        bool keepAfterTrainingState = false
+        bool keepAfterTrainingState = false,
+        bool bestSkillAsLeader = true
     );
 };
    

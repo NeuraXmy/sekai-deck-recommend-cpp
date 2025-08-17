@@ -29,11 +29,15 @@ std::optional<CardDetail> CardCalculator::getCardDetail(
     // 判断强制使用画布
     hasCanvasBonus |= cfg.canvas;
 
+    // wl终章
+    bool isFinalChapter = false;
+
     auto userCard0 = this->cardService.applyCardConfig(userCard, card, cfg);
     auto units = this->cardService.getCardUnits(card);
     auto skill = this->skillCalculator.getCardSkill(userCard0, card);
     auto power = this->powerCalculator.getCardPower(
-        userCard0, card, units, userAreaItemLevels, hasCanvasBonus, userGateBonuses
+        userCard0, card, units, userAreaItemLevels, hasCanvasBonus, userGateBonuses,
+        isFinalChapter ? std::nullopt : std::optional<int>(20)  // 终章限制玩偶加成2%
     );
     std::optional<double> eventBonus = std::nullopt;
     if (eventConfig && eventConfig->eventId != 0) {

@@ -55,7 +55,7 @@ int EventCalculator::getEventPoint(int liveType, int eventType, int selfScore, d
     }
 }
 
-int EventCalculator::getDeckEventPoint(
+Score EventCalculator::getDeckScoreAndEventPoint(
     const DeckDetail &deckDetail, 
     const MusicMeta &musicMeta, 
     int liveType, 
@@ -72,12 +72,17 @@ int EventCalculator::getDeckEventPoint(
     if (eventType == world_bloom_enum && !supportDeckBonus.has_value()) 
         throw std::runtime_error("Support deck bonus is undefined");
 
-    auto score = this->liveCalculator.getLiveScoreByDeck(
+    auto liveScore = this->liveCalculator.getLiveScoreByDeck(
         deckDetail, musicMeta, liveType, 
         multiTeammateScoreUp, multiTeammatePower
     );
-    return this->getEventPoint(liveType, eventType, score, musicMeta.event_rate,
+    auto eventPoint = this->getEventPoint(liveType, eventType, liveScore, musicMeta.event_rate,
         deckBonus.value_or(0) + supportDeckBonus.value_or(0));
+    
+    return Score{
+        .score=eventPoint,
+        .liveScore=liveScore,
+    };
 }
 
 ScoreFunction EventCalculator::getEventPointFunction(
@@ -89,7 +94,7 @@ ScoreFunction EventCalculator::getEventPointFunction(
 {
     return [this, liveType, eventType, multiTeammateScoreUp, multiTeammatePower]
         (const MusicMeta &musicMeta, const DeckDetail &deckDetail) {
-        return this->getDeckEventPoint(
+        return this->getDeckScoreAndEventPoint(
             deckDetail, musicMeta, liveType, eventType,
             multiTeammateScoreUp, multiTeammatePower
         );

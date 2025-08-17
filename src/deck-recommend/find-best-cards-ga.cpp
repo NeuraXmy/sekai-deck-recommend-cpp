@@ -71,7 +71,7 @@ void BaseDeckRecommend::findBestCardsGA(
     Rng& rng,
     const std::vector<CardDetail> &cardDetails,     // 所有参与组队的卡牌
     const std::vector<CardDetail> &allCards,        // 全部卡牌（用于计算支援卡组加成）
-    const std::function<int(const DeckDetail &)> &scoreFunc,    
+    const std::function<Score(const DeckDetail &)> &scoreFunc,    
     RecommendCalcInfo& gaInfo,
     int limit, 
     bool isChallengeLive, 

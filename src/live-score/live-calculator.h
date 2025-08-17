@@ -4,7 +4,11 @@
 #include "data-provider/data-provider.h"
 #include "deck-information/deck-calculator.h"
 
-using ScoreFunction = std::function<int(const MusicMeta&, const DeckDetail&)>;
+struct Score { 
+    int score = 0;
+    int liveScore = 0;
+};
+using ScoreFunction = std::function<Score(const MusicMeta&, const DeckDetail&)>;
 
 struct SortedSkillDetails {
     std::vector<DeckCardSkillDetail> details;

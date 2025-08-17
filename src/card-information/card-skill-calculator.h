@@ -38,6 +38,7 @@ struct DeckCardSkillDetail {
     bool hasScoreUpReference = false;
     double scoreUpReferenceRate = 0;
     double scoreUpReferenceMax = 0;
+    double scoreUpToReference = 0;
 };
 
 class CardSkillCalculator {

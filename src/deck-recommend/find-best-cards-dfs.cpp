@@ -17,7 +17,7 @@ void BaseDeckRecommend::findBestCardsDFS(
     const DeckRecommendConfig& cfg,
     const std::vector<CardDetail> &cardDetails, 
     const std::vector<CardDetail> &allCards, 
-    const std::function<int(const DeckDetail &)> &scoreFunc, 
+    const std::function<Score(const DeckDetail &)> &scoreFunc, 
     RecommendCalcInfo& dfsInfo,
     int limit, 
     bool isChallengeLive, 

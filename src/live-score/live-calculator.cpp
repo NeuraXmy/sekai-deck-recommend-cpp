@@ -194,6 +194,10 @@ ScoreFunction LiveCalculator::getLiveScoreFunction(
 )
 {
     return [this, liveType, multiTeammateScoreUp, multiTeammatePower](const MusicMeta &musicMeta, const DeckDetail &deckDetail) {
-        return this->getLiveScoreByDeck(deckDetail, musicMeta, liveType, multiTeammateScoreUp, multiTeammatePower);
+        int liveScore = this->getLiveScoreByDeck(deckDetail, musicMeta, liveType, multiTeammateScoreUp, multiTeammatePower);
+        return Score{ 
+            .score=liveScore, 
+            .liveScore=liveScore
+        };
     };
 }

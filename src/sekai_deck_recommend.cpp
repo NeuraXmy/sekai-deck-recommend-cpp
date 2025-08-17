@@ -452,7 +452,7 @@ struct PyRecommendDeck {
     int gate_bonus_power;
     double event_bonus_rate;
     double support_deck_bonus_rate;
-    double expect_skill_score_up;
+    double multi_live_score_up;
     std::vector<PyRecommendCard> cards;
 
     py::dict to_dict() const {
@@ -468,7 +468,7 @@ struct PyRecommendDeck {
         result["gate_bonus_power"] = gate_bonus_power;
         result["event_bonus_rate"] = event_bonus_rate;
         result["support_deck_bonus_rate"] = support_deck_bonus_rate;
-        result["expect_skill_score_up"] = expect_skill_score_up;
+        result["multi_live_score_up"] = multi_live_score_up;
 
         py::list card_list;
         for (const auto& card : cards) {
@@ -491,7 +491,7 @@ struct PyRecommendDeck {
         deck.gate_bonus_power = dict["gate_bonus_power"].cast<int>();
         deck.event_bonus_rate = dict["event_bonus_rate"].cast<double>();
         deck.support_deck_bonus_rate = dict["support_deck_bonus_rate"].cast<double>();
-        deck.expect_skill_score_up = dict["expect_skill_score_up"].cast<double>();
+        deck.multi_live_score_up = dict["multi_live_score_up"].cast<double>();
 
         auto card_list = dict["cards"].cast<py::list>();
         for (const auto& item : card_list) {
@@ -932,7 +932,7 @@ class SekaiDeckRecommend {
             py_deck.gate_bonus_power = deck.power.gateBonus;
             py_deck.event_bonus_rate = deck.eventBonus.value_or(0);
             py_deck.support_deck_bonus_rate = deck.supportDeckBonus.value_or(0);
-            py_deck.expect_skill_score_up = deck.expectSkillBonus;
+            py_deck.multi_live_score_up = deck.multiLiveScoreUp;
 
             for (const auto& card : deck.cards) {
                 auto py_card = PyRecommendCard();
@@ -1157,7 +1157,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("gate_bonus_power", &PyRecommendDeck::gate_bonus_power)
         .def_readwrite("event_bonus_rate", &PyRecommendDeck::event_bonus_rate)
         .def_readwrite("support_deck_bonus_rate", &PyRecommendDeck::support_deck_bonus_rate)
-        .def_readwrite("expect_skill_score_up", &PyRecommendDeck::expect_skill_score_up)
+        .def_readwrite("multi_live_score_up", &PyRecommendDeck::multi_live_score_up)
         .def_readwrite("cards", &PyRecommendDeck::cards);
     
     py::class_<PyDeckRecommendResult>(m, "DeckRecommendResult")

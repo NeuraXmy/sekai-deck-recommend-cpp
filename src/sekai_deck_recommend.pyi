@@ -250,7 +250,7 @@ class RecommendDeck:
         gate_bonus_power (int): Gate bonus power of the deck
         event_bonus_rate (float): Event bonus rate of the deck
         support_deck_bonus_rate (float): Support deck bonus rate of the deck
-        expect_skill_score_up (float): Expected skill score up of the deck
+        multi_live_score_up (float): final score up of the deck in multi live
         cards (List[RecommendCard]): List of recommended cards in the deck
     """
     score: int
@@ -264,7 +264,7 @@ class RecommendDeck:
     gate_bonus_power: int
     event_bonus_rate: float
     support_deck_bonus_rate: float
-    expect_skill_score_up: float
+    multi_live_score_up: float
     cards: List[RecommendCard]
 
     def to_dict(self) -> Dict[str, Any]:

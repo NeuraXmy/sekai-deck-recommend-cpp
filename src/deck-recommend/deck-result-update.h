@@ -2,6 +2,7 @@
 #define DECK_RESULT_UPDATE_H
 
 #include "deck-information/deck-calculator.h"
+#include "live-score/live-calculator.h"
 #include <set>
 #include <queue>
 
@@ -12,39 +13,32 @@ enum class RecommendTarget {
     Bonus,
 };
 
-constexpr double SCORE_MAX = 3000000;
+constexpr double SCORE_MAX = 10000000;
 constexpr double POWER_MAX = 500000;
 constexpr double SKILL_MAX = 500 * 10;  // 实效可能有一位小数点
 
 struct RecommendDeck : DeckDetail {
     // 实际分数或pt
     int score;
-    // 期望技能加成（实效）
-    double expectSkillBonus;
+    // 游玩歌曲分数
+    int liveScore;
+    // 多人技能加成（实效）
+    double multiLiveScoreUp;
     // 优化目标值（不一定是分数）
     double targetValue;
 
-    // 游玩歌曲分数
-    int liveScore = 0;
-
     RecommendDeck() = default;
 
-    RecommendDeck(const DeckDetail &deckDetail, RecommendTarget target, int score, double expectSkillBonus)
-        : DeckDetail(deckDetail), score(score), expectSkillBonus(expectSkillBonus) {
+    RecommendDeck(const DeckDetail &deckDetail, RecommendTarget target, Score s, double multiLiveScoreUp)
+        : DeckDetail(deckDetail), score(s.score), liveScore(s.liveScore), multiLiveScoreUp(multiLiveScoreUp) {
             int power = deckDetail.power.total;
             // 根据不同优化目标计算目标值
             if (target == RecommendTarget::Power) {
-                targetValue = power
-                    + double(score) / SCORE_MAX
-                    + double(expectSkillBonus) / (SCORE_MAX * SKILL_MAX);
+                targetValue = power + double(score) / SCORE_MAX;
             } else if (target == RecommendTarget::Skill) {
-                targetValue = expectSkillBonus
-                    + double(score) / SCORE_MAX
-                    + double(power) / (SCORE_MAX * POWER_MAX);
+                targetValue = multiLiveScoreUp + double(score) / SCORE_MAX;
             } else {
-                targetValue = score
-                    + double(power) / POWER_MAX 
-                    + double(expectSkillBonus) / (POWER_MAX * SKILL_MAX);
+                targetValue = score + double(liveScore) / SCORE_MAX;
             }
         }
 
