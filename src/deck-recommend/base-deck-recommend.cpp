@@ -64,14 +64,9 @@ RecommendDeck BaseDeckRecommend::getBestPermutation(
     int liveType,
     const DeckRecommendConfig& config
 ) const {
-    auto deck = deckCards;
-    // 后几位按照cardId从小到大排序
-    std::sort(deck.begin() + 1, deck.end(), [&](const CardDetail* a, const CardDetail* b) {
-        return a->cardId < b->cardId;
-    });
     // 获取当前卡组的详情
     auto deckDetails = deckCalculator.getDeckDetailByCards(
-        deck, allCards, honorBonus, eventType, eventId, 
+        deckCards, allCards, honorBonus, eventType, eventId, 
         config.skillReferenceChooseStrategy, config.keepAfterTrainingState, true
     );
     // 获取最高分的卡组

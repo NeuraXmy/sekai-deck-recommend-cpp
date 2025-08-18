@@ -235,9 +235,9 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
         order.resize(card_num);
         std::iota(order.begin(), order.end(), 0);
         if (bestSkillAsLeader) {
-            int bestIndex = std::max_element(skills.begin(), skills.end(), [](const DeckCardSkillDetail& a, const DeckCardSkillDetail& b) {
-                return a.scoreUp < b.scoreUp;
-            }) - skills.begin();
+            int bestIndex = std::max_element(order.begin(), order.end(), [&skills, &cardDetails](int x, int y) {
+                return std::tuple(skills[x].scoreUp, -cardDetails[x]->cardId) < std::tuple(skills[y].scoreUp, -cardDetails[y]->cardId);
+            }) - order.begin();
             if (bestIndex != 0) std::swap(order[0], order[bestIndex]);
         }
 
