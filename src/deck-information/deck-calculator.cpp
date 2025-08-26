@@ -231,14 +231,19 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
             } 
         }
 
-        // 如果需要，调整最大技能的卡为队长
         order.resize(card_num);
         std::iota(order.begin(), order.end(), 0);
         if (bestSkillAsLeader) {
+            // 如果需要，调整最大技能的卡为队长
             int bestIndex = std::max_element(order.begin(), order.end(), [&skills, &cardDetails](int x, int y) {
                 return std::tuple(skills[x].scoreUp, -cardDetails[x]->cardId) < std::tuple(skills[y].scoreUp, -cardDetails[y]->cardId);
             }) - order.begin();
             if (bestIndex != 0) std::swap(order[0], order[bestIndex]);
+        } else {
+            // 否则只需要队长之后的按卡牌ID排序
+            std::sort(order.begin() + 1, order.end(), [&cardDetails](int x, int y) {
+                return cardDetails[x]->cardId < cardDetails[y]->cardId;
+            });
         }
 
         // 检查当前队长技能/其他成员技能的总和，如果都劣于或等于之前某组，则不用考虑该组

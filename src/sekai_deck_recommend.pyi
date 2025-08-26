@@ -146,6 +146,7 @@ class DeckRecommendOptions:
         single_card_configs (List[DeckRecommendSingleCardConfig]): Card config for single cards that will override rarity configs.
         filter_other_unit (bool): Whether to filter out other units for banner event, default is False
         fixed_cards (List[int]): List of card IDs that always included in the deck, default is None
+        fixed_characters (List[int]): List of character IDs that always included in the deck (first is always leader), cannot used in challenge live, cannot used with fixed_cards together, default is None
         target_bonus_list (List[int]): List of target event bonus, required when target is "bonus"
         skill_reference_choose_strategy (str): Strategy for bfes skill reference choose in ["average", "max", "min"], default is "average"
         keep_after_training_state (bool): Whether to keep after-training state of bfes cards, default is False
@@ -179,6 +180,7 @@ class DeckRecommendOptions:
     single_card_configs: Optional[List[DeckRecommendSingleCardConfig]]
     filter_other_unit: Optional[bool]
     fixed_cards: Optional[List[int]]
+    fixed_characters: Optional[List[int]]
     target_bonus_list: Optional[List[int]]
     skill_reference_choose_strategy: Optional[str]
     keep_after_training_state: Optional[bool]

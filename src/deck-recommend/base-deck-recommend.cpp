@@ -64,10 +64,15 @@ RecommendDeck BaseDeckRecommend::getBestPermutation(
     int liveType,
     const DeckRecommendConfig& config
 ) const {
+    bool bestSkillAsLeader = true;
+    // 存在固定队长角色则不允许把技能最强的换到队长
+    if (config.fixedCharacters.size()) {
+        bestSkillAsLeader = false;
+    }
     // 获取当前卡组的详情
     auto deckDetails = deckCalculator.getDeckDetailByCards(
         deckCards, allCards, honorBonus, eventType, eventId, 
-        config.skillReferenceChooseStrategy, config.keepAfterTrainingState, true
+        config.skillReferenceChooseStrategy, config.keepAfterTrainingState, bestSkillAsLeader
     );
     // 获取最高分的卡组
     double maxValue{};
@@ -91,6 +96,13 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
     int liveType,
     const EventConfig &eventConfig)
 {
+    // 暂不支持同时指定固定卡牌和固定角色
+    if (config.fixedCards.size() && config.fixedCharacters.size())
+        throw std::runtime_error("Cannot set both fixed cards and fixed characters");
+    // 挑战live不允许指定固定角色
+    if (liveType == challenge_live_type_enum && config.fixedCharacters.size())
+        throw std::runtime_error("Cannot set fixed characters in challenge live");
+
     auto musicMeta = this->liveCalculator.getMusicMeta(config.musicId, config.musicDiff);
 
     auto areaItemLevels = areaItemService.getAreaItemLevels();

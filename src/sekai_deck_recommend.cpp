@@ -257,6 +257,7 @@ struct PyDeckRecommendOptions {
     std::optional<std::vector<PySingleCardConfig>> single_card_configs;
     std::optional<bool> filter_other_unit;
     std::optional<std::vector<int>> fixed_cards;
+    std::optional<std::vector<int>> fixed_characters;
     std::optional<std::vector<int>> target_bonus_list;
     std::optional<std::string> skill_reference_choose_strategy;
     std::optional<bool> keep_after_training_state;
@@ -306,6 +307,8 @@ struct PyDeckRecommendOptions {
             result["filter_other_unit"] = filter_other_unit.value();
         if (fixed_cards.has_value())
             result["fixed_cards"] = fixed_cards.value();
+        if (fixed_characters.has_value())
+            result["fixed_characters"] = fixed_characters.value();
         if (target_bonus_list.has_value())
             result["target_bonus_list"] = target_bonus_list.value();
         if (skill_reference_choose_strategy.has_value())
@@ -365,6 +368,8 @@ struct PyDeckRecommendOptions {
             options.filter_other_unit = dict["filter_other_unit"].cast<bool>();
         if (dict.contains("fixed_cards"))
             options.fixed_cards = dict["fixed_cards"].cast<std::vector<int>>();
+        if (dict.contains("fixed_characters"))
+            options.fixed_characters = dict["fixed_characters"].cast<std::vector<int>>();
         if (dict.contains("target_bonus_list"))
             options.target_bonus_list = dict["target_bonus_list"].cast<std::vector<int>>();
         if (dict.contains("skill_reference_choose_strategy"))
@@ -732,6 +737,22 @@ class SekaiDeckRecommend {
                     }, "Invalid fixed card ID: " + std::to_string(card_id));
                 }
                 config.fixedCards = fixed_cards;
+            }
+
+            // fixed characters
+            if (pyoptions.fixed_characters.has_value()) {
+                auto fixed_characters = pyoptions.fixed_characters.value();
+                if (int(fixed_characters.size()) > config.member)
+                    throw std::invalid_argument("Fixed characters size exceeds member count.");
+                if (config.fixedCards.size()) 
+                    throw std::invalid_argument("fixed_characters and fixed_cards cannot be used together.");
+                if (pyoptions.live_type == "challenge")
+                    throw std::invalid_argument("fixed_characters is not valid for challenge live.");
+                for (const auto& character_id : fixed_characters) {
+                    if (character_id < 1 || character_id > 26)
+                        throw std::invalid_argument("Invalid fixed character ID: " + std::to_string(character_id));
+                }
+                config.fixedCharacters = fixed_characters;
             }
 
             // skill reference choose strategy
@@ -1113,6 +1134,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("single_card_configs", &PyDeckRecommendOptions::single_card_configs)
         .def_readwrite("filter_other_unit", &PyDeckRecommendOptions::filter_other_unit)
         .def_readwrite("fixed_cards", &PyDeckRecommendOptions::fixed_cards)
+        .def_readwrite("fixed_characters", &PyDeckRecommendOptions::fixed_characters)
         .def_readwrite("target_bonus_list", &PyDeckRecommendOptions::target_bonus_list)
         .def_readwrite("skill_reference_choose_strategy", &PyDeckRecommendOptions::skill_reference_choose_strategy)
         .def_readwrite("keep_after_training_state", &PyDeckRecommendOptions::keep_after_training_state)

@@ -47,6 +47,9 @@ struct DeckRecommendConfig {
     // 指定一定要包含的卡牌
     std::vector<int> fixedCards = {}; 
 
+    // 指定从队长位开始的卡牌所属角色（队长后的顺序无所谓）
+    std::vector<int> fixedCharacters = {};
+
     // bfes花前技能选择策略
     SkillReferenceChooseStrategy skillReferenceChooseStrategy = SkillReferenceChooseStrategy::Average;
 

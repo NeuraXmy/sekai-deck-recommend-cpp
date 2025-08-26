@@ -1,5 +1,6 @@
 #include "deck-recommend/base-deck-recommend.h"
 #include <any>
+#include <algorithm>
 
 
 struct Individual {
@@ -124,10 +125,11 @@ void BaseDeckRecommend::findBestCardsGA(
         individual.deckHash = deckHash;
     };
 
-    auto cardWeights = calcRandomSelectWeights(cardDetails, cfg.target);
+    // 计算用于随机选择的卡牌权重
+    constexpr int MAX_CID = 27;
+    auto allCardWeights = calcRandomSelectWeights(cardDetails, cfg.target); 
 
     // 根据卡的角色map参与组队的卡牌
-    constexpr int MAX_CID = 27;
     std::vector<CardDetail> charaCardDetails[MAX_CID] = {};
     std::vector<double> charaCardWeights[MAX_CID] = {};
     for (const auto& card : cardDetails) 
@@ -137,30 +139,37 @@ void BaseDeckRecommend::findBestCardsGA(
 
     // 生成初始种群
     std::vector<Individual> population;
-    for (int i = 0; i < cfg.gaPopSize; ++i) {
+    while((int)population.size() < cfg.gaPopSize) {
         Individual individual{};
         // 随机生成卡组
         if (!isChallengeLive) {
-            // 活动live先随机选择member-fixed个不同角色（不能是和fixedCards相同的角色）
-            std::vector<int> charas{};
+            // 活动live先随机选择member-fixed个不同角色
+            std::vector<int> valid_charas{};
             for (int j = 0; j < MAX_CID; ++j)  {
+                // 跳过没有卡的角色
                 if (charaCardDetails[j].empty()) continue;
+                // 不能是和fixedCards相同的角色
                 if (std::find_if(fixedCards.begin(), fixedCards.end(), [&](const CardDetail& card) {
                     return card.characterId == j;
                 }) != fixedCards.end()) continue;
-                charas.push_back(j);
+                // 不能是固定角色
+                if (std::find(cfg.fixedCharacters.begin(), cfg.fixedCharacters.end(), j) != cfg.fixedCharacters.end()) continue;
+                valid_charas.push_back(j);
             }
-            std::shuffle(charas.begin(), charas.end(), rng);
-            charas.resize(member - fixedSize);
+            std::shuffle(valid_charas.begin(), valid_charas.end(), rng);
+            valid_charas.resize(member - fixedSize - cfg.fixedCharacters.size());
+            // 在开头添加固定角色
+            for (auto it = cfg.fixedCharacters.rbegin(); it != cfg.fixedCharacters.rend(); ++it) 
+                valid_charas.insert(valid_charas.begin(), *it);
             // 每个角色随机1张
-            for (const auto& chara : charas) {
+            for (const auto& chara : valid_charas) {
                 auto idx = randomSelectIndexByWeight(rng, charaCardWeights[chara]);
                 individual.deck.push_back(&charaCardDetails[chara][idx]);
             }
         } 
         else {
             // 挑战live随机member-fixed张不重复的（不能是和fixedCards相同的卡）
-            auto indices = randomSelectIndexByWeight(rng, cardWeights, member - fixedSize, fixedCardIndices);
+            auto indices = randomSelectIndexByWeight(rng, allCardWeights, member - fixedSize, fixedCardIndices);
             for (const auto& idx : indices) 
                 individual.deck.push_back(&cardDetails[idx]);
         }
@@ -188,6 +197,11 @@ void BaseDeckRecommend::findBestCardsGA(
         // 随机选择要保留的a位置（不包括固定）
         std::vector<int> pos{};
         for (int i = 0; i < (int)a.deck.size() - fixedSize; ++i) {
+            // 如果是固定角色则一定保留
+            if (std::find(cfg.fixedCharacters.begin(), cfg.fixedCharacters.end(), a.deck[i]->characterId) != cfg.fixedCharacters.end()) {
+                pos.push_back(i);
+                continue;
+            }
             if (std::uniform_real_distribution<double>(0.0, 1.0)(rng) > 0.5) 
                 pos.push_back(i);
         }
@@ -245,10 +259,22 @@ void BaseDeckRecommend::findBestCardsGA(
         for (int pos = 0; pos < (int)a.deck.size() - fixedSize; ++pos) {
             if (std::uniform_real_distribution<double>(0.0, 1.0)(rng) > cur_mutation_rate) 
                 continue;
-            // 随机选择一张卡替换，需要检查新卡是否重复，最多10次避免死循环
+            // 随机选择一张卡进行替换，需要检查新卡是否重复，最多10次避免死循环
             for (int _ = 0; _ < 10; ++_) {
-                auto idx = randomSelectIndexByWeight(rng, cardWeights, fixedCardIndices);
-                auto newCard = &cardDetails[idx];
+                bool isFixedChara = std::find(cfg.fixedCharacters.begin(), cfg.fixedCharacters.end(), a.deck[pos]->characterId) != cfg.fixedCharacters.end();
+                int index = 0;
+                const CardDetail* newCard = nullptr;
+                if (isFixedChara) {
+                    // 如果是固定角色，则只能从该角色的卡随机
+                    index = randomSelectIndexByWeight(rng, charaCardWeights[a.deck[pos]->characterId], fixedCardIndices);
+                    newCard = &charaCardDetails[a.deck[pos]->characterId][index];
+                }
+                else {
+                    // 否则从所有卡随机
+                    index = randomSelectIndexByWeight(rng, allCardWeights, fixedCardIndices);
+                    newCard = &cardDetails[index];
+                }
+                // 检查与队里其他卡的冲突
                 bool ok = true;
                 for (int i = 0; i < (int)a.deck.size(); ++i) {
                     if (i == pos) continue;
@@ -290,7 +316,7 @@ void BaseDeckRecommend::findBestCardsGA(
 
         // 繁殖
         int parentSize = std::min(cfg.gaParentSize, (int)population.size());
-        for (int i = 0; i < cfg.gaPopSize - cfg.gaEliteSize; ++i) {
+        while ((int)newPopulation.size() < cfg.gaPopSize) {
             // 随机选择两个父代
             int idx1 = std::uniform_int_distribution<int>(0, parentSize - 1)(rng);
             int idx2 = std::uniform_int_distribution<int>(0, parentSize - 1)(rng);
@@ -312,7 +338,8 @@ void BaseDeckRecommend::findBestCardsGA(
         }
 
         if (cfg.gaDebug) {
-            std::cout << "iter: " << iter_num << ", max fitness: " << cur_max_fitness << ", mutation rate: " << cur_mutation_rate << ", population size: " << population.size() << '\n';
+            std::cout << "iter: " << iter_num << ", max fitness: " << cur_max_fitness 
+            << ", mutation rate: " << cur_mutation_rate << ", population size: " << population.size() << '\n';
         }
         
         // 超出次数限制

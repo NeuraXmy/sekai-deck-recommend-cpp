@@ -17,7 +17,12 @@ void BaseDeckRecommend::findBestCardsSA(
     std::optional<int> eventId,
     const std::vector<CardDetail>& fixedCards
 )
-{
+{   
+    // 该算法已停止维护
+    std::cerr << "SA is deprecated, please use GA instead" << std::endl;
+    if (cfg.fixedCharacters.size() > 0) 
+        throw std::invalid_argument("SA does not support fixedCharacters");
+
     // 防止挑战Live卡的数量小于允许上场的数量导致无法组队
     if (isChallengeLive) {
         member = std::min(member, int(cardDetails.size()));
