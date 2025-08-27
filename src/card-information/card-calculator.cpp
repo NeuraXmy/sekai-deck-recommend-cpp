@@ -38,7 +38,7 @@ std::optional<CardDetail> CardCalculator::getCardDetail(
     auto skill = this->skillCalculator.getCardSkill(userCard0, card, scoreUpLimit);
     auto power = this->powerCalculator.getCardPower(
         userCard0, card, units, userAreaItemLevels, hasCanvasBonus, userGateBonuses,
-        isFinalChapter ? std::nullopt : std::optional<int>(20)  // 终章限制玩偶加成2%
+        isFinalChapter ? std::optional<int>(20) : std::nullopt  // 终章限制玩偶加成2%
     );
 
     CardEventBonusInfo eventBonus{};
