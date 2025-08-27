@@ -27,8 +27,13 @@ struct CardDetail {
     int attr;
     CardDetailMap<DeckCardPowerDetail> power;
     CardDetailMap<DeckCardSkillDetail> skill;
-    std::optional<double> eventBonus;
+    std::optional<double> maxEventBonus;    // 最大活动加成
+    std::optional<double> minEventBonus;    // 最小活动加成，用于终章计算
+    std::optional<double> limitedEventBonus; // 当期活动加成，用于终章计算
+    std::optional<double> leaderHonorEventBonus;  // 作为队长的时候的称号活动加成，用于终章计算
+    std::optional<double> leaderLimitEventBonus;  // 作为队长的时候的当期活动加成，用于终章计算
     std::optional<double> supportDeckBonus;
+    std::optional<double> unmatchCharacterSupportDeckBonus;  // 不匹配角色的支援加成，用于终章计算
     bool hasCanvasBonus;
     bool episode1Read;
     bool episode2Read;
@@ -67,6 +72,7 @@ public:
      * @param eventConfig 活动设置
      * @param hasCanvasBonus 是否拥有自定义世界中的画布
      * @param userGateBonuses 用户拥有的大门加成
+     * @param scoreUpLimit 终章应用的技能加分上限
      */
     std::optional<CardDetail> getCardDetail(
         const UserCard& userCard,
@@ -75,7 +81,8 @@ public:
         const std::unordered_map<int, CardConfig>& singleCardConfig,
         const std::optional<EventConfig>& eventConfig = std::nullopt,
         bool hasCanvasBonus = false,
-        const std::vector<MysekaiGateBonus>& userGateBonuses = std::vector<MysekaiGateBonus>()
+        const std::vector<MysekaiGateBonus>& userGateBonuses = std::vector<MysekaiGateBonus>(),
+        std::optional<double> scoreUpLimit = std::nullopt
     );
 
     /**
@@ -84,13 +91,15 @@ public:
      * @param config 卡牌设置
      * @param eventConfig 活动设置
      * @param areaItemLevels （可选）纳入计算的区域道具等级
+     * @param scoreUpLimit 终章应用的技能加分上限
      */
     std::vector<CardDetail> batchGetCardDetail(
         const std::vector<UserCard>& userCards,
         const std::unordered_map<int, CardConfig>& config,
         const std::unordered_map<int, CardConfig>& singleCardConfig,
         const std::optional<EventConfig>& eventConfig = std::nullopt,
-        const std::vector<AreaItemLevel>& areaItemLevels = std::vector<AreaItemLevel>()
+        const std::vector<AreaItemLevel>& areaItemLevels = std::vector<AreaItemLevel>(),
+        std::optional<double> scoreUpLimit = std::nullopt
     );
 
     /**

@@ -71,7 +71,7 @@ void BaseDeckRecommend::findBestCardsGA(
     const DeckRecommendConfig& cfg,
     Rng& rng,
     const std::vector<CardDetail> &cardDetails,     // 所有参与组队的卡牌
-    const std::vector<CardDetail> &allCards,        // 全部卡牌（用于计算支援卡组加成）
+    std::map<int, std::vector<SupportDeckCard>>& supportCards,        // 全部卡牌（用于计算支援卡组加成）
     const std::function<Score(const DeckDetail &)> &scoreFunc,    
     RecommendCalcInfo& gaInfo,
     int limit, 
@@ -114,7 +114,7 @@ void BaseDeckRecommend::findBestCardsGA(
         } else {
             // 计算当前综合力
             auto recDeck = getBestPermutation(
-                this->deckCalculator, individual.deck, allCards, scoreFunc, 
+                this->deckCalculator, individual.deck, supportCards, scoreFunc, 
                 honorBonus, eventType, eventId, liveType, cfg
             );
             targetValue = recDeck.targetValue;
@@ -159,8 +159,7 @@ void BaseDeckRecommend::findBestCardsGA(
             std::shuffle(valid_charas.begin(), valid_charas.end(), rng);
             valid_charas.resize(member - fixedSize - cfg.fixedCharacters.size());
             // 在开头添加固定角色
-            for (auto it = cfg.fixedCharacters.rbegin(); it != cfg.fixedCharacters.rend(); ++it) 
-                valid_charas.insert(valid_charas.begin(), *it);
+            valid_charas.insert(valid_charas.begin(), cfg.fixedCharacters.begin(), cfg.fixedCharacters.end());
             // 每个角色随机1张
             for (const auto& chara : valid_charas) {
                 auto idx = randomSelectIndexByWeight(rng, charaCardWeights[chara]);

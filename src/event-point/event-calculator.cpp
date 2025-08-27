@@ -10,16 +10,6 @@ static int cheerful_carnival_enum = mapEnum(EnumMap::eventType, "cheerful_carniv
 static int world_bloom_enum = mapEnum(EnumMap::eventType, "world_bloom");
 
 
-int EventCalculator::getDeckEventBonus(const std::vector<UserCard> &deckCards, int eventId)
-{
-    int totalBonus = 0;
-    for (const auto &card : deckCards) {
-        int cardBonus = this->cardEventCalculator.getCardEventBonus(card, eventId);
-        totalBonus += cardBonus;
-    }
-    return totalBonus;
-}
-
 int EventCalculator::getEventPoint(int liveType, int eventType, int selfScore, double musicRate, double deckBonus, double boostRate, int otherScore, int life)
 {
     double musicRate0 = musicRate / 100.;

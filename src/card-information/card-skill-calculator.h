@@ -53,10 +53,12 @@ public:
      * 获得不同情况下的卡牌技能
      * @param userCard 用户卡牌
      * @param card 卡牌
+     * @param scoreUpLimit 终章应用的加分上限
      */
     CardDetailMap<DeckCardSkillDetail> getCardSkill(
         const UserCard& userCard,
-        const Card& card
+        const Card& card,
+        std::optional<double> scoreUpLimit = std::nullopt
     );
 
     /**

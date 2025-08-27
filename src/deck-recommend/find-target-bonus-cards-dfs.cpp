@@ -144,6 +144,8 @@ void BaseDeckRecommend::findTargetBonusCardsDFS(
     std::optional<int> eventId
 )
 {
+    std::map<int, std::vector<SupportDeckCard>> emptySupportCards{};
+
     std::vector<int> bonusList = config.bonusList;
     for (auto& x : bonusList) x *= 2;
     std::sort(bonusList.begin(), bonusList.end());
@@ -159,8 +161,8 @@ void BaseDeckRecommend::findTargetBonusCardsDFS(
     std::map<int, std::vector<const CardDetail *>> bonusCharaCards;
     std::map<int, bool> hasBonusCharaCards;
     for (const auto &card : cardDetails) {
-        if (card.eventBonus.has_value() && card.eventBonus.value() > 0) {
-            int bonus = std::round(card.eventBonus.value() * 2);
+        if (card.maxEventBonus.has_value() && card.maxEventBonus.value() > 0) {
+            int bonus = std::round(card.maxEventBonus.value() * 2);
             int chara = card.characterId;
             int key = getCharaBonusKey(chara, bonus);
             bonusCharaCards[key].push_back(&card);
@@ -193,7 +195,7 @@ void BaseDeckRecommend::findTargetBonusCardsDFS(
                     deckCards.push_back(bonusCharaCards[key].front()); 
                 // 计算卡组详情
                 auto deckRes = getBestPermutation(
-                    deckCalculator, deckCards, {}, scoreFunc,
+                    deckCalculator, deckCards, emptySupportCards, scoreFunc,
                     0, eventType, eventId, liveType, config
                 );
                 // 需要验证加成正确

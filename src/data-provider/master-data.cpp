@@ -77,6 +77,61 @@ void loadMasterDataJsonFromStrings(std::map<std::string, json>& jsons, std::map<
     }
 }
 
+
+void addFinalChapterEventIfNeeded(MasterData& md) {
+    bool hasFinalChapter = false;
+    for (const auto& e : md.events) {
+        if (e.id == finalChapterEventId) {
+            hasFinalChapter = true;
+            break;
+        }
+    }
+    if (!hasFinalChapter) {
+        // 活动本身
+        Event event;
+        event.id = finalChapterEventId;
+        event.eventType = mapEnum(EnumMap::eventType, "world_bloom");
+        md.events.push_back(event);
+
+        // 角色加成
+        for (auto& gameCharacterUnit : md.gameCharacterUnits) {
+            EventDeckBonus bonus;
+            bonus.eventId = finalChapterEventId;
+            bonus.gameCharacterUnitId = gameCharacterUnit.id;
+            bonus.bonusRate = 5.0;
+            bonus.cardAttr = mapEnum(EnumMap::attr, "");
+            md.eventDeckBonuses.push_back(bonus);
+        }
+
+        // wl2限定卡牌加成
+        const std::set<int> worldBloomEventIds = { 163, 167, 170, 171, 176, 179 };
+        std::vector<EventCard> newEventCards{};
+        for (const auto& eventCard : md.eventCards) {
+            if (worldBloomEventIds.count(eventCard.eventId)) {
+                auto newEventCard = eventCard;
+                newEventCard.eventId = finalChapterEventId;
+                newEventCard.bonusRate = 25.0;
+                newEventCards.push_back(newEventCard);
+            }
+        }
+        md.eventCards.insert(md.eventCards.end(), newEventCards.begin(), newEventCards.end());
+
+        // 支援里的wl1限定卡牌加成
+        std::vector<WorldBloomSupportDeckUnitEventLimitedBonus> newLimitedBonuses{};
+        for (const auto& limitedBonus : md.worldBloomSupportDeckUnitEventLimitedBonuses) {
+            auto newLimitBonus = limitedBonus;
+            newLimitBonus.eventId = finalChapterEventId;
+            newLimitedBonuses.push_back(newLimitBonus);
+        }
+        md.worldBloomSupportDeckUnitEventLimitedBonuses.insert(
+            md.worldBloomSupportDeckUnitEventLimitedBonuses.end(),
+            newLimitedBonuses.begin(),
+            newLimitedBonuses.end()
+        );
+    }
+}
+
+
 template <typename T>
 std::vector<T> loadMasterData(std::map<std::string, json>& jsons, const std::string& key, bool required = true) {
     if (!jsons.count(key)) {
@@ -89,7 +144,6 @@ std::vector<T> loadMasterData(std::map<std::string, json>& jsons, const std::str
     }
     return T::fromJsonList(jsons.at(key));
 }
-
 
 void MasterData::loadFromJsons(std::map<std::string, json>& jsons) {
     this->areaItemLevels = loadMasterData<AreaItemLevel>(jsons, "areaItemLevels");
@@ -128,8 +182,8 @@ void MasterData::loadFromJsons(std::map<std::string, json>& jsons) {
     addFakeEvent(event_type_world_bloom);
     addFakeEvent(event_type_marathon);
     addFakeEvent(event_type_cheerful);
+    addFinalChapterEventIfNeeded(*this);
 }
-
 
 void MasterData::loadFromFiles(const std::string& baseDir) {
     this->baseDir = baseDir;
@@ -234,4 +288,5 @@ int MasterData::getWorldBloomEventTurn(int eventId) const
     else 
         return eventId <= 140 ? 1 : 2;  // 140之前为第一轮
 }
+
 

@@ -12,8 +12,14 @@ static int score_up_unit_count_enum                     = mapEnum(EnumMap::skill
 static int special_training_enum = mapEnum(EnumMap::defaultImage, "special_training");
 
 
-CardDetailMap<DeckCardSkillDetail> CardSkillCalculator::getCardSkill(const UserCard &userCard, const Card &card)
+CardDetailMap<DeckCardSkillDetail> CardSkillCalculator::getCardSkill(
+    const UserCard &userCard, 
+    const Card &card, 
+    std::optional<double> scoreUpLimit
+)
 {
+    double limit = scoreUpLimit.value_or(std::numeric_limits<double>::max());
+
     CardDetailMap<DeckCardSkillDetail> skillMap{};
     std::vector<SkillDetail> details = { getSkillDetail(userCard, card, false) };
     if (card.specialTrainingSkillId != 0) 
@@ -23,12 +29,12 @@ CardDetailMap<DeckCardSkillDetail> CardSkillCalculator::getCardSkill(const UserC
         DeckCardSkillDetail deckDetail = {
             .skillId = detail.skillId,
             .isAfterTraining = detail.isAfterTraining,
-            .scoreUp = detail.scoreUp,
+            .scoreUp = std::min(detail.scoreUp, limit),
             .lifeRecovery = detail.lifeRecovery,
         };
 
         // 固定加成，即便是组分也有个保底加成
-        skillMap.set(any_unit_enum, 1, 1, detail.scoreUp, deckDetail);
+        skillMap.set(any_unit_enum, 1, 1, deckDetail.scoreUp, deckDetail);
 
         // 组分
         if (detail.sameUnitScoreUp) {
@@ -37,6 +43,7 @@ CardDetailMap<DeckCardSkillDetail> CardSkillCalculator::getCardSkill(const UserC
                 // 如果全部同队还有一次额外加成
                 auto dd = deckDetail;
                 dd.scoreUp += (i == 5 ? 5 : (i - 1)) * detail.sameUnitScoreUp;
+                dd.scoreUp = std::min(dd.scoreUp, limit);
                 skillMap.set(detail.sameUnitScoreUpUnit, i, 1, dd.scoreUp, dd);
             }
         }
@@ -47,6 +54,7 @@ CardDetailMap<DeckCardSkillDetail> CardSkillCalculator::getCardSkill(const UserC
             dd.hasScoreUpReference = true;
             dd.scoreUpReferenceRate = detail.scoreUpReferenceRate;
             dd.scoreUpReferenceMax = detail.scoreUpReferenceMax;
+            dd.scoreUpReferenceMax = std::min(dd.scoreUpReferenceMax, limit - dd.scoreUp);
             // 这边cmpValue只设置最大值就行，因为最小值被前面的固定加成设置
             skillMap.set(ref_unit_enum, 1, 1, dd.scoreUp + detail.scoreUpReferenceMax, dd);
         }
@@ -56,8 +64,10 @@ CardDetailMap<DeckCardSkillDetail> CardSkillCalculator::getCardSkill(const UserC
             // 处理不同异团人数的情况
             for (int i = 0; i <= 2; ++i) {
                 auto dd = deckDetail;
-                if (i > 0)
+                if (i > 0) {
                     dd.scoreUp += detail.differentUnitCountScoreUpMap[i];
+                    dd.scoreUp = std::min(dd.scoreUp, limit);
+                }
                 skillMap.set(diff_unit_enum, i, 1, dd.scoreUp, dd);
             }
         }

@@ -34,39 +34,65 @@ double CardEventCalculator::getEventDeckBonus(int eventId, const Card &card)
     return maxBonus;
 }
 
-double CardEventCalculator::getCardEventBonus(const UserCard &userCard, int eventId)
+CardEventBonusInfo CardEventCalculator::getCardEventBonus(const UserCard &userCard, int eventId)
 {
     auto& cards = this->dataProvider.masterData->cards;
+    auto card = findOrThrow(cards, [&](const Card& it) { 
+        return it.id == userCard.cardId; 
+    });
     auto& eventCards = this->dataProvider.masterData->eventCards;
     auto& eventRarityBonusRates = this->dataProvider.masterData->eventRarityBonusRates;
 
     // 无活动组卡
     if (eventId == this->dataProvider.masterData->getNoEventFakeEventId(event_type_marathon)
      || eventId == this->dataProvider.masterData->getNoEventFakeEventId(event_type_cheerful)) {
-        return 0;
+        return {};
     }
 
     // 计算角色、属性加成
-    double eventBonus = 0;
-    auto card = findOrThrow(cards, [&](const Card& it) { 
-        return it.id == userCard.cardId; 
-    });
-    eventBonus += this->getEventDeckBonus(eventId, card);
-
-    // 计算当期卡牌加成
-    for (const auto& it : eventCards) {
-        if (it.eventId == eventId && it.cardId == card.id) {
-            eventBonus += it.bonusRate;
-            break;
-        }
-    }
-
+    double basicBonus = this->getEventDeckBonus(eventId, card);
     // 计算突破等级加成
     auto masterRankBonus = findOrThrow(eventRarityBonusRates, [&](const EventRarityBonusRate& it) { 
         return it.cardRarityType == card.cardRarityType && it.masterRank == userCard.masterRank; 
     });
-    eventBonus += masterRankBonus.bonusRate;
+    basicBonus += masterRankBonus.bonusRate;
 
-    // 实际使用的时候还得/100
-    return eventBonus;
+    // 计算当期卡牌加成
+    double limitedBonus = 0.0;
+    for (const auto& it : eventCards) {
+        if (it.eventId == eventId && it.cardId == card.id) {
+            limitedBonus = it.bonusRate;
+            break;
+        }
+    }
+
+    // 终章机制
+    if (eventId == finalChapterEventId) {
+        // 1k牌加成
+        double leaderHonorBonus = this->dataProvider.userData->userCharacterFinalChapterHonorEventBonusMap[card.characterId];
+        // 当期队长加成
+        double leaderLimitBonus = 0.0;
+        for (const auto& it : eventCards) {
+            if (it.eventId == eventId && it.cardId == card.id) {
+                leaderLimitBonus = 20.0;
+                break;
+            }
+        }
+        return CardEventBonusInfo{
+            .maxBonus = basicBonus + limitedBonus + leaderHonorBonus + leaderLimitBonus,
+            .minBonus = basicBonus,     // 终章的当期加成和队长相关的加成都可能不生效
+            .limitedBonus = limitedBonus,
+            .leaderHonorBonus = leaderHonorBonus,
+            .leaderLimitBonus = leaderLimitBonus,
+        };
+    }
+    else {
+        return CardEventBonusInfo{
+            .maxBonus = basicBonus + limitedBonus,
+            .minBonus = basicBonus + limitedBonus,
+            .limitedBonus = limitedBonus,
+            .leaderHonorBonus = 0.0,
+            .leaderLimitBonus = 0.0,
+        };
+    }
 }

@@ -12,50 +12,85 @@ static int default_image_original_enum = mapEnum(EnumMap::defaultImage, "origina
 static int default_image_special_training_enum = mapEnum(EnumMap::defaultImage, "special_training");
 
 
-std::optional<double> DeckCalculator::getDeckBonus(const std::vector<const CardDetail *> &deckCards, std::optional<int> eventType) 
+DeckBonusInfo DeckCalculator::getDeckBonus(
+    const std::vector<const CardDetail *> &deckCards, 
+    std::optional<int> eventType,
+    std::optional<int> eventId
+) 
 {
+    DeckBonusInfo ret{};
+
     // 如果没有预处理好活动加成，则返回空
     for (const auto &card : deckCards) 
-        if (!card->eventBonus.has_value()) 
-            return std::nullopt;
-    double bonus = 0;
-    for (const auto &card : deckCards) 
-        bonus += card->eventBonus.value();
-    if (eventType != world_bloom_enum) 
-        return bonus;
-    
-    // 如果是世界开花活动，还需要计算卡组的异色加成
-    auto& worldBloomDifferentAttributeBonuses = this->dataProvider.masterData->worldBloomDifferentAttributeBonuses;
-    bool attr_vis[10] = {};
-    for (const auto &card : deckCards) 
-        attr_vis[card->attr] = true;
-    int attr_count = 0;
-    for (int i = 0; i < 10; ++i) 
-        attr_count += attr_vis[i];
-    auto it = findOrThrow(worldBloomDifferentAttributeBonuses, [&](const auto &it) { 
-        return it.attributeCount == attr_count; 
-    });
-    return bonus + it.bonusRate;
+        if (!card->maxEventBonus.has_value()) {
+            ret.cardBonus = std::vector<double>(deckCards.size(), 0.0);
+            return ret;
+        }
+
+    // 正常加成
+    for (const auto &card : deckCards) {
+        ret.cardBonus.push_back(card->maxEventBonus.value());
+    }
+
+    // 终章机制
+    if (eventId.has_value() && eventId.value() == finalChapterEventId) {
+        // 不是队长的角色扣掉1k牌加成和队长当期加成
+        for (int i = 1; i < (int)deckCards.size(); i++) {
+            ret.cardBonus[i] -= deckCards[i]->leaderHonorEventBonus.value_or(0.0);
+            ret.cardBonus[i] -= deckCards[i]->leaderLimitEventBonus.value_or(0.0);
+        }
+        // 最多生效4个当期
+        int limitedEventBonusNum = 0;
+        for (int i = 0; i < (int)deckCards.size(); i++) {
+            if (deckCards[i]->limitedEventBonus.value_or(0.) > 0) {
+                if(++limitedEventBonusNum == 5) {
+                    // 去掉最后一个当期加成
+                    ret.cardBonus[i] -= deckCards[i]->limitedEventBonus.value();
+                    break;
+                }
+            }
+        }
+    }
+
+    // WL异色加成
+    if (eventType == world_bloom_enum) 
+    {
+        auto& worldBloomDifferentAttributeBonuses = this->dataProvider.masterData->worldBloomDifferentAttributeBonuses;
+        bool attr_vis[10] = {};
+        for (const auto &card : deckCards) 
+            attr_vis[card->attr] = true;
+        int attr_count = 0;
+        for (int i = 0; i < 10; ++i) 
+            attr_count += attr_vis[i];
+        auto it = findOrThrow(worldBloomDifferentAttributeBonuses, [&](const auto &it) { 
+            return it.attributeCount == attr_count; 
+        });
+        ret.diffAttrBonus = it.bonusRate;
+    }
+
+    ret.totalBonus = ret.diffAttrBonus + std::accumulate(ret.cardBonus.begin(), ret.cardBonus.end(), 0.0);
+    return ret;
 }
 
-SupportDeckBonus DeckCalculator::getSupportDeckBonus(const std::vector<const CardDetail*> &deckCards, const std::vector<CardDetail> &allCards, int supportDeckCount)
+SupportDeckBonus DeckCalculator::getSupportDeckBonus(
+    const std::vector<const CardDetail*> &deckCards, 
+    const std::vector<SupportDeckCard>& supportCards, 
+    int supportDeckCount
+)
 {
     double bonus = 0;
     int count = 0;
+    
     std::vector<CardDetail> cards{};
-    for (const auto &card : allCards) {
-        // 如果没有预处理好支援卡组加成，则跳过
-        if (!card.supportDeckBonus.has_value()) 
-            continue;
+    for (const auto &card : supportCards) {
         // 支援卡组的卡不能和主队伍重复，需要排除掉
         if (std::find_if(deckCards.begin(), deckCards.end(), [&](const auto &it) { 
-            return it->cardId == card.cardId; 
+            return it->cardId == card.cardId;
         }) != deckCards.end()) 
             continue;
-        bonus += card.supportDeckBonus.value();
+        bonus += card.bonus;
         count++;
         // cards.push_back(card); for debug
-        // 修改为能够自定义支援卡组的数量
         if (count >= supportDeckCount) return { bonus, cards };
     }
     // 就算组不出完整的支援卡组也得返回
@@ -82,7 +117,7 @@ int DeckCalculator::getHonorBonusPower()
 
 std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
     const std::vector<const CardDetail*> &cardDetails, 
-    const std::vector<CardDetail> &allCards, 
+    std::map<int, std::vector<SupportDeckCard>>& supportCards,
     int honorBonus, 
     std::optional<int> eventType,
     std::optional<int> eventId,
@@ -90,11 +125,23 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
     bool keepAfterTrainingState,
     bool bestSkillAsLeader
 )
-{
-    // 活动加成（与顺序无关，不用考虑deckCardOrder）
-    auto eventBonus = getDeckBonus(cardDetails, eventType);
-    // 支援加成（与顺序无关，不用考虑deckCardOrder）
-    auto supportDeckBonus = this->getSupportDeckBonus(cardDetails, allCards, this->getWorldBloomSupportDeckCount(eventId.value_or(0)));
+{   
+    // 活动加成
+    auto eventBonusInfo = getDeckBonus(cardDetails, eventType, eventId);
+    
+    // 支援加成
+    SupportDeckBonus supportDeckBonus{};
+    if (supportCards.size()) {
+        std::vector<SupportDeckCard>* pSupportCards = nullptr;
+        if (eventId.value_or(0) == finalChapterEventId) 
+            pSupportCards = &supportCards[cardDetails[0]->characterId]; // 终章支援角色为队长角色
+        else
+            pSupportCards = &(supportCards.begin()->second);    // 普通wl只会处理出一组支援卡牌列表
+        supportDeckBonus = this->getSupportDeckBonus(
+            cardDetails, *pSupportCards, 
+            this->getWorldBloomSupportDeckCount(eventId.value_or(0))
+        );
+    }
 
     // 预处理队伍和属性，存储每个队伍或属性出现的次数
     int card_num = int(cardDetails.size());
@@ -197,7 +244,6 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
         // 根据mask枚举花前/花后技能状态，计算实际技能
         skills.clear();
         for (int i = 0; i < card_num; ++i) {
-            auto& cardDetail = *cardDetails[i];
             auto& s1 = prepareSkills[i][0]; // 花前技能
             auto& s2 = prepareSkills[i][1]; // 花后技能（或者已经被花前技能替换的技能）
             auto& s = (mask & (1 << i)) ? s1 : s2; // 实际技能，0为花后技能，1为花前技能
@@ -280,7 +326,7 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
                 cardDetail.skillLevel, 
                 cardDetail.masterRank, 
                 cardPower[i],
-                cardDetail.eventBonus, 
+                eventBonusInfo.cardBonus[i],
                 skills[i],
                 cardDetail.episode1Read,
                 cardDetail.episode2Read,
@@ -292,7 +338,7 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
 
         ret.push_back(DeckDetail{ 
             power, 
-            eventBonus, 
+            eventBonusInfo.totalBonus,
             supportDeckBonus.bonus,
             std::nullopt, // supportDeckBonus.cards
             cards 

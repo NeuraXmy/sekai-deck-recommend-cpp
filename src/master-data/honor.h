@@ -27,6 +27,7 @@ struct Honor {
     int groupId;
     int honorRarity;
     std::vector<HonorLevel> levels;
+    std::string assetbundleName;
 
     static inline std::vector<Honor> fromJsonList(const json& jsonData) {
         std::vector<Honor> honors;
@@ -37,6 +38,7 @@ struct Honor {
             honor.groupId = item.value("groupId", 0);
             honor.honorRarity = mapEnum(EnumMap::honorRarity, item.value("honorRarity", ""));
             honor.levels = HonorLevel::fromJsonList(item.value("levels", json::array()));
+            honor.assetbundleName = item.value("assetbundleName", "");
             honors.push_back(honor);
         }
         return honors;

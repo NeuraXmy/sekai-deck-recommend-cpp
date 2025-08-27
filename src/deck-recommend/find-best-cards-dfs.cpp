@@ -16,7 +16,7 @@ void BaseDeckRecommend::findBestCardsDFS(
     int liveType,
     const DeckRecommendConfig& cfg,
     const std::vector<CardDetail> &cardDetails, 
-    const std::vector<CardDetail> &allCards, 
+    std::map<int, std::vector<SupportDeckCard>>& supportCards,
     const std::function<Score(const DeckDetail &)> &scoreFunc, 
     RecommendCalcInfo& dfsInfo,
     int limit, 
@@ -39,7 +39,7 @@ void BaseDeckRecommend::findBestCardsDFS(
     if (int(deckCards.size()) == member) {
         dfsInfo.update(
             getBestPermutation(
-                this->deckCalculator, deckCards, allCards, scoreFunc, 
+                this->deckCalculator, deckCards, supportCards, scoreFunc, 
                 honorBonus, eventType, eventId, liveType, cfg
             ), limit
         );
@@ -126,7 +126,7 @@ void BaseDeckRecommend::findBestCardsDFS(
         deckCards.push_back(&card);
         deckCharacters.insert(card.characterId);
         findBestCardsDFS(
-            liveType, cfg, cardDetails, allCards, scoreFunc, dfsInfo,
+            liveType, cfg, cardDetails, supportCards, scoreFunc, dfsInfo,
             limit, isChallengeLive, member, honorBonus, eventType, eventId, fixedCards
         );
         deckCards.pop_back();

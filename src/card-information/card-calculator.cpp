@@ -7,7 +7,8 @@ std::optional<CardDetail> CardCalculator::getCardDetail(
     const std::unordered_map<int, CardConfig>& singleCardConfig,
     const std::optional<EventConfig>& eventConfig,
     bool hasCanvasBonus,
-    const std::vector<MysekaiGateBonus>& userGateBonuses
+    const std::vector<MysekaiGateBonus>& userGateBonuses,
+    std::optional<double> scoreUpLimit
 )
 {
     auto& cards = this->dataProvider.masterData->cards;
@@ -29,24 +30,32 @@ std::optional<CardDetail> CardCalculator::getCardDetail(
     // 判断强制使用画布
     hasCanvasBonus |= cfg.canvas;
 
-    // wl终章
-    bool isFinalChapter = false;
+    // 是否是wl终章
+    bool isFinalChapter = eventConfig.has_value() ? eventConfig->eventId == finalChapterEventId : false;
 
     auto userCard0 = this->cardService.applyCardConfig(userCard, card, cfg);
     auto units = this->cardService.getCardUnits(card);
-    auto skill = this->skillCalculator.getCardSkill(userCard0, card);
+    auto skill = this->skillCalculator.getCardSkill(userCard0, card, scoreUpLimit);
     auto power = this->powerCalculator.getCardPower(
         userCard0, card, units, userAreaItemLevels, hasCanvasBonus, userGateBonuses,
         isFinalChapter ? std::nullopt : std::optional<int>(20)  // 终章限制玩偶加成2%
     );
-    std::optional<double> eventBonus = std::nullopt;
+
+    CardEventBonusInfo eventBonus{};
     if (eventConfig && eventConfig->eventId != 0) {
         eventBonus = this->eventCalculator.getCardEventBonus(userCard0, eventConfig->eventId);
     }
+
     std::optional<double> supportDeckBonus = std::nullopt;
+    std::optional<double> unmatchCharacterSupportDeckBonus = std::nullopt;
     if (eventConfig && eventConfig->eventId != 0) {
+        // 和支援角色相同的话该卡支援加成
         supportDeckBonus = this->bloomEventCalculator.getCardSupportDeckBonus(
-            userCard0, eventConfig->eventId, eventConfig->specialCharacterId
+            userCard0, eventConfig->eventId, card.characterId
+        );
+        // 和支援角色不同的话该卡支援加成
+        unmatchCharacterSupportDeckBonus = this->bloomEventCalculator.getCardSupportDeckBonus(
+            userCard0, eventConfig->eventId, card.characterId <= 4 ? 5 : 1
         );
     }
 
@@ -60,23 +69,28 @@ std::optional<CardDetail> CardCalculator::getCardDetail(
     bool afterTraining = userCard0.specialTrainingStatus == mapEnum(EnumMap::specialTrainingStatus, "done");
 
     return CardDetail{
-        card.id,
-        userCard0.level,
-        userCard0.skillLevel,
-        userCard0.masterRank,
-        card.cardRarityType,
-        card.characterId,
-        units,
-        card.attr,
-        power,
-        skill,
-        eventBonus,
-        supportDeckBonus,
-        hasCanvasBonus,
-        episode1Read,
-        episode2Read,
-        afterTraining,
-        userCard.defaultImage
+        .cardId = card.id,
+        .level = userCard0.level,
+        .skillLevel = userCard0.skillLevel,
+        .masterRank = userCard0.masterRank,
+        .cardRarityType = card.cardRarityType,
+        .characterId = card.characterId,
+        .units = units,
+        .attr = card.attr,
+        .power = power,
+        .skill = skill,
+        .maxEventBonus = eventBonus.maxBonus,
+        .minEventBonus = eventBonus.minBonus,
+        .limitedEventBonus = eventBonus.limitedBonus,
+        .leaderHonorEventBonus = eventBonus.leaderHonorBonus,
+        .leaderLimitEventBonus = eventBonus.leaderLimitBonus,
+        .supportDeckBonus = supportDeckBonus,
+        .unmatchCharacterSupportDeckBonus = unmatchCharacterSupportDeckBonus,
+        .hasCanvasBonus = hasCanvasBonus,
+        .episode1Read = episode1Read,
+        .episode2Read = episode2Read,
+        .afterTraining = afterTraining,
+        .defaultImage = userCard.defaultImage
     };
 }
 
@@ -85,7 +99,8 @@ std::vector<CardDetail> CardCalculator::batchGetCardDetail(
     const std::unordered_map<int, CardConfig>& config,
     const std::unordered_map<int, CardConfig>& singleCardConfig,
     const std::optional<EventConfig>& eventConfig,
-    const std::vector<AreaItemLevel>& areaItemLevels
+    const std::vector<AreaItemLevel>& areaItemLevels,
+    std::optional<double> scoreUpLimit
 )
 {
     std::vector<CardDetail> ret{};
@@ -98,17 +113,11 @@ std::vector<CardDetail> CardCalculator::batchGetCardDetail(
         auto cardDetail = this->getCardDetail(
             userCard, areaItemLevels0, config, singleCardConfig, eventConfig, 
             userCanvasBonusCards.find(userCard.cardId) != userCanvasBonusCards.end(),
-            userGateBonuses
+            userGateBonuses, scoreUpLimit
         );
         if (cardDetail.has_value()) {
             ret.push_back(cardDetail.value());
         }
-    }
-    // 如果是给世界开花活动算的话，allCards一定要按支援加成从大到小排序
-    if (eventConfig && eventConfig->specialCharacterId > 0) {
-        std::sort(ret.begin(), ret.end(), [&](const CardDetail &a, const CardDetail &b) {
-            return a.supportDeckBonus.value_or(0) > b.supportDeckBonus.value_or(0);
-        });
     }
     return ret;
 }
@@ -117,6 +126,6 @@ bool CardCalculator::isCertainlyLessThan(const CardDetail &cardDetail0, const Ca
 {
     return cardDetail0.power.isCertainlyLessThan(cardDetail1.power) &&
         cardDetail0.skill.isCertainlyLessThan(cardDetail1.skill) &&
-        (cardDetail0.eventBonus == std::nullopt || cardDetail1.eventBonus == std::nullopt ||
-            cardDetail0.eventBonus.value() <= cardDetail1.eventBonus.value());
+        (cardDetail0.maxEventBonus == std::nullopt || cardDetail1.minEventBonus == std::nullopt ||
+            cardDetail0.maxEventBonus.value() < cardDetail1.minEventBonus.value());
 }

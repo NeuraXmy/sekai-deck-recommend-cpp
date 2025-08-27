@@ -12,9 +12,20 @@ enum class SkillReferenceChooseStrategy {
     Average,
 };
 
+struct DeckBonusInfo {
+    std::vector<double> cardBonus{};
+    double diffAttrBonus = 0.;
+    double totalBonus = 0.;
+};
+
 struct SupportDeckBonus {
     double bonus;
     std::vector<CardDetail> cards;
+};
+
+struct SupportDeckCard {
+    int cardId;
+    double bonus;
 };
 
 
@@ -39,7 +50,11 @@ public:
      * @param deckCards 卡组
      * @param eventType （可选）活动类型
      */
-    std::optional<double> getDeckBonus(const std::vector<const CardDetail*>& deckCards, std::optional<int> eventType = std::nullopt);
+    DeckBonusInfo getDeckBonus(
+        const std::vector<const CardDetail*>& deckCards, 
+        std::optional<int> eventType = std::nullopt,
+        std::optional<int> eventId = std::nullopt
+    );
 
     /**
      * 这个函数原本在 EventCalculator 中，为防止循环引用移动到这里
@@ -48,7 +63,11 @@ public:
      * @param allCards 所有卡牌（按支援卡组加成从大到小排序）
      * @param supportDeckCount 支援卡组数量
      */
-    SupportDeckBonus getSupportDeckBonus(const std::vector<const CardDetail*>& deckCards, const std::vector<CardDetail>& allCards, int supportDeckCount);
+    SupportDeckBonus getSupportDeckBonus(
+        const std::vector<const CardDetail*>& deckCards, 
+        const std::vector<SupportDeckCard>& supportCards, 
+        int supportDeckCount
+    );
 
 
     /**
@@ -59,7 +78,7 @@ public:
     /**
      * 计算给定的多张卡牌综合力、技能
      * @param cardDetails 处理好的卡牌详情（数组长度1-5，兼容挑战Live）
-     * @param allCards 参与计算的所有卡，按支援队伍加成从大到小排序
+     * @param supportCards 每个对应角色的排序后的支援队伍卡牌
      * @param honorBonus 称号加成
      * @param eventType 活动类型（用于算加成）
      * @param eventId 活动ID（用于算加成）
@@ -69,7 +88,7 @@ public:
      */
     std::vector<DeckDetail> getDeckDetailByCards(
         const std::vector<const CardDetail*>& cardDetails,
-        const std::vector<CardDetail>& allCards,
+        std::map<int, std::vector<SupportDeckCard>>& supportCards,
         int honorBonus = 0,
         std::optional<int> eventType = std::nullopt,
         std::optional<int> eventId = std::nullopt,

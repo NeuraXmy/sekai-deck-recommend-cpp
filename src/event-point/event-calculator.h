@@ -22,13 +22,6 @@ public:
         liveCalculator(dataProvider) {}
 
     /**
-     * 计算用户卡组的活动加成
-     * @param deckCards 用户卡组中的卡牌
-     * @param eventId 活动ID
-     */
-    int getDeckEventBonus(const std::vector<UserCard>& deckCards, int eventId);
-
-    /**
     * 计算活动PT
     * @param liveType Live类型
     * @param eventType 活动类型

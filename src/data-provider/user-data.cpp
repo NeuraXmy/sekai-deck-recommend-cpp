@@ -28,6 +28,7 @@ std::vector<T> loadUserDataJsonList(const json& j, const std::string& key, bool 
     return {};
 }
 
+
 void UserData::loadFromJson(const json& j) {
     this->userGamedata = loadUserDataJson<UserGameData>(j, "userGamedata");
     this->userAreas = loadUserDataJsonList<UserArea>(j, "userAreas");

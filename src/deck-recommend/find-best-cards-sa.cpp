@@ -6,7 +6,7 @@ void BaseDeckRecommend::findBestCardsSA(
     const DeckRecommendConfig& cfg,
     Rng& rng,
     const std::vector<CardDetail> &cardDetails,     // 所有参与组队的卡牌
-    const std::vector<CardDetail> &allCards,        // 全部卡牌（用于计算支援卡组加成）
+    std::map<int, std::vector<SupportDeckCard>>& supportCards,        // 全部卡牌（用于计算支援卡组加成）
     const std::function<Score(const DeckDetail &)> &scoreFunc,    
     RecommendCalcInfo& saInfo,
     int limit, 
@@ -81,7 +81,7 @@ void BaseDeckRecommend::findBestCardsSA(
             deck.resize(member);
         // 计算当前综合力
         auto recDeck = getBestPermutation(
-            this->deckCalculator, deck, allCards, scoreFunc, 
+            this->deckCalculator, deck, supportCards, scoreFunc, 
             honorBonus, eventType, eventId, liveType, cfg
         );
         // 记录当前卡组
@@ -103,7 +103,7 @@ void BaseDeckRecommend::findBestCardsSA(
     // 如果member=0，不需要退火
     if (member == 0) {
         saInfo.update(getBestPermutation(
-            this->deckCalculator, deck, allCards, scoreFunc, 
+            this->deckCalculator, deck, supportCards, scoreFunc, 
             honorBonus, eventType, eventId, liveType, cfg
         ), limit);
         return;
@@ -148,7 +148,7 @@ void BaseDeckRecommend::findBestCardsSA(
         }
         else {
             auto recDeck = getBestPermutation(
-                this->deckCalculator, deck, allCards, scoreFunc, 
+                this->deckCalculator, deck, supportCards, scoreFunc, 
                 honorBonus, eventType, eventId, liveType, cfg
             );
             new_score = recDeck.targetValue;

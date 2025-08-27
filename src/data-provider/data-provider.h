@@ -14,6 +14,11 @@ struct DataProvider {
     std::shared_ptr<MasterData> masterData;
     std::shared_ptr<UserData> userData;
     std::shared_ptr<MusicMetas> musicMetas;
+
+    bool inited = false;
+    
+    // 进行一些所有数据都加载后才能进行的预处理
+    void init();
 };
 
 #endif // DATA_PROVIDER_H

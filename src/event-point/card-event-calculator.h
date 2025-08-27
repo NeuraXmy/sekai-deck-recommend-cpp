@@ -3,6 +3,14 @@
 
 #include "data-provider/data-provider.h"
 
+struct CardEventBonusInfo {
+    double maxBonus = 0;
+    double minBonus = 0;
+    double limitedBonus = 0;
+    double leaderHonorBonus = 0;
+    double leaderLimitBonus = 0;
+};
+
 class CardEventCalculator {
 
     DataProvider dataProvider;  
@@ -24,7 +32,7 @@ public:
      * @param userCard 用户卡牌
      * @param eventId 活动ID
      */
-    double getCardEventBonus(const UserCard& userCard, int eventId);
+    CardEventBonusInfo getCardEventBonus(const UserCard& userCard, int eventId);
 
 };
 

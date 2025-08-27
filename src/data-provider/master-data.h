@@ -3,6 +3,10 @@
 
 #include "data-provider/master-data-types.h"
 
+
+constexpr int finalChapterEventId = 180;
+
+
 class MasterData {
 
 private:

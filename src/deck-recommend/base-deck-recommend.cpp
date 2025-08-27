@@ -56,7 +56,7 @@ long long BaseDeckRecommend::calcDeckHash(const std::vector<const CardDetail*>& 
 RecommendDeck BaseDeckRecommend::getBestPermutation(
     DeckCalculator& deckCalculator,
     const std::vector<const CardDetail*> &deckCards,
-    const std::vector<CardDetail> &allCards,
+    std::map<int, std::vector<SupportDeckCard>>& supportCards,
     const std::function<Score(const DeckDetail &)> &scoreFunc,
     int honorBonus,
     std::optional<int> eventType,
@@ -66,12 +66,12 @@ RecommendDeck BaseDeckRecommend::getBestPermutation(
 ) const {
     bool bestSkillAsLeader = true;
     // 存在固定队长角色则不允许把技能最强的换到队长
-    if (config.fixedCharacters.size()) {
-        bestSkillAsLeader = false;
-    }
+    if (config.fixedCharacters.size()) bestSkillAsLeader = false;
+    // 终章活动不允许把技能最强的换到队长
+    if (eventId.has_value() && eventId.value() == finalChapterEventId) bestSkillAsLeader = false;
     // 获取当前卡组的详情
     auto deckDetails = deckCalculator.getDeckDetailByCards(
-        deckCards, allCards, honorBonus, eventType, eventId, 
+        deckCards, supportCards, honorBonus, eventType, eventId, 
         config.skillReferenceChooseStrategy, config.keepAfterTrainingState, bestSkillAsLeader
     );
     // 获取最高分的卡组
@@ -96,6 +96,8 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
     int liveType,
     const EventConfig &eventConfig)
 {
+    this->dataProvider.init();
+
     // 暂不支持同时指定固定卡牌和固定角色
     if (config.fixedCards.size() && config.fixedCharacters.size())
         throw std::runtime_error("Cannot set both fixed cards and fixed characters");
@@ -106,13 +108,47 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
     auto musicMeta = this->liveCalculator.getMusicMeta(config.musicId, config.musicDiff);
 
     auto areaItemLevels = areaItemService.getAreaItemLevels();
+    auto& cardEpisodes = this->dataProvider.masterData->cardEpisodes;
+
+    std::optional<double> scoreUpLimit = std::nullopt;
+    // 终章技能加分上限为140
+    if (eventConfig.eventId == finalChapterEventId) 
+        scoreUpLimit = 140.0;
 
     auto cards = cardCalculator.batchGetCardDetail(
         userCards, config.cardConfig, config.singleCardConfig, 
-        eventConfig, areaItemLevels
+        eventConfig, areaItemLevels, scoreUpLimit
     );
 
-    auto& cardEpisodes = this->dataProvider.masterData->cardEpisodes;
+    // 归类支援卡组
+    std::map<int, std::vector<SupportDeckCard>> supportCards{};
+    if (eventConfig.eventId == finalChapterEventId) {
+        // 终章对每个角色都算一个支援卡组排序
+        for (int i = 1; i <= 26; i++) {
+            std::vector<SupportDeckCard> sc{};
+            for (const auto& card : cards) 
+                sc.push_back(SupportDeckCard{
+                    .cardId = card.cardId,
+                    .bonus = card.characterId == i 
+                    ? card.supportDeckBonus.value_or(0) 
+                    : card.unmatchCharacterSupportDeckBonus.value_or(0),
+                });
+            std::sort(sc.begin(), sc.end(), [](const SupportDeckCard& a, const SupportDeckCard& b) { return a.bonus > b.bonus; });
+            supportCards[i] = sc;
+        }
+    } else if(eventConfig.eventType == world_bloom_type_enum) {
+        // 普通wl只算一个支援卡组排序
+        std::vector<SupportDeckCard> sc{};
+        for (const auto& card : cards) 
+            sc.push_back(SupportDeckCard{
+                .cardId = card.cardId,
+                .bonus = card.characterId == eventConfig.specialCharacterId
+                        ? card.supportDeckBonus.value_or(0) 
+                        : card.unmatchCharacterSupportDeckBonus.value_or(0),
+            });
+        std::sort(sc.begin(), sc.end(), [](const SupportDeckCard& a, const SupportDeckCard& b) { return a.bonus > b.bonus; });
+        supportCards[0] = sc;
+    }
 
     // 过滤箱活的卡，不上其它组合的
     if (eventConfig.eventUnit && config.filterOtherUnit) {
@@ -158,7 +194,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
                 }
             auto card = cardCalculator.batchGetCardDetail(
                 {uc}, config.cardConfig, config.singleCardConfig, 
-                eventConfig, areaItemLevels
+                eventConfig, areaItemLevels, scoreUpLimit
             );
             if (card.size() > 0) {
                 fixedCards.push_back(card[0]);
@@ -251,15 +287,15 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
                 break;
         }
         preCardDetails = cardDetails;
-        auto cards0 = cardDetails;
+        auto cardsSortedByStrength = cardDetails;
 
         // 卡牌大致按强度排序，保证dfs先遍历强度高的卡组
         if (config.target == RecommendTarget::Skill) {
-            std::sort(cards0.begin(), cards0.end(), [](const CardDetail& a, const CardDetail& b) { 
+            std::sort(cardsSortedByStrength.begin(), cardsSortedByStrength.end(), [](const CardDetail& a, const CardDetail& b) { 
                 return std::make_tuple(a.skill.max, a.skill.min, a.cardId) > std::make_tuple(b.skill.max, b.skill.min, b.cardId);
             });
         } else {
-            std::sort(cards0.begin(), cards0.end(), [](const CardDetail& a, const CardDetail& b) { 
+            std::sort(cardsSortedByStrength.begin(), cardsSortedByStrength.end(), [](const CardDetail& a, const CardDetail& b) { 
                 return std::make_tuple(a.power.max, a.power.min, a.cardId) > std::make_tuple(b.power.max, b.power.min, b.cardId);
             });
         }
@@ -273,7 +309,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
             auto rng = Rng(seed);
             for (int i = 0; i < config.saRunCount && !calcInfo.isTimeout(); i++) {
                 findBestCardsSA(
-                    liveType, config, rng, cards0, cards, sf,
+                    liveType, config, rng, cardsSortedByStrength, supportCards, sf,
                     calcInfo,
                     config.limit, liveType == challenge_live_type_enum, config.member, honorBonus,
                     eventConfig.eventType, eventConfig.eventId, fixedCards
@@ -288,7 +324,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
 
             auto rng = Rng(seed);
             findBestCardsGA(
-                liveType, config, rng, cards0, cards, sf,
+                liveType, config, rng, cardsSortedByStrength, supportCards, sf,
                 calcInfo,
                 config.limit, liveType == challenge_live_type_enum, config.member, honorBonus,
                 eventConfig.eventType, eventConfig.eventId, fixedCards
@@ -306,7 +342,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
             }
 
             findBestCardsDFS(
-                liveType, config, cards0, cards, sf,
+                liveType, config, cardsSortedByStrength, supportCards, sf,
                 calcInfo,
                 config.limit, liveType == challenge_live_type_enum, config.member, honorBonus, 
                 eventConfig.eventType, eventConfig.eventId, fixedCards

@@ -109,7 +109,7 @@ public:
     RecommendDeck getBestPermutation(
         DeckCalculator& deckCalculator,
         const std::vector<const CardDetail*> &deckCards,
-        const std::vector<CardDetail> &allCards,
+        std::map<int, std::vector<SupportDeckCard>>& supportCards,
         const std::function<Score(const DeckDetail &)> &scoreFunc,
         int honorBonus,
         std::optional<int> eventType,
@@ -124,7 +124,7 @@ public:
      * 复杂度O(n^member)，带大量剪枝
      * （按分数高到低排序）
      * @param cardDetails 参与计算的卡牌
-     * @param allCards 全部卡牌（按支援卡组加成排序）
+     * @param supportCards 每个对应角色的排序后的支援队伍卡牌
      * @param scoreFunc 获得分数的公式
      * @param dfsInfo DFS信息
      * @param limit 需要推荐的卡组数量（按分数高到低）
@@ -137,7 +137,7 @@ public:
         int liveType,
         const DeckRecommendConfig& config,
         const std::vector<CardDetail>& cardDetails,
-        const std::vector<CardDetail>& allCards,
+        std::map<int, std::vector<SupportDeckCard>>& supportCards,
         const std::function<Score(const DeckDetail&)>& scoreFunc,
         RecommendCalcInfo& dfsInfo,
         int limit = 1,
@@ -154,7 +154,7 @@ public:
      * （按分数高到低排序）
      * @param config 配置
      * @param cardDetails 参与计算的卡牌
-     * @param allCards 全部卡牌（按支援卡组加成排序）
+     * @param supportCards 每个对应角色的排序后的支援队伍卡牌
      * @param scoreFunc 获得分数的公式
      * @param dfsInfo DFS信息
      * @param limit 需要推荐的卡组数量（按分数高到低）
@@ -168,7 +168,7 @@ public:
         const DeckRecommendConfig& config,
         Rng& rng,
         const std::vector<CardDetail>& cardDetails,
-        const std::vector<CardDetail>& allCards,
+        std::map<int, std::vector<SupportDeckCard>>& supportCards,
         const std::function<Score(const DeckDetail&)>& scoreFunc,
         RecommendCalcInfo& dfsInfo,
         int limit = 1,
@@ -185,7 +185,7 @@ public:
      * （按分数高到低排序）
      * @param config 配置
      * @param cardDetails 参与计算的卡牌
-     * @param allCards 全部卡牌（按支援卡组加成排序）
+     * @param supportCards 每个对应角色的排序后的支援队伍卡牌
      * @param scoreFunc 获得分数的公式
      * @param dfsInfo DFS信息
      * @param limit 需要推荐的卡组数量（按分数高到低）
@@ -199,7 +199,7 @@ public:
         const DeckRecommendConfig& config,
         Rng& rng,
         const std::vector<CardDetail>& cardDetails,
-        const std::vector<CardDetail>& allCards,
+        std::map<int, std::vector<SupportDeckCard>>& supportCards,
         const std::function<Score(const DeckDetail&)>& scoreFunc,
         RecommendCalcInfo& dfsInfo,
         int limit = 1,

@@ -153,7 +153,7 @@ std::vector<CardDetail> filterCardPriority(int liveType, int eventType, std::vec
             if (cardIds.find(it.cardId) == cardIds.end() &&
                 it.cardRarityType == cardPriority.cardRarityType &&
                 it.masterRank >= cardPriority.masterRank &&
-                (!it.eventBonus.has_value() || it.eventBonus >= cardPriority.eventBonus)) {
+                (!it.maxEventBonus.has_value() || it.maxEventBonus >= cardPriority.eventBonus)) {
                 cardIds.insert(it.cardId);
                 cards.push_back(it);
             }
