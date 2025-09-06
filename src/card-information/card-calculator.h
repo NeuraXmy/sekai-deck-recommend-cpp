@@ -32,14 +32,19 @@ struct CardDetail {
     std::optional<double> limitedEventBonus; // 当期活动加成，用于终章计算
     std::optional<double> leaderHonorEventBonus;  // 作为队长的时候的称号活动加成，用于终章计算
     std::optional<double> leaderLimitEventBonus;  // 作为队长的时候的当期活动加成，用于终章计算
-    std::optional<double> supportDeckBonus;
-    std::optional<double> unmatchCharacterSupportDeckBonus;  // 不匹配角色的支援加成，用于终章计算
+    std::optional<double> supportDeckBonus; // 支援卡组加成（实际计算中未使用，用于返回结果）
     bool hasCanvasBonus;
     bool episode1Read;
     bool episode2Read;
     bool afterTraining;
     int defaultImage;
 };
+
+struct SupportDeckCard {
+    int cardId;
+    double bonus;
+};
+
 
 class CardCalculator {
 
@@ -110,6 +115,15 @@ public:
     bool isCertainlyLessThan(
         const CardDetail& cardDetail0,
         const CardDetail& cardDetail1
+    );
+
+    /**
+     * 获取对于某个角色的wl的支援加成
+     */
+    SupportDeckCard getSupportDeckCard(
+        const UserCard& card,
+        int eventId,
+        int specialCharacterId
     );
 };
 

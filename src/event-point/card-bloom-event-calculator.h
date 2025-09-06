@@ -5,6 +5,7 @@
 #include "card-information/card-service.h"
 #include <optional>
 
+
 class CardBloomEventCalculator {
 
     DataProvider dataProvider;

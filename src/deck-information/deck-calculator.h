@@ -23,12 +23,6 @@ struct SupportDeckBonus {
     std::vector<CardDetail> cards;
 };
 
-struct SupportDeckCard {
-    int cardId;
-    double bonus;
-};
-
-
 class DeckCalculator {
     DataProvider dataProvider;
     CardCalculator cardCalculator;

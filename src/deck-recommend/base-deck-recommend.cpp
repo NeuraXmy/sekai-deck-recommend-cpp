@@ -126,26 +126,16 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
         // 终章对每个角色都算一个支援卡组排序
         for (int i = 1; i <= 26; i++) {
             std::vector<SupportDeckCard> sc{};
-            for (const auto& card : cards) 
-                sc.push_back(SupportDeckCard{
-                    .cardId = card.cardId,
-                    .bonus = card.characterId == i 
-                    ? card.supportDeckBonus.value_or(0) 
-                    : card.unmatchCharacterSupportDeckBonus.value_or(0),
-                });
+            for (const auto& card : userCards) 
+                sc.push_back(this->cardCalculator.getSupportDeckCard(card, eventConfig.eventId, i));
             std::sort(sc.begin(), sc.end(), [](const SupportDeckCard& a, const SupportDeckCard& b) { return a.bonus > b.bonus; });
             supportCards[i] = sc;
         }
     } else if(eventConfig.eventType == world_bloom_type_enum) {
         // 普通wl只算一个支援卡组排序
         std::vector<SupportDeckCard> sc{};
-        for (const auto& card : cards) 
-            sc.push_back(SupportDeckCard{
-                .cardId = card.cardId,
-                .bonus = card.characterId == eventConfig.specialCharacterId
-                        ? card.supportDeckBonus.value_or(0) 
-                        : card.unmatchCharacterSupportDeckBonus.value_or(0),
-            });
+        for (const auto& card : userCards) 
+            sc.push_back(this->cardCalculator.getSupportDeckCard(card, eventConfig.eventId, eventConfig.specialCharacterId));
         std::sort(sc.begin(), sc.end(), [](const SupportDeckCard& a, const SupportDeckCard& b) { return a.bonus > b.bonus; });
         supportCards[0] = sc;
     }

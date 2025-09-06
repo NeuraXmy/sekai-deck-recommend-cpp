@@ -90,7 +90,14 @@ SupportDeckBonus DeckCalculator::getSupportDeckBonus(
             continue;
         bonus += card.bonus;
         count++;
-        // cards.push_back(card); for debug
+
+        // debug
+        // cards.push_back(CardDetail{
+        //     .cardId = card.cardId,
+        //     .supportDeckBonus = card.bonus,
+        // });
+        // std::cerr << "SupportDeckCard: cardId=" << card.cardId << ", bonus=" << card.bonus << std::endl;
+
         if (count >= supportDeckCount) return { bonus, cards };
     }
     // 就算组不出完整的支援卡组也得返回

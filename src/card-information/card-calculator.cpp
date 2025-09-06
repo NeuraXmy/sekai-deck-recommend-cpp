@@ -1,4 +1,5 @@
 #include "card-information/card-calculator.h"
+#include "card-calculator.h"
 
 std::optional<CardDetail> CardCalculator::getCardDetail(
     const UserCard& userCard,
@@ -46,18 +47,7 @@ std::optional<CardDetail> CardCalculator::getCardDetail(
         eventBonus = this->eventCalculator.getCardEventBonus(userCard0, eventConfig->eventId);
     }
 
-    std::optional<double> supportDeckBonus = std::nullopt;
-    std::optional<double> unmatchCharacterSupportDeckBonus = std::nullopt;
-    if (eventConfig && eventConfig->eventId != 0) {
-        // 和支援角色相同的话该卡支援加成
-        supportDeckBonus = this->bloomEventCalculator.getCardSupportDeckBonus(
-            userCard0, eventConfig->eventId, card.characterId
-        );
-        // 和支援角色不同的话该卡支援加成
-        unmatchCharacterSupportDeckBonus = this->bloomEventCalculator.getCardSupportDeckBonus(
-            userCard0, eventConfig->eventId, card.characterId <= 4 ? 5 : 1
-        );
-    }
+    // 支援加成延后到组卡前计算
 
     bool episode1Read = false;
     if (userCard0.episodes.size() > 0) 
@@ -84,8 +74,7 @@ std::optional<CardDetail> CardCalculator::getCardDetail(
         .limitedEventBonus = eventBonus.limitedBonus,
         .leaderHonorEventBonus = eventBonus.leaderHonorBonus,
         .leaderLimitEventBonus = eventBonus.leaderLimitBonus,
-        .supportDeckBonus = supportDeckBonus,
-        .unmatchCharacterSupportDeckBonus = unmatchCharacterSupportDeckBonus,
+        .supportDeckBonus = std::nullopt,
         .hasCanvasBonus = hasCanvasBonus,
         .episode1Read = episode1Read,
         .episode2Read = episode2Read,
@@ -128,4 +117,13 @@ bool CardCalculator::isCertainlyLessThan(const CardDetail &cardDetail0, const Ca
         cardDetail0.skill.isCertainlyLessThan(cardDetail1.skill) &&
         (cardDetail0.maxEventBonus == std::nullopt || cardDetail1.minEventBonus == std::nullopt ||
             cardDetail0.maxEventBonus.value() < cardDetail1.minEventBonus.value());
+}
+
+SupportDeckCard CardCalculator::getSupportDeckCard(const UserCard &card, int eventId, int specialCharacterId)
+{
+    auto bonus = this->bloomEventCalculator.getCardSupportDeckBonus(card, eventId, specialCharacterId);
+    return SupportDeckCard{
+        .cardId = card.cardId,
+        .bonus = bonus.value_or(0.0),
+    };
 }
