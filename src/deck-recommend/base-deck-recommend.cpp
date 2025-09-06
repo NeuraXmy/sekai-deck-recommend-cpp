@@ -64,7 +64,7 @@ RecommendDeck BaseDeckRecommend::getBestPermutation(
     int liveType,
     const DeckRecommendConfig& config
 ) const {
-    bool bestSkillAsLeader = true;
+    bool bestSkillAsLeader = config.bestSkillAsLeader;
     // 存在固定队长角色则不允许把技能最强的换到队长
     if (config.fixedCharacters.size()) bestSkillAsLeader = false;
     // 终章活动不允许把技能最强的换到队长

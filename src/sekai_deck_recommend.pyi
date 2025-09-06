@@ -152,6 +152,7 @@ class DeckRecommendOptions:
         keep_after_training_state (bool): Whether to keep after-training state of bfes cards, default is False
         multi_live_teammate_score_up (int): Score up of single multi-live teammate, default is None (None means copying self score up)
         multi_live_teammate_power (int): Power of single multi-live teammate, default is None (None means copying self power)
+        best_skill_as_leader (bool): Whether to use the best skill card as leader, default is True
         sa_options (DeckRecommendSaOptions): Simulated annealing options
         ga_options (DeckRecommendGaOptions): Genetic algorithm options
     """
@@ -186,6 +187,7 @@ class DeckRecommendOptions:
     keep_after_training_state: Optional[bool]
     multi_live_teammate_score_up: Optional[int]
     multi_live_teammate_power: Optional[int]
+    best_skill_as_leader: Optional[bool]
     sa_options: Optional[DeckRecommendSaOptions]
     ga_options: Optional[DeckRecommendGaOptions]
 

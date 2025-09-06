@@ -61,6 +61,9 @@ struct DeckRecommendConfig {
     // 指定协力队友综合力
     std::optional<int> multiTeammatePower = std::nullopt;
 
+    // 是否总是将技能加分最高的换到队长（即使指定了固定卡牌）
+    bool bestSkillAsLeader = true;
+
     // 模拟退火参数
     int saRunCount = 20; // 运行次数
     int saSeed = -1; // 随机数种子 -1 代表使用当前时间

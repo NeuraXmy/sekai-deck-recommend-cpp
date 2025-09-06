@@ -263,6 +263,7 @@ struct PyDeckRecommendOptions {
     std::optional<bool> keep_after_training_state;
     std::optional<int> multi_live_teammate_score_up;
     std::optional<int> multi_live_teammate_power;
+    std::optional<bool> best_skill_as_leader;
     std::optional<PySaOptions> sa_options;
     std::optional<PyGaOptions> ga_options;
 
@@ -319,6 +320,8 @@ struct PyDeckRecommendOptions {
             result["multi_live_teammate_score_up"] = multi_live_teammate_score_up.value();
         if (multi_live_teammate_power.has_value())
             result["multi_live_teammate_power"] = multi_live_teammate_power.value();
+        if (best_skill_as_leader.has_value())
+            result["best_skill_as_leader"] = best_skill_as_leader.value();
         if (sa_options.has_value())
             result["sa_options"] = sa_options->to_dict();
         if (ga_options.has_value())
@@ -380,6 +383,8 @@ struct PyDeckRecommendOptions {
             options.multi_live_teammate_score_up = dict["multi_live_teammate_score_up"].cast<int>();
         if (dict.contains("multi_live_teammate_power"))
             options.multi_live_teammate_power = dict["multi_live_teammate_power"].cast<int>();
+        if (dict.contains("best_skill_as_leader"))
+            options.best_skill_as_leader = dict["best_skill_as_leader"].cast<bool>();
 
         if (dict.contains("sa_options"))
             options.sa_options = PySaOptions::from_dict(dict["sa_options"].cast<py::dict>());
@@ -789,6 +794,11 @@ class SekaiDeckRecommend {
                     throw std::invalid_argument("Invalid multi live teammate power: " + std::to_string(config.multiTeammatePower.value()));
             }
 
+            // best skill as leader
+            if (pyoptions.best_skill_as_leader.has_value()) {
+                config.bestSkillAsLeader = pyoptions.best_skill_as_leader.value();
+            }
+
             // timeout
             if (pyoptions.timeout_ms.has_value()) {
                 config.timeout_ms = pyoptions.timeout_ms.value();
@@ -1140,6 +1150,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("keep_after_training_state", &PyDeckRecommendOptions::keep_after_training_state)
         .def_readwrite("multi_live_teammate_score_up", &PyDeckRecommendOptions::multi_live_teammate_score_up)
         .def_readwrite("multi_live_teammate_power", &PyDeckRecommendOptions::multi_live_teammate_power)
+        .def_readwrite("best_skill_as_leader", &PyDeckRecommendOptions::best_skill_as_leader)
         .def_readwrite("sa_options", &PyDeckRecommendOptions::sa_options)
         .def_readwrite("ga_options", &PyDeckRecommendOptions::ga_options);
 
