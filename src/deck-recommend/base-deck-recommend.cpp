@@ -112,7 +112,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
 
     std::optional<double> scoreUpLimit = std::nullopt;
     // 终章技能加分上限为140
-    if (eventConfig.eventId == finalChapterEventId) 
+    if (eventConfig.eventId == finalChapterEventId && liveType != challenge_live_type_enum)
         scoreUpLimit = 140.0;
 
     auto cards = cardCalculator.batchGetCardDetail(

@@ -226,7 +226,7 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
 
         if (keepAfterTrainingState) {
             // 如果指定不改变状态，则无论如何都不枚举，并且根据用户选择的状态设置
-            if(cardDetail.defaultImage != default_image_special_training_enum)
+            if(cardDetail.defaultImage != default_image_special_training_enum && s1.isAfterTraining)
                 s2 = s1; // 用户设置花前技能
         } else {
             if (needEnumerate) {
