@@ -19,7 +19,7 @@ double LiveCalculator::getBaseScore(const MusicMeta &musicMeta, int liveType)
     if (liveType == enum_solo || liveType == enum_challenge) {
         return musicMeta.base_score;
     } else if (liveType == enum_multi || liveType == enum_cheerful) {
-        return musicMeta.base_score + musicMeta.fever_score;
+        return musicMeta.base_score + musicMeta.fever_score * 0.5;
     } else if (liveType == enum_auto) {
         return musicMeta.base_score_auto;
     } else {
