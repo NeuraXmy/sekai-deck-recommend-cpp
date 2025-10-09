@@ -113,13 +113,18 @@ void BaseDeckRecommend::findBestCardsGA(
             targetValue = gaInfo.deckTargetValueMap[deckHash];
         } else {
             // 计算当前综合力
-            auto recDeck = getBestPermutation(
+            auto ret = getBestPermutation(
                 this->deckCalculator, individual.deck, supportCards, scoreFunc, 
                 honorBonus, eventType, eventId, liveType, cfg
             );
-            targetValue = recDeck.targetValue;
-            gaInfo.update(recDeck, limit);
-            gaInfo.deckTargetValueMap[deckHash] = targetValue;
+            if (ret.bestDeck.has_value()) {
+                targetValue = ret.bestDeck.value().targetValue;
+                gaInfo.update(ret.bestDeck.value(), limit);
+                gaInfo.deckTargetValueMap[deckHash] = targetValue;
+            } else {
+                // 目前只会由于最低实效限制导致无法组出卡组，这种情况适应度主要考虑实效
+                targetValue = -1e9 + ret.maxMultiLiveScoreUp;
+            }
         }
         individual.fitness = targetValue; // 分数直接作为适应度
         individual.deckHash = deckHash;

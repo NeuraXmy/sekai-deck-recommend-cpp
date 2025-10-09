@@ -16,25 +16,6 @@ static int not_doing_special_training_status = mapEnum(EnumMap::specialTrainingS
 static int world_bloom_type_enum = mapEnum(EnumMap::eventType, "world_bloom");
 
 
-// 计算技能实效
-double calcMultiLiveScoreUp(const DeckDetail& deckDetail, int liveType) {
-    double ret = 0;
-    auto& cards = deckDetail.cards;
-    if (liveType == multi_live_type_enum || liveType == cheerful_live_type_enum) {
-        // 多人Live实效
-        ret += cards[0].skill.scoreUp;
-        for (int i = 1; i < int(cards.size()); ++i) 
-            ret += cards[i].skill.scoreUp * 0.2;
-    } else {
-        // 单人Live实效（没有实际作用）
-        ret += cards[0].skill.scoreUp;
-        for (int i = 0; i < int(cards.size()); ++i) 
-            ret += cards[i].skill.scoreUp;
-    }
-    return ret;
-}
-
-
 long long BaseDeckRecommend::calcDeckHash(const std::vector<const CardDetail*>& deck) {
     std::vector<int> v{};
     for(auto& card : deck) 
@@ -53,7 +34,7 @@ long long BaseDeckRecommend::calcDeckHash(const std::vector<const CardDetail*>& 
 /*
 获取当前卡组的最佳排列
 */
-RecommendDeck BaseDeckRecommend::getBestPermutation(
+BestPermutationResult BaseDeckRecommend::getBestPermutation(
     DeckCalculator& deckCalculator,
     const std::vector<const CardDetail*> &deckCards,
     std::map<int, std::vector<SupportDeckCard>>& supportCards,
@@ -76,16 +57,24 @@ RecommendDeck BaseDeckRecommend::getBestPermutation(
     );
     // 获取最高分的卡组
     double maxValue{};
-    RecommendDeck bestDeck{};
+    BestPermutationResult ret{};
     for (auto& deckDetail : deckDetails) {
         auto score = scoreFunc(deckDetail);
         double value = score.score + score.liveScore * 1e-7;
+
+        ret.maxTargetValue = std::max(ret.maxTargetValue, value);
+        ret.maxMultiLiveScoreUp = std::max(ret.maxMultiLiveScoreUp, deckDetail.multiLiveScoreUp);
+        
+        // 最低实效限制
+        if (deckDetail.multiLiveScoreUp < config.multiScoreUpLowerBound)
+            continue;
+        
         if (value > maxValue) {
             maxValue = value;
-            bestDeck = RecommendDeck(deckDetail, config.target, score, calcMultiLiveScoreUp(deckDetail, liveType));
+            ret.bestDeck = RecommendDeck(deckDetail, config.target, score);
         }
     }
-    return bestDeck;
+    return ret;
 }
 
 

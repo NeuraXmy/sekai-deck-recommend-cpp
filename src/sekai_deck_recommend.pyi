@@ -51,7 +51,7 @@ class DeckRecommendSingleCardConfig:
     def to_dict(self) -> Dict[str, Any]:
         ...
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'DeckRecommendCardConfig':
+    def from_dict(cls, data: Dict[str, Any]) -> 'DeckRecommendSingleCardConfig':
         ...
 
 
@@ -153,6 +153,7 @@ class DeckRecommendOptions:
         multi_live_teammate_score_up (int): Score up of single multi-live teammate, default is None (None means copying self score up)
         multi_live_teammate_power (int): Power of single multi-live teammate, default is None (None means copying self power)
         best_skill_as_leader (bool): Whether to use the best skill card as leader, default is True
+        multi_live_score_up_lower_bound (float): Lower bound of multi live score up, only available when live_type is "multi", default is 0
         sa_options (DeckRecommendSaOptions): Simulated annealing options
         ga_options (DeckRecommendGaOptions): Genetic algorithm options
     """

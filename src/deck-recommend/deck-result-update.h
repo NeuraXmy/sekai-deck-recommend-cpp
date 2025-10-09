@@ -29,8 +29,8 @@ struct RecommendDeck : DeckDetail {
 
     RecommendDeck() = default;
 
-    RecommendDeck(const DeckDetail &deckDetail, RecommendTarget target, Score s, double multiLiveScoreUp)
-        : DeckDetail(deckDetail), score(s.score), liveScore(s.liveScore), multiLiveScoreUp(multiLiveScoreUp) {
+    RecommendDeck(const DeckDetail &deckDetail, RecommendTarget target, Score s)
+        : DeckDetail(deckDetail), score(s.score), liveScore(s.liveScore), multiLiveScoreUp(deckDetail.multiLiveScoreUp) {
             int power = deckDetail.power.total;
             // 根据不同优化目标计算目标值
             if (target == RecommendTarget::Power) {

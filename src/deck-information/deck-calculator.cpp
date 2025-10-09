@@ -343,12 +343,19 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
             });
         }
 
+        // 计算多人live的技能实效
+        double multiLiveScoreUp = 0;
+        multiLiveScoreUp += skills[order[0]].scoreUp;
+        for (int i = 1; i < card_num; ++i) 
+            multiLiveScoreUp += skills[order[i]].scoreUp * 0.2;
+
         ret.push_back(DeckDetail{ 
-            power, 
-            eventBonusInfo.totalBonus,
-            supportDeckBonus.bonus,
-            std::nullopt, // supportDeckBonus.cards
-            cards 
+            .power = power, 
+            .eventBonus = eventBonusInfo.totalBonus,
+            .supportDeckBonus = supportDeckBonus.bonus,
+            .supportDeckCards = std::nullopt, // supportDeckBonus.cards
+            .cards = cards,
+            .multiLiveScoreUp = multiLiveScoreUp
         });
     }
 

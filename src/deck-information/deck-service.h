@@ -39,6 +39,7 @@ struct DeckDetail {
     std::optional<double> supportDeckBonus;
     std::optional<std::vector<CardDetail>> supportDeckCards;    // for debug
     std::vector<DeckCardDetail> cards;
+    double multiLiveScoreUp;
 };
 
 

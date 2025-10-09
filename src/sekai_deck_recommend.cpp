@@ -264,6 +264,7 @@ struct PyDeckRecommendOptions {
     std::optional<int> multi_live_teammate_score_up;
     std::optional<int> multi_live_teammate_power;
     std::optional<bool> best_skill_as_leader;
+    std::optional<double> multi_live_score_up_lower_bound;
     std::optional<PySaOptions> sa_options;
     std::optional<PyGaOptions> ga_options;
 
@@ -322,6 +323,9 @@ struct PyDeckRecommendOptions {
             result["multi_live_teammate_power"] = multi_live_teammate_power.value();
         if (best_skill_as_leader.has_value())
             result["best_skill_as_leader"] = best_skill_as_leader.value();
+        if (multi_live_score_up_lower_bound.has_value())
+            result["multi_live_score_up_lower_bound"] = multi_live_score_up_lower_bound.value();
+        
         if (sa_options.has_value())
             result["sa_options"] = sa_options->to_dict();
         if (ga_options.has_value())
@@ -385,6 +389,8 @@ struct PyDeckRecommendOptions {
             options.multi_live_teammate_power = dict["multi_live_teammate_power"].cast<int>();
         if (dict.contains("best_skill_as_leader"))
             options.best_skill_as_leader = dict["best_skill_as_leader"].cast<bool>();
+        if (dict.contains("multi_live_score_up_lower_bound"))
+            options.multi_live_score_up_lower_bound = dict["multi_live_score_up_lower_bound"].cast<double>();
 
         if (dict.contains("sa_options"))
             options.sa_options = PySaOptions::from_dict(dict["sa_options"].cast<py::dict>());
@@ -799,6 +805,13 @@ class SekaiDeckRecommend {
                 config.bestSkillAsLeader = pyoptions.best_skill_as_leader.value();
             }
 
+            // multi live score up lower bound
+            if (pyoptions.multi_live_score_up_lower_bound.has_value()) {
+                if (options.liveType != mapEnum(EnumMap::liveType, "multi"))
+                    throw std::invalid_argument("multi_live_score_up_lower_bound is only valid for multi live.");
+                config.multiScoreUpLowerBound = pyoptions.multi_live_score_up_lower_bound.value();
+            }
+
             // timeout
             if (pyoptions.timeout_ms.has_value()) {
                 config.timeout_ms = pyoptions.timeout_ms.value();
@@ -1151,6 +1164,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("multi_live_teammate_score_up", &PyDeckRecommendOptions::multi_live_teammate_score_up)
         .def_readwrite("multi_live_teammate_power", &PyDeckRecommendOptions::multi_live_teammate_power)
         .def_readwrite("best_skill_as_leader", &PyDeckRecommendOptions::best_skill_as_leader)
+        .def_readwrite("multi_live_score_up_lower_bound", &PyDeckRecommendOptions::multi_live_score_up_lower_bound)
         .def_readwrite("sa_options", &PyDeckRecommendOptions::sa_options)
         .def_readwrite("ga_options", &PyDeckRecommendOptions::ga_options);
 

@@ -64,6 +64,9 @@ struct DeckRecommendConfig {
     // 是否总是将技能加分最高的换到队长（即使指定了固定卡牌）
     bool bestSkillAsLeader = true;
 
+    // 实效下限
+    double multiScoreUpLowerBound = 0.0;
+
     // 模拟退火参数
     int saRunCount = 20; // 运行次数
     int saSeed = -1; // 随机数种子 -1 代表使用当前时间
@@ -85,6 +88,13 @@ struct DeckRecommendConfig {
     double gaCrossoverRate = 1.0; // 交叉率
     double gaBaseMutationRate = 0.1; // 基础变异率
     double gaNoImproveIterToMutationRate = 0.02; // 无改进迭代次数转换为变异率的比例
+};
+
+
+struct BestPermutationResult {
+    std::optional<RecommendDeck> bestDeck = std::nullopt;
+    double maxTargetValue = 0.0;
+    double maxMultiLiveScoreUp = 0.0;
 };
   
 
@@ -108,8 +118,11 @@ public:
     // 计算第一位+后几位顺序无关的哈希值
     long long calcDeckHash(const std::vector<const CardDetail*>& deck);
 
-    // 获取卡组的最佳排列并计算分数
-    RecommendDeck getBestPermutation(
+    /**
+     * 获取卡组的最佳排列并计算分数，返回可能用到的最优推荐卡组信息
+     * 由于组卡参数限制导致卡组无效时返回nullopt
+     */
+    BestPermutationResult getBestPermutation(
         DeckCalculator& deckCalculator,
         const std::vector<const CardDetail*> &deckCards,
         std::map<int, std::vector<SupportDeckCard>>& supportCards,

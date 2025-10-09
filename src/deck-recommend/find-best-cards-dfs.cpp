@@ -37,12 +37,12 @@ void BaseDeckRecommend::findBestCardsDFS(
     }
     // 已经是完整卡组，计算当前卡组的值
     if (int(deckCards.size()) == member) {
-        dfsInfo.update(
-            getBestPermutation(
-                this->deckCalculator, deckCards, supportCards, scoreFunc, 
-                honorBonus, eventType, eventId, liveType, cfg
-            ), limit
+        auto ret = getBestPermutation(
+            this->deckCalculator, deckCards, supportCards, scoreFunc, 
+            honorBonus, eventType, eventId, liveType, cfg
         );
+        if (ret.bestDeck.has_value())
+            dfsInfo.update(ret.bestDeck.value(), limit);
         return;
     }
 

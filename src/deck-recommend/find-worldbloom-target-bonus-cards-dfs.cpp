@@ -233,7 +233,7 @@ void BaseDeckRecommend::findWorldBloomTargetBonusCardsDFS(
                 auto deckRes = getBestPermutation(
                     deckCalculator, deckCards, emptySupportCards, scoreFunc,
                     0, eventType, eventId, liveType, config
-                );
+                ).bestDeck.value();
                 // 需要验证加成正确
                 if(std::round(deckRes.eventBonus.value_or(0) * 2) == bonus) 
                     dfsInfo.update(deckRes, 1e9);
