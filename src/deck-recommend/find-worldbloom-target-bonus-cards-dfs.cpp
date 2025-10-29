@@ -183,9 +183,6 @@ void BaseDeckRecommend::findWorldBloomTargetBonusCardsDFS(
     std::map<int, bool> hasBonusCharaCards;
     for (const auto &card : cardDetails) {
         if (card.maxEventBonus.has_value() && card.maxEventBonus.value() > 0) {
-            // 如果不是 .0 .5 直接跳过
-            if (abs(std::round(card.maxEventBonus.value() * 2) - card.maxEventBonus.value() * 2) > 1e-6)
-                continue;
             int bonus = std::round(card.maxEventBonus.value() * 2);
             int chara = card.characterId;
             int attr = card.attr;
