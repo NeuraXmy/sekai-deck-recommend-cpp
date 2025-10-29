@@ -183,6 +183,8 @@ void BaseDeckRecommend::findWorldBloomTargetBonusCardsDFS(
     std::map<int, bool> hasBonusCharaCards;
     for (const auto &card : cardDetails) {
         if (card.maxEventBonus.has_value() && card.maxEventBonus.value() > 0) {
+            if (std::abs(std::round(card.maxEventBonus.value() * 2) - card.maxEventBonus.value() * 2) > 1e-6)
+                continue;
             int bonus = std::round(card.maxEventBonus.value() * 2);
             int chara = card.characterId;
             int attr = card.attr;
@@ -235,7 +237,7 @@ void BaseDeckRecommend::findWorldBloomTargetBonusCardsDFS(
                     0, eventType, eventId, liveType, config
                 ).bestDeck.value();
                 // 需要验证加成正确
-                if(std::round(deckRes.eventBonus.value_or(0) * 2) == bonus) 
+                if(std::abs(deckRes.eventBonus.value_or(0) * 2 - bonus) < 1e-6)
                     dfsInfo.update(deckRes, 1e9);
                 else
                     std::cerr << "Warning: World Bloom bonus mismatch, expected " 
