@@ -15,7 +15,6 @@ std::vector<RecommendDeck> MysekaiDeckRecommend::recommendMysekaiDeck(
 
     auto cfg = config;
     cfg.target = RecommendTarget::Mysekai;
-    cfg.bestSkillAsLeader = false;
     cfg.keepAfterTrainingState = true;
 
     auto userCards = dataProvider.userData->userCards;
