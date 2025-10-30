@@ -11,6 +11,7 @@ enum class RecommendTarget {
     Power,
     Skill,
     Bonus,
+    Mysekai,
 };
 
 constexpr double SCORE_MAX = 10000000;
@@ -26,19 +27,36 @@ struct RecommendDeck : DeckDetail {
     double multiLiveScoreUp;
     // 优化目标值（不一定是分数）
     double targetValue;
+    // Mysekai活动点数
+    int mysekaiEventPoint;
 
     RecommendDeck() = default;
 
     RecommendDeck(const DeckDetail &deckDetail, RecommendTarget target, Score s)
-        : DeckDetail(deckDetail), score(s.score), liveScore(s.liveScore), multiLiveScoreUp(deckDetail.multiLiveScoreUp) {
-            int power = deckDetail.power.total;
-            // 根据不同优化目标计算目标值
-            if (target == RecommendTarget::Power) {
-                targetValue = power + double(score) / SCORE_MAX;
-            } else if (target == RecommendTarget::Skill) {
-                targetValue = multiLiveScoreUp + double(score) / SCORE_MAX;
-            } else {
-                targetValue = score + double(liveScore) / SCORE_MAX;
+        : DeckDetail(deckDetail) {
+            if (target == RecommendTarget::Mysekai) {
+                // 烤森目标值
+                this->targetValue = s.mysekaiInternalPoint;
+                this->mysekaiEventPoint = s.mysekaiEventPoint;
+                this->score = 0;
+                this->liveScore = 0;
+                this->multiLiveScoreUp = 0;
+            } 
+            else {
+                this->score = s.score;
+                this->liveScore = s.liveScore;
+                this->multiLiveScoreUp = deckDetail.multiLiveScoreUp;
+                this->mysekaiEventPoint = 0;
+
+                int power = deckDetail.power.total;
+                // 根据不同优化目标计算目标值
+                if (target == RecommendTarget::Power) {
+                    targetValue = power + double(score) / SCORE_MAX;
+                } else if (target == RecommendTarget::Skill) {
+                    targetValue = multiLiveScoreUp + double(score) / SCORE_MAX;
+                } else {
+                    targetValue = score + double(liveScore) / SCORE_MAX;
+                }
             }
         }
 

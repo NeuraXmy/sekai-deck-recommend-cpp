@@ -68,11 +68,11 @@ Score EventCalculator::getDeckScoreAndEventPoint(
     );
     auto eventPoint = this->getEventPoint(liveType, eventType, liveScore, musicMeta.event_rate,
         deckBonus.value_or(0) + supportDeckBonus.value_or(0));
-    
-    return Score{
-        .score=eventPoint,
-        .liveScore=liveScore,
-    };
+
+    Score ret{};
+    ret.score = eventPoint;
+    ret.liveScore = liveScore;
+    return ret;
 }
 
 ScoreFunction EventCalculator::getEventPointFunction(

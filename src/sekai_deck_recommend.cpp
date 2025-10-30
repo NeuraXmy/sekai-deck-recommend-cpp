@@ -1,5 +1,6 @@
 #include "deck-recommend/event-deck-recommend.h"
 #include "deck-recommend/challenge-live-deck-recommend.h"
+#include "deck-recommend/mysekai-deck-recommend.h"
 
 #include <iostream>
 #include <chrono>
@@ -45,7 +46,8 @@ static const std::set<std::string> VALID_LIVE_TYPES = {
     "solo",
     "challenge",
     "cheerful",
-    "auto"
+    "auto",
+    "mysekai",
 };
 static const std::set<std::string> VALID_RARITY_TYPES = {
     "rarity_4",
@@ -459,6 +461,7 @@ struct PyRecommendCard {
 struct PyRecommendDeck {
     int score;
     int live_score;
+    int mysekai_event_point;
     int total_power;
     int base_power;
     int area_item_bonus_power;
@@ -475,6 +478,7 @@ struct PyRecommendDeck {
         py::dict result;
         result["score"] = score;
         result["live_score"] = live_score;
+        result["mysekai_event_point"] = mysekai_event_point;
         result["total_power"] = total_power;
         result["base_power"] = base_power;
         result["area_item_bonus_power"] = area_item_bonus_power;
@@ -498,6 +502,7 @@ struct PyRecommendDeck {
         PyRecommendDeck deck;
         deck.score = dict["score"].cast<int>();
         deck.live_score = dict["live_score"].cast<int>();
+        deck.mysekai_event_point = dict["mysekai_event_point"].cast<int>();
         deck.total_power = dict["total_power"].cast<int>();
         deck.base_power = dict["base_power"].cast<int>();
         deck.area_item_bonus_power = dict["area_item_bonus_power"].cast<int>();
@@ -593,11 +598,17 @@ class SekaiDeckRecommend {
         };
 
         // liveType
+        bool is_mysekai = false;
         if (!pyoptions.live_type.has_value())
             throw std::invalid_argument("live_type is required.");
         if (!VALID_LIVE_TYPES.count(pyoptions.live_type.value()))
             throw std::invalid_argument("Invalid live type: " + pyoptions.live_type.value());
-        options.liveType = mapEnum(EnumMap::liveType, pyoptions.live_type.value());
+        if (pyoptions.live_type.value() == "mysekai") {
+            is_mysekai = true;
+            options.liveType = mapEnum(EnumMap::liveType, "multi");
+        }
+        else
+            options.liveType = mapEnum(EnumMap::liveType, pyoptions.live_type.value());
         
         // eventId
         if (pyoptions.event_id.has_value()) {
@@ -662,17 +673,22 @@ class SekaiDeckRecommend {
             auto config = DeckRecommendConfig();
 
             // target
-            std::string target = pyoptions.target.value_or(DEFAULT_TARGET);
-            if (!VALID_TARGETS.count(target))
-                throw std::invalid_argument("Invalid target: " + target);
-            if (target == "score")
-                config.target = RecommendTarget::Score;
-            else if (target == "skill")
-                config.target = RecommendTarget::Skill;
-            else if (target == "power")
-                config.target = RecommendTarget::Power;
-            else if (target == "bonus")
-                config.target = RecommendTarget::Bonus;
+            if (is_mysekai) {
+                // 虽然传参的时候用live类型，但是暂时用target标记Mysekai组卡
+                config.target = RecommendTarget::Mysekai;
+            } else {
+                std::string target = pyoptions.target.value_or(DEFAULT_TARGET);
+                if (!VALID_TARGETS.count(target))
+                    throw std::invalid_argument("Invalid target: " + target);
+                if (target == "score")
+                    config.target = RecommendTarget::Score;
+                else if (target == "skill")
+                    config.target = RecommendTarget::Skill;
+                else if (target == "power")
+                    config.target = RecommendTarget::Power;
+                else if (target == "bonus")
+                    config.target = RecommendTarget::Bonus;
+            }
 
             // bonus list for target == bonus
             if (pyoptions.target_bonus_list.value_or(std::vector<int>{}).size()) {
@@ -967,6 +983,7 @@ class SekaiDeckRecommend {
             auto py_deck = PyRecommendDeck();
             py_deck.score = deck.score;
             py_deck.live_score = deck.liveScore;
+            py_deck.mysekai_event_point = deck.mysekaiEventPoint;
             py_deck.total_power = deck.power.total;
             py_deck.base_power = deck.power.base;
             py_deck.area_item_bonus_power = deck.power.areaItemBonus;
@@ -1047,7 +1064,14 @@ public:
 
         std::vector<RecommendDeck> result;
         
-        if (options.liveType != mapEnum(EnumMap::liveType, "challenge")) {
+        if (options.config.target == RecommendTarget::Mysekai) {
+            MysekaiDeckRecommend mysekaiDeckRecommend(options.dataProvider);
+            result = mysekaiDeckRecommend.recommendMysekaiDeck(
+                options.eventId,
+                options.config,
+                options.worldBloomCharacterId
+            );
+        } else if (options.liveType != mapEnum(EnumMap::liveType, "challenge")) {
             EventDeckRecommend eventDeckRecommend(options.dataProvider);
             result = eventDeckRecommend.recommendEventDeck(
                 options.eventId,
@@ -1195,6 +1219,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_static("from_dict", &PyRecommendDeck::from_dict)
         .def_readwrite("score", &PyRecommendDeck::score)
         .def_readwrite("live_score", &PyRecommendDeck::live_score)
+        .def_readwrite("mysekai_event_point", &PyRecommendDeck::mysekai_event_point)
         .def_readwrite("total_power", &PyRecommendDeck::total_power)
         .def_readwrite("base_power", &PyRecommendDeck::base_power)
         .def_readwrite("area_item_bonus_power", &PyRecommendDeck::area_item_bonus_power)

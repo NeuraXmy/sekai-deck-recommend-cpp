@@ -114,7 +114,10 @@ public:
      */
     bool isCertainlyLessThan(
         const CardDetail& cardDetail0,
-        const CardDetail& cardDetail1
+        const CardDetail& cardDetail1,
+        bool checkPower = true,
+        bool checkSkill = true,
+        bool checkEventBonus = true
     );
 
     /**

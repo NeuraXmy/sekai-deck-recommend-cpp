@@ -126,7 +126,7 @@ class DeckRecommendOptions:
         region (str): Region in ["jp", "en", "tw", "kr", "cn"]
         user_data_file_path (str): File path of user suite json
         user_data_str (str | bytes): String or bytes of user suite json
-        live_type (str): Live type in ["multi", "solo", "auto", "challenge"]
+        live_type (str): Live type in ["multi", "solo", "auto", "challenge", "mysekai"]
         music_id (int): Music ID
         music_diff (str): Music difficulty in ["easy", "normal", "hard", "expert", "master", "append"]
         event_id (int): Event ID, only required when live_type is not "challenge". leave it None to use no-event or unit-attr-specificed recommendation
@@ -246,6 +246,7 @@ class RecommendDeck:
     Attributes:
         score (int): event point or challenge score of the deck
         live_score (int): Live score of the deck
+        mysekai_event_point (int): event point of the deck obtained in mysekai
         total_power (int): Total power of the deck
         base_power (int): Base power of the deck
         area_item_bonus_power (int): Area item bonus power of the deck
@@ -260,6 +261,7 @@ class RecommendDeck:
     """
     score: int
     live_score: int
+    mysekai_event_point: int
     total_power: int
     base_power: int
     area_item_bonus_power: int

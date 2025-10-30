@@ -111,12 +111,23 @@ std::vector<CardDetail> CardCalculator::batchGetCardDetail(
     return ret;
 }
 
-bool CardCalculator::isCertainlyLessThan(const CardDetail &cardDetail0, const CardDetail &cardDetail1)
+bool CardCalculator::isCertainlyLessThan(
+    const CardDetail &cardDetail0, 
+    const CardDetail &cardDetail1,
+    bool checkPower,
+    bool checkSkill,
+    bool checkEventBonus
+)
 {
-    return cardDetail0.power.isCertainlyLessThan(cardDetail1.power) &&
-        cardDetail0.skill.isCertainlyLessThan(cardDetail1.skill) &&
-        (cardDetail0.maxEventBonus == std::nullopt || cardDetail1.minEventBonus == std::nullopt ||
-            cardDetail0.maxEventBonus.value() < cardDetail1.minEventBonus.value());
+    bool ret = false;
+    if (checkPower)
+        ret = (ret && cardDetail0.power.isCertainlyLessThan(cardDetail1.power));
+    if (checkSkill)
+        ret = (ret && cardDetail0.skill.isCertainlyLessThan(cardDetail1.skill));
+    if (checkEventBonus)
+        ret = (ret && (cardDetail0.maxEventBonus == std::nullopt || cardDetail1.minEventBonus == std::nullopt ||
+            cardDetail0.maxEventBonus.value() < cardDetail1.minEventBonus.value()));
+    return ret;
 }
 
 SupportDeckCard CardCalculator::getSupportDeckCard(const UserCard &card, int eventId, int specialCharacterId)

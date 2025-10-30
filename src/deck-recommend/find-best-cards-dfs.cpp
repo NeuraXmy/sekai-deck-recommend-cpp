@@ -104,13 +104,17 @@ void BaseDeckRecommend::findBestCardsDFS(
         if (preCard.has_value()) {
             auto& pre = preCard.value();
             bool lessThan = false;
+
             if (cfg.target == RecommendTarget::Score) {
                 lessThan = this->cardCalculator.isCertainlyLessThan(card, pre);
             } else if (cfg.target == RecommendTarget::Power) {
                 lessThan = card.power.isCertainlyLessThan(pre.power);
             } else if (cfg.target == RecommendTarget::Skill) {
                 lessThan = card.skill.isCertainlyLessThan(pre.skill);
+            } else if (cfg.target == RecommendTarget::Mysekai) {
+                lessThan = this->cardCalculator.isCertainlyLessThan(card, pre, true, false, true);
             }
+
             if (cfg.target == RecommendTarget::Score) {
                 // 如果肯定比上一次选定的卡牌要弱，那么舍去，让这张卡去后面再选
                 // 该优化较为激进，未考虑卡的协同效应，在计算分数最优的情况下才使用

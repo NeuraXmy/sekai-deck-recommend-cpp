@@ -4,9 +4,15 @@
 #include "data-provider/data-provider.h"
 #include "deck-information/deck-calculator.h"
 
-struct Score { 
-    int score = 0;
-    int liveScore = 0;
+union Score { 
+    struct {
+        int score;
+        int liveScore;
+    };
+    struct {
+        int mysekaiEventPoint;
+        int mysekaiInternalPoint;
+    };
 };
 using ScoreFunction = std::function<Score(const MusicMeta&, const DeckDetail&)>;
 
