@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "sekai-deck-recommend-cpp"
-version = "0.2.1"
+version = "0.2.2"
 
 [tool.scikit-build]
 cmake.args = ["-DCMAKE_BUILD_TYPE=Release"]
