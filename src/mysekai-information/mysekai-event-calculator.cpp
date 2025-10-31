@@ -7,7 +7,7 @@ Score MysekaiEventCalculator::getDeckMysekaiEventPoint(const DeckDetail &deckDet
     double event_bonus = deckDetail.eventBonus.value_or(0) + deckDetail.supportDeckBonus.value_or(0);
 
     double power_bonus = 1 + (power / 450000.0);
-    power_bonus = std::floor(power_bonus * 100 + 1e-6) / 100.0;
+    power_bonus = std::floor(power_bonus * 10 + 1e-6) / 10.0;
 
     event_bonus = std::floor(event_bonus + 1e-6) / 100.0;
 
