@@ -189,6 +189,7 @@ class DeckRecommendOptions:
     multi_live_teammate_score_up: Optional[int]
     multi_live_teammate_power: Optional[int]
     best_skill_as_leader: Optional[bool]
+    multi_live_score_up_lower_bound: Optional[float]
     sa_options: Optional[DeckRecommendSaOptions]
     ga_options: Optional[DeckRecommendGaOptions]
 
