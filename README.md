@@ -2,11 +2,18 @@
 
 A C++ optimized version of [sekai-calculator](https://github.com/xfl03/sekai-calculator) with Python bindings, providing both the original brute-force search algorithm and some new randomized algorithms.
 
-## Install
+## Install from PyPI
+
+```
+pip install sekai-deck-recommend-cpp
+```
+
+## Install from source
 
 ### Prerequisites
+
 - CMake ≥ 3.15
-- C++17 compatible compiler (GCC/Clang/MSVC)
+- C++20 compatible compiler (GCC/Clang/MSVC)
 - Python 3.8+ with development headers
 
 ### Steps
@@ -39,7 +46,7 @@ options = DeckRecommendOptions()
 # optimizing target in ["score", "power", "skill", "bonus"], default is "score"
 options.target = "score"
 
-# "ga" for genetic algorithm, "sa" for simulated annealing, "dfs" for brute-force search
+# "ga" for genetic algorithm, "dfs" for brute-force search
 # default is "ga"
 options.algorithm = "ga"   
 
