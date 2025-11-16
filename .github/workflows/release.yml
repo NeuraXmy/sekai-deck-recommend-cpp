@@ -1,0 +1,72 @@
+# .github/workflows/release.yml
+
+name: Build and publish to PyPI
+
+# 仅在创建新的 release 时触发
+on:
+  release:
+    types: [created]
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # 在这些操作系统上构建
+        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8' # cibuildwheel 会自己管理和下载其他 Python 版本
+
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel
+
+      - name: Build wheels
+        run: python -m cibuildwheel --output-dir wheelhouse
+        # CIBW_BUILD_VERBOSITY: 增加构建日志的详细程度，方便排查问题
+        # CIBW_ARCHS_MACOS: 在 macOS 上同时构建 x86_64 和 arm64 (Apple Silicon) 架构
+        env:
+          CIBW_BUILD_VERBOSITY: "1"
+          CIBW_ARCHS_MACOS: "x86_64 arm64"
+
+      - name: Store artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}
+          path: ./wheelhouse/*.whl
+
+  publish_wheels:
+    name: Publish wheels to PyPI
+    needs: build_wheels # 依赖于构建任务
+    runs-on: ubuntu-latest
+
+    # 配置发布环境，用于 PyPI Trusted Publishing
+    environment:
+      name: pypi-publish
+      url: https://pypi.org/p/sekai-deck-recommend-cpp
+
+    # 授予向 PyPI 写入的权限
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download all wheels
+        uses: actions/download-artifact@v4
+        with:
+          # 将所有构建任务生成的 artifacts 下载到 dist 文件夹
+          path: dist
+          merge-multiple: true
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # 'pypi-publish' 环境会自动提供 OIDC token，无需手动配置 token
+          # gh-action-pypi-publish 会自动使用这个 token 进行认证
+          packages-dir: dist/
