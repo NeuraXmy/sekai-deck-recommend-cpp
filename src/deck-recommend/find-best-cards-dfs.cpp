@@ -52,7 +52,7 @@ void BaseDeckRecommend::findBestCardsDFS(
     }
 
     // 非完整卡组，继续遍历所有情况
-    std::optional<CardDetail> preCard = std::nullopt;
+    const CardDetail* preCard = nullptr;
 
     for (const auto& card : cardDetails) {
         // 跳过已经重复出现过的卡牌
@@ -65,7 +65,7 @@ void BaseDeckRecommend::findBestCardsDFS(
         }
         if (has_card) continue;
         // 跳过重复角色
-        if (!isChallengeLive && deckCharacters.count(card.characterId)) continue;
+        if (!isChallengeLive && deckCharacters.test(card.characterId)) continue;
         // 强制角色限制（不需要考虑固定卡牌，两个参数不允许同时存在）
         if (cfg.fixedCharacters.size() > deckCards.size() && cfg.fixedCharacters[deckCards.size()] != card.characterId) {
             continue;
@@ -101,8 +101,8 @@ void BaseDeckRecommend::findBestCardsDFS(
             if (!greaterThan && card.cardId > last.cardId) continue;
         }
         
-        if (preCard.has_value()) {
-            auto& pre = preCard.value();
+        if (preCard) {
+            auto& pre = *preCard;
             bool lessThan = false;
 
             if (cfg.target == RecommendTarget::Score) {
@@ -124,16 +124,16 @@ void BaseDeckRecommend::findBestCardsDFS(
                 if (lessThan && deckCards.size() != member - 1) continue;
             }
         }
-        preCard = card;
+        preCard = &card;
 
         // 递归，寻找所有情况
         deckCards.push_back(&card);
-        deckCharacters.insert(card.characterId);
+        deckCharacters.flip(card.characterId);
         findBestCardsDFS(
             liveType, cfg, cardDetails, supportCards, scoreFunc, dfsInfo,
             limit, isChallengeLive, member, honorBonus, eventType, eventId, fixedCards
         );
         deckCards.pop_back();
-        deckCharacters.erase(card.characterId);
+        deckCharacters.flip(card.characterId);
     }
 }

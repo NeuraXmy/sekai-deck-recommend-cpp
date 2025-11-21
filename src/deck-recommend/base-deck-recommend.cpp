@@ -312,12 +312,12 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
         else if (config.algorithm == RecommendAlgorithm::DFS) {
             // 使用DFS
             calcInfo.deckCards.clear();
-            calcInfo.deckCharacters.clear();
+            calcInfo.deckCharacters = 0;
 
             // 插入固定卡牌
             for (const auto& card : fixedCards) {
                 calcInfo.deckCards.push_back(&card);
-                calcInfo.deckCharacters.insert(card.characterId);
+                calcInfo.deckCharacters.flip(card.characterId);
             }
 
             findBestCardsDFS(

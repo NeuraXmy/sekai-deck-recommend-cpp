@@ -5,6 +5,7 @@
 #include "live-score/live-calculator.h"
 #include <set>
 #include <queue>
+#include <bitset>
 
 enum class RecommendTarget {
     Score,
@@ -72,7 +73,7 @@ struct RecommendCalcInfo {
     std::unordered_set<long long> deckHashSet = {};
     
     std::vector<const CardDetail*> deckCards = {};
-    std::unordered_set<int> deckCharacters = {};
+    std::bitset<32> deckCharacters = 0;
     std::map<long long, double> deckTargetValueMap{};
 
     // 添加一个新结果
