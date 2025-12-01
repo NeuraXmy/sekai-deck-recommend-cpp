@@ -88,7 +88,7 @@ SkillDetail CardSkillCalculator::getSkillDetail(const UserCard &userCard, const 
     for (auto& skillEffect : skill.skillEffects) {
         auto skillEffectDetail = findOrThrow(skillEffect.skillEffectDetails, [&](auto& it) {
             return it.level == userCard.skillLevel;
-        });
+        }, [&]() { return "Skill effect detail not found for skillEffectId=" + std::to_string(skillEffect.id) + " level=" + std::to_string(userCard.skillLevel); });
         if (skillEffect.skillEffectType == score_up_enum ||
             skillEffect.skillEffectType == score_up_condition_life_enum ||
             skillEffect.skillEffectType == score_up_keep_enum) {
@@ -141,7 +141,7 @@ Skill CardSkillCalculator::getSkill(const UserCard &userCard, const Card &card, 
     auto skills = dataProvider.masterData->skills;
     return findOrThrow(skills, [&](auto& it) {
         return it.id == skillId;
-    });
+    }, [&]() { return "Skill not found for skillId=" + std::to_string(skillId); });
 }
 
 int CardSkillCalculator::getCharacterRank(int characterId)
@@ -149,6 +149,6 @@ int CardSkillCalculator::getCharacterRank(int characterId)
     auto userCharacters = dataProvider.userData->userCharacters;
     auto userCharacter = findOrThrow(userCharacters, [&](auto& it) {
         return it.characterId == characterId;
-    });
+    }, [&]() { return "User character not found for characterId=" + std::to_string(characterId); });
     return userCharacter.characterRank;
 }

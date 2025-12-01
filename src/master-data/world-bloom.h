@@ -1,7 +1,7 @@
 #ifndef WORLD_BLOOM_H
 #define WORLD_BLOOM_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct WorldBloom {
     int id = 0;

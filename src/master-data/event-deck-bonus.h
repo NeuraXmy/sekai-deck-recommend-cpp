@@ -1,7 +1,7 @@
 #ifndef EVENT_DECK_BONUS_H
 #define EVENT_DECK_BONUS_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct EventDeckBonus {
     int id = 0;

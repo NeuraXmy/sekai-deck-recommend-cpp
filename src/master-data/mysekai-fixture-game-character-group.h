@@ -1,7 +1,7 @@
 #ifndef MYSEKAI_FIXTURE_GAME_CHARACTER_GROUP_H
 #define MYSEKAI_FIXTURE_GAME_CHARACTER_GROUP_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct MysekaiFixtureGameCharacterGroup {
     int id;

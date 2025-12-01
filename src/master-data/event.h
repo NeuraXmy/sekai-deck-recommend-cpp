@@ -1,7 +1,7 @@
 #ifndef EVENT_H
 #define EVENT_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct Event {
     int id = 0;

@@ -11,7 +11,7 @@ MusicMeta LiveCalculator::getMusicMeta(int musicId, int musicDif)
     auto& musicMetas = this->dataProvider.musicMetas->metas;
     return findOrThrow(musicMetas, [musicId, musicDif](const MusicMeta &meta) {
         return meta.music_id == musicId && meta.difficulty == musicDif;
-    });
+    }, [&]() { return "Music meta not found for musicId=" + std::to_string(musicId) + " musicDif=" + std::to_string(musicDif); });
 }
 
 double LiveCalculator::getBaseScore(const MusicMeta &musicMeta, int liveType)

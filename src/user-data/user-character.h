@@ -1,7 +1,7 @@
 #ifndef USER_CHARACTER_H
 #define USER_CHARACTER_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct UserCharacter {
     int characterId = 0;

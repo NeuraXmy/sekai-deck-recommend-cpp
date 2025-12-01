@@ -1,7 +1,7 @@
 #ifndef USER_AREA_H
 #define USER_AREA_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct UserAreaActionSets {
     int id = 0;

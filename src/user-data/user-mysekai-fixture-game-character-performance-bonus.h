@@ -1,7 +1,7 @@
 #ifndef USER_MYSEKAI_FIXTURE_GAME_CHARACTER_PERFORMANCE_BONUS_H
 #define USER_MYSEKAI_FIXTURE_GAME_CHARACTER_PERFORMANCE_BONUS_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct UserMysekaiFixtureGameCharacterPerformanceBonus {
     int gameCharacterId = 0;

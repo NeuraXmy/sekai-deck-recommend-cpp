@@ -23,10 +23,10 @@ std::vector<MysekaiGateBonus> MySekaiService::getMysekaiGateBonuses()
     for (auto& it : userMysekaiGates) {
         auto& gate = findOrThrow(mysekaiGates, [&](const MysekaiGate& g) {
             return g.id == it.mysekaiGateId;
-        });
+        }, [&]() { return "Mysekai gate not found for mysekaiGateId=" + std::to_string(it.mysekaiGateId); });
         auto& gateLevel = findOrThrow(mysekaiGateLevels, [&](const MysekaiGateLevel& l) {
             return l.mysekaiGateId == it.mysekaiGateId && l.level == it.mysekaiGateLevel;
-        });
+        }, [&]() { return "Mysekai gate level not found for mysekaiGateId=" + std::to_string(it.mysekaiGateId) + " level=" + std::to_string(it.mysekaiGateLevel); });
         result.push_back(MysekaiGateBonus{
             gate.unit,
             gateLevel.powerBonusRate

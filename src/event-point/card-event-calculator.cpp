@@ -21,7 +21,7 @@ double CardEventCalculator::getEventDeckBonus(int eventId, const Card &card)
             } else {
                 auto unit = findOrThrow(gameCharacterUnits, [it](const GameCharacterUnit& a) { 
                     return a.id == it.gameCharacterUnitId; 
-                });
+                }, [&]() { return "Game character unit not found for gameCharacterUnitId=" + std::to_string(it.gameCharacterUnitId); });
                 // 角色不匹配
                 if (unit.gameCharacterId != card.characterId) continue;
                 // 非虚拟歌手或者组合正确（或者无组合）的虚拟歌手，享受全量加成
@@ -39,7 +39,7 @@ CardEventBonusInfo CardEventCalculator::getCardEventBonus(const UserCard &userCa
     auto& cards = this->dataProvider.masterData->cards;
     auto card = findOrThrow(cards, [&](const Card& it) { 
         return it.id == userCard.cardId; 
-    });
+    }, [&]() { return "Card not found for cardId=" + std::to_string(userCard.cardId); });
     auto& eventCards = this->dataProvider.masterData->eventCards;
     auto& eventRarityBonusRates = this->dataProvider.masterData->eventRarityBonusRates;
 
@@ -54,7 +54,7 @@ CardEventBonusInfo CardEventCalculator::getCardEventBonus(const UserCard &userCa
     // 计算突破等级加成
     auto masterRankBonus = findOrThrow(eventRarityBonusRates, [&](const EventRarityBonusRate& it) { 
         return it.cardRarityType == card.cardRarityType && it.masterRank == userCard.masterRank; 
-    });
+    }, [&]() { return "Event Rarity Bonus Rate not found for cardRarityType=" + std::to_string(card.cardRarityType) + " masterRank=" + std::to_string(userCard.masterRank); });
     basicBonus += masterRankBonus.bonusRate;
 
     // 计算当期卡牌加成

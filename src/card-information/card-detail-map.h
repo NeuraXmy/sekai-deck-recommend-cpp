@@ -5,7 +5,7 @@
 #include <string>
 #include <map>
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 inline int any_unit_enum = mapEnum(EnumMap::unit, "any");
 inline int diff_unit_enum = mapEnum(EnumMap::unit, "diff");

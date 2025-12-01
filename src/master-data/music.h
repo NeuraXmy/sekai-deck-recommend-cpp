@@ -1,7 +1,7 @@
 #ifndef MUSIC_H
 #define MUSIC_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct Music {
     int id = 0;

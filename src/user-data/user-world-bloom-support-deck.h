@@ -1,7 +1,7 @@
 #ifndef USER_WORLD_BLOOM_SUPPORT_DECK_H
 #define USER_WORLD_BLOOM_SUPPORT_DECK_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct UserWorldBloomSupportDeck {
     int gameCharacterId = 0;

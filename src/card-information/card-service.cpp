@@ -9,8 +9,9 @@ std::vector<int> CardService::getCardUnits(const Card &card)
         cardUnits.push_back(card.supportUnit);
     }
     cardUnits.push_back(findOrThrow(gameCharacters, [&](const GameCharacter& it) {
-        return it.id == card.characterId;
-    }).unit);
+            return it.id == card.characterId;
+        }, [&]() { return "Game character not found for characterId=" + std::to_string(card.characterId); }
+    ).unit);
     return cardUnits;
 }
 
@@ -28,7 +29,7 @@ UserCard CardService::applyCardConfig(const UserCard &userCard, const Card &card
     auto cardRarities = dataProvider.masterData->cardRarities;
     auto cardRarity = findOrThrow(cardRarities, [&](const CardRarity& it) {
         return it.cardRarityType == card.cardRarityType;
-    });
+    }, [&]() { return "Card rarity not found for cardRarityType=" + std::to_string(card.cardRarityType); });
 
     UserCard ret = userCard;
 

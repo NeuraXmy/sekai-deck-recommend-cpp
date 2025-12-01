@@ -1,7 +1,7 @@
 #ifndef USER_MYSEKAI_CANVAS_H
 #define USER_MYSEKAI_CANVAS_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct UserMysekaiCanvas {
     int mysekaiFixtureId = 0;

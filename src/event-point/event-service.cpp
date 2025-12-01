@@ -6,7 +6,7 @@ int EventService::getEventType(int eventId)
     auto& events = this->dataProvider.masterData->events;
     auto& event = findOrThrow(events, [eventId](const Event& it) { 
         return it.id == eventId; 
-    });
+    }, [&]() { return "Event not found for eventId=" + std::to_string(eventId); });
     return event.eventType;
 }
 
@@ -29,7 +29,7 @@ int EventService::getEventBonusUnit(int eventId)
         if (it.eventId == eventId && it.gameCharacterUnitId != 0) {
             auto unit = findOrThrow(gameCharacterUnits, [it](const GameCharacterUnit& a) { 
                 return a.id == it.gameCharacterUnitId; 
-            });
+            }, [&]() { return "Game character unit not found for gameCharacterUnitId=" + std::to_string(it.gameCharacterUnitId); });
             s.insert(unit.unit);
         }
     }

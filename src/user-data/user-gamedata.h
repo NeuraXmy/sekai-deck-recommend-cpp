@@ -1,7 +1,7 @@
 #ifndef USER_GAMEDATA_H
 #define USER_GAMEDATA_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct UserGameData {
     int userId = 0;

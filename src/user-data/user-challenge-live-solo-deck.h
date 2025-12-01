@@ -1,7 +1,7 @@
 #ifndef USER_CHALLENGE_LIVE_SOLO_DECK_H
 #define USER_CHALLENGE_LIVE_SOLO_DECK_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct UserChallengeLiveSoloDeck {
     int characterId = 0;

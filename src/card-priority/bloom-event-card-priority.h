@@ -2,7 +2,7 @@
 #define BLOOM_EVENT_CARD_PRIORITY_H
 
 #include "card-priority/card-priority-filter.h"
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 inline std::vector<CardPriority> bloomCardPriorities = {
     CardPriority{

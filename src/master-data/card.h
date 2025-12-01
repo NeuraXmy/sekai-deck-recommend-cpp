@@ -1,7 +1,7 @@
 #ifndef CARD_H
 #define CARD_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct CardParameter {
     int cardLevel = 0;

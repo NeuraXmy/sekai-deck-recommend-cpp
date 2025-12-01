@@ -1,7 +1,7 @@
 #ifndef USER_DECK_H
 #define USER_DECK_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct UserDeck {
     long long userId = 0;

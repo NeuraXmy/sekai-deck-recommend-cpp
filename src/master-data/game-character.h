@@ -1,7 +1,7 @@
 #ifndef GAME_CHARACTER_H
 #define GAME_CHARACTER_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 /*
 export interface GameCharacter {

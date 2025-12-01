@@ -17,7 +17,7 @@ AreaItemLevel AreaItemService::getAreaItemLevel(int areaItemId, int level)
     auto& areaItemLevels = this->dataProvider.masterData->areaItemLevels;
     return findOrThrow(areaItemLevels, [&](const AreaItemLevel& it) {
         return it.areaItemId == areaItemId && it.level == level;
-    });
+    }, [&]() { return "Area item level not found for areaItemId=" + std::to_string(areaItemId) + " level=" + std::to_string(level); });
 }
 
 AreaItemLevel AreaItemService::getAreaItemNextLevel(const AreaItem &areaItem, std::optional<AreaItemLevel> areaItemLevel)
@@ -37,5 +37,5 @@ ShopItem AreaItemService::getShopItem(const AreaItemLevel &areaItemLevel)
     int id = idOffset + areaItemLevel.level;
     return findOrThrow(shopItems, [&](const ShopItem& it) {
         return it.id == id;
-    });
+    }, [&]() { return "Shop item not found for areaItemId=" + std::to_string(areaItemLevel.areaItemId) + " level=" + std::to_string(areaItemLevel.level); } );
 }

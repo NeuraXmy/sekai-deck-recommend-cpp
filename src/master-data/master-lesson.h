@@ -1,7 +1,7 @@
 #ifndef MASTER_LESSON_H
 #define MASTER_LESSON_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 
 struct MasterLesson {

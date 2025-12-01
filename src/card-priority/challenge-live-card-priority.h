@@ -2,7 +2,7 @@
 #define CHALLENGE_LIVE_CARD_PRIORITY_H
 
 #include "card-priority/card-priority-filter.h"
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 inline std::vector<CardPriority> challengeLiveCardPriorities = {
     CardPriority{

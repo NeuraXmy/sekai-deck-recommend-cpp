@@ -1,7 +1,7 @@
 #ifndef AREA_ITEM_H
 #define AREA_ITEM_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct AreaItem {
     int id = 0;

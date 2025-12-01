@@ -5,7 +5,7 @@ UserCard DeckService::getUserCard(int cardId)
     auto& userCards = this->dataProvider.userData->userCards;
     return findOrThrow(userCards, [cardId](const UserCard& it) { 
         return it.cardId == cardId; 
-    });
+    }, [&]() { return "User card not found for cardId=" + std::to_string(cardId); });
 }
 
 UserDeck DeckService::getDeck(int deckId)
@@ -13,7 +13,7 @@ UserDeck DeckService::getDeck(int deckId)
     auto& userDecks = this->dataProvider.userData->userDecks;
     return findOrThrow(userDecks, [deckId](const UserDeck& it) { 
         return it.deckId == deckId; 
-    });
+    }, [&]() { return "User deck not found for deckId=" + std::to_string(deckId); });
 }
 
 std::vector<UserCard> DeckService::getDeckCards(const UserDeck &userDeck)
@@ -49,7 +49,7 @@ UserChallengeLiveSoloDeck DeckService::getChallengeLiveSoloDeck(int characterId)
     auto& userChallengeLiveSoloDecks = this->dataProvider.userData->userChallengeLiveSoloDecks;
     return findOrThrow(userChallengeLiveSoloDecks, [characterId](const UserChallengeLiveSoloDeck& it) { 
         return it.characterId == characterId; 
-    });
+    }, [&]() { return "User challenge live solo deck not found for characterId=" + std::to_string(characterId); });
 }
 
 std::vector<UserCard> DeckService::getChallengeLiveSoloDeckCards(const UserChallengeLiveSoloDeck &deck)

@@ -1,7 +1,7 @@
 #ifndef USER_CARD_H
 #define USER_CARD_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct UserCardEpisodes {
     int cardEpisodeId = 0;

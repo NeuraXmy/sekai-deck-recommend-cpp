@@ -1,7 +1,7 @@
 #ifndef GAME_CHARACTER_UNIT_H
 #define GAME_CHARACTER_UNIT_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct GameCharacterUnit {
     int id = 0;

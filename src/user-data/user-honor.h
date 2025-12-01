@@ -1,7 +1,7 @@
 #ifndef USER_HONOR_H
 #define USER_HONOR_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct UserHonor {
     int honorId = 0;

@@ -1,7 +1,7 @@
 #ifndef CARD_MYSEKAI_CANVAS_BONUS_H
 #define CARD_MYSEKAI_CANVAS_BONUS_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct CardMysekaiCanvasBonus {
     int id = 0;

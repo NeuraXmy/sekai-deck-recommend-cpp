@@ -1,7 +1,7 @@
 #ifndef SHOP_ITEM_H
 #define SHOP_ITEM_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct ShopItem {
     int id = 0;

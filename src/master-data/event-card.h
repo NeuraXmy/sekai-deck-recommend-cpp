@@ -1,7 +1,7 @@
 #ifndef EVENT_CARD_H
 #define EVENT_CARD_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct EventCard {
     int id = 0;

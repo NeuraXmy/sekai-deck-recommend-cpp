@@ -1,7 +1,7 @@
 #ifndef USER_MYSEKAI_GATE_H
 #define USER_MYSEKAI_GATE_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct UserMysekaiGate {
     int mysekaiGateId;

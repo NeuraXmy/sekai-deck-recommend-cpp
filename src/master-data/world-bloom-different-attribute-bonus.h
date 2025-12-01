@@ -1,7 +1,7 @@
 #ifndef WORLD_BLOOM_DIFFERENT_ATTRIBUTE_BONUS_H
 #define WORLD_BLOOM_DIFFERENT_ATTRIBUTE_BONUS_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct WorldBloomDifferentAttributeBonus {
     int attributeCount = 0;

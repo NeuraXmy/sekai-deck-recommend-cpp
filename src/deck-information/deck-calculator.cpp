@@ -64,7 +64,7 @@ DeckBonusInfo DeckCalculator::getDeckBonus(
             attr_count += attr_vis[i];
         auto it = findOrThrow(worldBloomDifferentAttributeBonuses, [&](const auto &it) { 
             return it.attributeCount == attr_count; 
-        });
+        }, [&]() { return "World bloom different attribute bonus not found for attributeCount=" + std::to_string(attr_count); });
         ret.diffAttrBonus = it.bonusRate;
     }
 
@@ -112,10 +112,10 @@ int DeckCalculator::getHonorBonusPower()
     for (const auto &userHonor : userHonors) {
         auto it = findOrThrow(honors, [&](const auto &it) { 
             return it.id == userHonor.honorId; 
-        });
+        }, [&]() { return "Honor not found for honorId=" + std::to_string(userHonor.honorId); });
         auto levelIt = findOrThrow(it.levels, [&](const auto &it) { 
             return it.level == userHonor.level; 
-        });
+        }, [&]() { return "Honor level not found for honorId=" + std::to_string(userHonor.honorId) + " level=" + std::to_string(userHonor.level); });
         bonus += levelIt.bonus;
     }
     return bonus;

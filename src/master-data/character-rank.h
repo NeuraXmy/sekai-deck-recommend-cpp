@@ -1,7 +1,7 @@
 #ifndef CHARACTER_RANKS_H
 #define CHARACTER_RANKS_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct CharacterRank {
     int id;

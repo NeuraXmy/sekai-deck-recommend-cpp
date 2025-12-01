@@ -1,7 +1,7 @@
 #ifndef MUSIC_VOCAL_H
 #define MUSIC_VOCAL_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct MusicVocalCharacter {
     int id = 0;

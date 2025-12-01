@@ -1,7 +1,7 @@
 #ifndef AREA_ITEM_LEVEL_H
 #define AREA_ITEM_LEVEL_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct AreaItemLevel {
     int areaItemId = 0;

@@ -1,7 +1,7 @@
 #ifndef CARD_RARITY_H
 #define CARD_RARITY_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct CardRarity {
     int cardRarityType = 0;

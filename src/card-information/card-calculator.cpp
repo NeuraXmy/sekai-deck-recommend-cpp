@@ -13,9 +13,16 @@ std::optional<CardDetail> CardCalculator::getCardDetail(
 )
 {
     auto& cards = this->dataProvider.masterData->cards;
-    auto card = findOrThrow(cards, [&](const auto &it) { 
-        return it.id == userCard.cardId; 
-    });
+
+    Card card{};
+    try {
+        card = findOrThrow(cards, [&](const auto &it) { 
+            return it.id == userCard.cardId; 
+        });
+    } catch (const ElementNoFoundError& e) {
+        std::cerr << "[warning] card id " << userCard.cardId << " appears in user data but not in master data." << std::endl;
+        return std::nullopt;
+    }
 
     CardConfig cfg{};
     // 单独卡配置覆盖稀有度卡配置

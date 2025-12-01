@@ -1,7 +1,7 @@
 #ifndef SKILL_H
 #define SKILL_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct SkillEffectDetail {
     int id = 0;

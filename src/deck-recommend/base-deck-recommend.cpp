@@ -159,7 +159,9 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
             uc.masterRank = 0;
             uc.specialTrainingStatus = not_doing_special_training_status;
             
-            auto& c = findOrThrow(this->dataProvider.masterData->cards, [&](const Card& c) {return c.id == card_id;});
+            auto& c = findOrThrow(this->dataProvider.masterData->cards, [&](const Card& c) {
+                return c.id == card_id;
+            }, [&]() { return "Card not found for fixed cardId=" + std::to_string(card_id); });
             bool hasSpecialTraining = c.cardRarityType == mapEnum(EnumMap::cardRarityType, "rarity_3")
                                     || c.cardRarityType == mapEnum(EnumMap::cardRarityType, "rarity_4");
             uc.defaultImage = mapEnum(EnumMap::defaultImage, hasSpecialTraining ? "special_training" : "original");

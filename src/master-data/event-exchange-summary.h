@@ -1,7 +1,7 @@
 #ifndef EVENT_EXCHANGE_SUMMARY_H
 #define EVENT_EXCHANGE_SUMMARY_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct EventExchange {
     int id = 0;

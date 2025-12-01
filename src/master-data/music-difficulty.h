@@ -1,7 +1,7 @@
 #ifndef MUSIC_DIFFICULTY_H
 #define MUSIC_DIFFICULTY_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct MusicDifficulty {
     int id;

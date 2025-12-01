@@ -82,7 +82,7 @@ BasePower CardPowerCalculator::getBasePower(const UserCard &userCard, const Card
         if (it.scenarioStatus == already_read_enum) {
             auto episode = findOrThrow(cardEpisodes, [&](auto& e) {
                 return e.id == it.cardEpisodeId;
-            });
+            }, [&]() { return "Card episode not found for cardId=" + std::to_string(card.id) + " episodeId=" + std::to_string(it.cardEpisodeId); });
             ret[0] += episode.power1BonusFixed;
             ret[1] += episode.power2BonusFixed;
             ret[2] += episode.power3BonusFixed;
@@ -101,7 +101,7 @@ BasePower CardPowerCalculator::getBasePower(const UserCard &userCard, const Card
         auto& cardMysekaiCanvasBonuses = dataProvider.masterData->cardMysekaiCanvasBonuses;
         auto canvasBonus = findOrThrow(cardMysekaiCanvasBonuses, [&](auto& it) {
             return it.cardRarityType == card.cardRarityType;
-        });
+        }, [&]() { return "Card mysekai canvas bonus not found for cardRarityType=" + std::to_string(card.cardRarityType); });
         ret[0] += canvasBonus.power1BonusFixed;
         ret[1] += canvasBonus.power2BonusFixed;
         ret[2] += canvasBonus.power3BonusFixed;
@@ -148,11 +148,11 @@ int CardPowerCalculator::getCharacterBonusPower(const BasePower &basePower, int 
 
     auto userCharacter = findOrThrow(userCharacters, [&](auto& it) {
         return it.characterId == characterId;
-    });
+    }, [&]() { return "User character not found for characterId=" + std::to_string(characterId); });
     auto characterRank = findOrThrow(characterRanks, [&](auto& it) {
         return it.characterId == userCharacter.characterId &&
                it.characterRank == userCharacter.characterRank;
-    });
+    }, [&]() { return "Character rank not found for characterId=" + std::to_string(userCharacter.characterId) + " rank=" + std::to_string(userCharacter.characterRank); });
     double rates[3] = {
         characterRank.power1BonusRate,
         characterRank.power2BonusRate,
@@ -182,7 +182,7 @@ int CardPowerCalculator::getFixtureBonusPower(const BasePower &basePower, int ch
         // 按各个综合分别计算加成，其中totalBonusRate单位是0.1%
         int total = sumPower(basePower) * rate * 0.001;
         return std::floor(total);
-    } catch (std::exception &e) {
+    } catch (const ElementNoFoundError &e) {
         return 0;
     }
 }

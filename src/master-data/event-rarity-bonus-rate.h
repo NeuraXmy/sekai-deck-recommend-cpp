@@ -1,7 +1,7 @@
 #ifndef EVENT_RARITY_BONUS_RATE_H
 #define EVENT_RARITY_BONUS_RATE_H
 
-#include "common/json-utils.h"
+#include "common/collection-utils.h"
 
 struct EventRarityBonusRate {
     int id = 0;
