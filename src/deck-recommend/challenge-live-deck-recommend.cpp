@@ -15,7 +15,11 @@ std::vector<RecommendDeck> ChallengeLiveDeckRecommend::recommendChallengeLiveDec
     }
     return this->baseRecommend.recommendHighScoreDeck(
         characterCards,
-        liveCalculator.getLiveScoreFunction(Enums::LiveType::challenge_live),
+        liveCalculator.getLiveScoreFunction(
+            Enums::LiveType::challenge_live,
+            config.liveSkillOrder,
+            config.specificSkillOrder
+        ),
         config,
         Enums::LiveType::challenge_live
     );

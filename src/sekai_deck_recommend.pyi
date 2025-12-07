@@ -154,6 +154,8 @@ class DeckRecommendOptions:
         multi_live_teammate_power (int): Power of single multi-live teammate, default is None (None means copying self power)
         best_skill_as_leader (bool): Whether to use the best skill card as leader, default is True
         multi_live_score_up_lower_bound (float): Lower bound of multi live score up, only available when live_type is "multi", default is 0
+        skill_order_choose_strategy (str): Strategy for skill order choose in ["average", "max", "min", "specific"], default is "average"
+        specific_skill_order (List[int]): Specific skill order starting from 0, only required when skill_order_choose_strategy is "specific", default is None
         sa_options (DeckRecommendSaOptions): Simulated annealing options
         ga_options (DeckRecommendGaOptions): Genetic algorithm options
     """
@@ -190,6 +192,8 @@ class DeckRecommendOptions:
     multi_live_teammate_power: Optional[int]
     best_skill_as_leader: Optional[bool]
     multi_live_score_up_lower_bound: Optional[float]
+    skill_order_choose_strategy: Optional[str]
+    specific_skill_order: Optional[List[int]]
     sa_options: Optional[DeckRecommendSaOptions]
     ga_options: Optional[DeckRecommendGaOptions]
 

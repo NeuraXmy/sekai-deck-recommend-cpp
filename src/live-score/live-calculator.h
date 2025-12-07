@@ -4,6 +4,13 @@
 #include "data-provider/data-provider.h"
 #include "deck-information/deck-calculator.h"
 
+enum class LiveSkillOrder {
+    best,
+    worst,
+    average,
+    specific,
+};
+
 union Score { 
     struct {
         int score;
@@ -78,6 +85,8 @@ public:
     SortedSkillDetails getSortedSkillDetails(
         const DeckDetail &deckDetail, 
         int liveType, 
+        LiveSkillOrder liveSkillOrder,
+        std::optional<std::vector<int>> specificSkillOrder = std::nullopt,
         const std::optional<std::vector<DeckCardSkillDetail>>& skillDetails = std::nullopt,
         std::optional<int> multiTeammateScoreUp = std::nullopt
     );
@@ -106,6 +115,8 @@ public:
         const DeckDetail &deckDetail, 
         const MusicMeta &musicMeta, 
         int liveType, 
+        LiveSkillOrder liveSkillOrder,
+        std::optional<std::vector<int>> specificSkillOrder = std::nullopt,
         const std::optional<std::vector<DeckCardSkillDetail>>& skillDetails = std::nullopt,
         int multiPowerSum = 0,
         std::optional<int> multiTeammateScoreUp = std::nullopt,
@@ -138,6 +149,8 @@ public:
         const DeckDetail &deckDetail, 
         const MusicMeta &musicMeta, 
         int liveType,
+        LiveSkillOrder liveSkillOrder,
+        std::optional<std::vector<int>> specificSkillOrder = std::nullopt,
         std::optional<int> multiTeammateScoreUp = std::nullopt,
         std::optional<int> multiTeammatePower = std::nullopt
     );
@@ -148,6 +161,8 @@ public:
      */
     ScoreFunction getLiveScoreFunction(
         int liveType,
+        LiveSkillOrder liveSkillOrder,
+        std::optional<std::vector<int>> specificSkillOrder = std::nullopt,
         std::optional<int> multiTeammateScoreUp = std::nullopt,
         std::optional<int> multiTeammatePower = std::nullopt
     );

@@ -55,6 +55,8 @@ public:
         const MusicMeta& musicMeta,
         int liveType,
         int eventType,
+        LiveSkillOrder liveSkillOrder,
+        std::optional<std::vector<int>> specificSkillOrder = std::nullopt,
         std::optional<int> multiTeammateScoreUp = std::nullopt,
         std::optional<int> multiTeammatePower = std::nullopt
     );
@@ -67,6 +69,8 @@ public:
     ScoreFunction getEventPointFunction(
         int liveType, 
         int eventType,
+        LiveSkillOrder liveSkillOrder,
+        std::optional<std::vector<int>> specificSkillOrder = std::nullopt,
         std::optional<int> multiTeammateScoreUp = std::nullopt,
         std::optional<int> multiTeammatePower = std::nullopt
     );

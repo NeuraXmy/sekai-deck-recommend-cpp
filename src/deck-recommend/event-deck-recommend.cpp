@@ -17,6 +17,8 @@ std::vector<RecommendDeck> EventDeckRecommend::recommendEventDeck(int eventId, i
         this->eventCalculator.getEventPointFunction(
             liveType, 
             eventConfig.eventType,
+            config.liveSkillOrder,
+            config.specificSkillOrder,
             config.multiTeammateScoreUp,
             config.multiTeammatePower
         ), 

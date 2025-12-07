@@ -84,6 +84,14 @@ static const std::set<std::string> VALID_SKILL_REFERENCE_CHOOSE_STRATEGIES = {
     "min",
 };
 
+static const std::string DEFAULT_SKILL_ORDER_CHOOSE_STRATEGY = "average";
+static const std::set<std::string> VALID_SKILL_ORDER_CHOOSE_STRATEGIES = {
+    "average",
+    "max",
+    "min",
+    "specific",
+};
+
 
 // python传入的card config
 struct PyCardConfig {
@@ -267,6 +275,8 @@ struct PyDeckRecommendOptions {
     std::optional<int> multi_live_teammate_power;
     std::optional<bool> best_skill_as_leader;
     std::optional<double> multi_live_score_up_lower_bound;
+    std::optional<std::string> skill_order_choose_strategy;
+    std::optional<std::vector<int>> specific_skill_order;
     std::optional<PySaOptions> sa_options;
     std::optional<PyGaOptions> ga_options;
 
@@ -327,6 +337,10 @@ struct PyDeckRecommendOptions {
             result["best_skill_as_leader"] = best_skill_as_leader.value();
         if (multi_live_score_up_lower_bound.has_value())
             result["multi_live_score_up_lower_bound"] = multi_live_score_up_lower_bound.value();
+        if (skill_order_choose_strategy.has_value())
+            result["skill_order_choose_strategy"] = skill_order_choose_strategy.value();
+        if (specific_skill_order.has_value())
+            result["specific_skill_order"] = specific_skill_order.value();
         
         if (sa_options.has_value())
             result["sa_options"] = sa_options->to_dict();
@@ -393,6 +407,10 @@ struct PyDeckRecommendOptions {
             options.best_skill_as_leader = dict["best_skill_as_leader"].cast<bool>();
         if (dict.contains("multi_live_score_up_lower_bound"))
             options.multi_live_score_up_lower_bound = dict["multi_live_score_up_lower_bound"].cast<double>();
+        if (dict.contains("skill_order_choose_strategy"))
+            options.skill_order_choose_strategy = dict["skill_order_choose_strategy"].cast<std::string>();
+        if (dict.contains("specific_skill_order"))
+            options.specific_skill_order = dict["specific_skill_order"].cast<std::vector<int>>();
 
         if (dict.contains("sa_options"))
             options.sa_options = PySaOptions::from_dict(dict["sa_options"].cast<py::dict>());
@@ -828,6 +846,36 @@ class SekaiDeckRecommend {
                 config.multiScoreUpLowerBound = pyoptions.multi_live_score_up_lower_bound.value();
             }
 
+            // skill order choose strategy
+            std::string skill_order_choose_strategy = pyoptions.skill_order_choose_strategy.value_or(DEFAULT_SKILL_ORDER_CHOOSE_STRATEGY);
+            if (!VALID_SKILL_ORDER_CHOOSE_STRATEGIES.count(skill_order_choose_strategy))
+                throw std::invalid_argument("Invalid skill order choose strategy: " + skill_order_choose_strategy);
+            if (skill_order_choose_strategy == "average")
+                config.liveSkillOrder = LiveSkillOrder::average;
+            else if (skill_order_choose_strategy == "max")
+                config.liveSkillOrder = LiveSkillOrder::best;
+            else if (skill_order_choose_strategy == "min")
+                config.liveSkillOrder = LiveSkillOrder::worst;
+            else if (skill_order_choose_strategy == "specific")
+                config.liveSkillOrder = LiveSkillOrder::specific;
+
+            // specific skill order
+            if (pyoptions.specific_skill_order.has_value()) {
+                if (skill_order_choose_strategy != "specific")
+                    throw std::invalid_argument("specific_skill_order is only valid when skill_order_choose_strategy is specific.");
+                auto specific_skill_order = pyoptions.specific_skill_order.value();
+                if (int(specific_skill_order.size()) != config.member)
+                    throw std::invalid_argument("specific_skill_order size must equal to member count.");
+                for (const auto& skill_index : specific_skill_order) {
+                    if (skill_index < 0 || skill_index >= config.member)
+                        throw std::invalid_argument("Invalid specific skill order index: " + std::to_string(skill_index));
+                }
+                config.specificSkillOrder = specific_skill_order;
+            } else {
+                if (skill_order_choose_strategy == "specific")
+                    throw std::invalid_argument("specific_skill_order is required when skill_order_choose_strategy is specific.");
+            }
+
             // timeout
             if (pyoptions.timeout_ms.has_value()) {
                 config.timeout_ms = pyoptions.timeout_ms.value();
@@ -1189,6 +1237,8 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("multi_live_teammate_power", &PyDeckRecommendOptions::multi_live_teammate_power)
         .def_readwrite("best_skill_as_leader", &PyDeckRecommendOptions::best_skill_as_leader)
         .def_readwrite("multi_live_score_up_lower_bound", &PyDeckRecommendOptions::multi_live_score_up_lower_bound)
+        .def_readwrite("skill_order_choose_strategy", &PyDeckRecommendOptions::skill_order_choose_strategy)
+        .def_readwrite("specific_skill_order", &PyDeckRecommendOptions::specific_skill_order)
         .def_readwrite("sa_options", &PyDeckRecommendOptions::sa_options)
         .def_readwrite("ga_options", &PyDeckRecommendOptions::ga_options);
 

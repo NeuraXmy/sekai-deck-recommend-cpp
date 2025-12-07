@@ -40,6 +40,8 @@ Score EventCalculator::getDeckScoreAndEventPoint(
     const MusicMeta &musicMeta, 
     int liveType, 
     int eventType,
+    LiveSkillOrder liveSkillOrder,
+    std::optional<std::vector<int>> specificSkillOrder,
     std::optional<int> multiTeammateScoreUp,
     std::optional<int> multiTeammatePower
 )
@@ -54,6 +56,7 @@ Score EventCalculator::getDeckScoreAndEventPoint(
 
     auto liveScore = this->liveCalculator.getLiveScoreByDeck(
         deckDetail, musicMeta, liveType, 
+        liveSkillOrder, specificSkillOrder,
         multiTeammateScoreUp, multiTeammatePower
     );
     auto eventPoint = this->getEventPoint(liveType, eventType, liveScore, musicMeta.event_rate,
@@ -68,14 +71,17 @@ Score EventCalculator::getDeckScoreAndEventPoint(
 ScoreFunction EventCalculator::getEventPointFunction(
     int liveType, 
     int eventType,
+    LiveSkillOrder liveSkillOrder,
+    std::optional<std::vector<int>> specificSkillOrder,
     std::optional<int> multiTeammateScoreUp,
     std::optional<int> multiTeammatePower
 )
 {
-    return [this, liveType, eventType, multiTeammateScoreUp, multiTeammatePower]
+    return [this, liveType, eventType, liveSkillOrder, specificSkillOrder, multiTeammateScoreUp, multiTeammatePower]
         (const MusicMeta &musicMeta, const DeckDetail &deckDetail) {
         return this->getDeckScoreAndEventPoint(
             deckDetail, musicMeta, liveType, eventType,
+            liveSkillOrder, specificSkillOrder,
             multiTeammateScoreUp, multiTeammatePower
         );
     };

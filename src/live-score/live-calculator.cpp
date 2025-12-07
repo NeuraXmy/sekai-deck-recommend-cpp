@@ -30,6 +30,8 @@ std::vector<double> LiveCalculator::getSkillScore(const MusicMeta &musicMeta, in
 SortedSkillDetails LiveCalculator::getSortedSkillDetails(
     const DeckDetail &deckDetail, 
     int liveType, 
+    LiveSkillOrder liveSkillOrder,
+    std::optional<std::vector<int>> specificSkillOrder,
     const std::optional<std::vector<DeckCardSkillDetail>> &skillDetails,
     std::optional<int> multiTeammateScoreUp
 )
@@ -38,49 +40,92 @@ SortedSkillDetails LiveCalculator::getSortedSkillDetails(
     if (skillDetails.has_value() && skillDetails->size() == 6 && skillDetails->at(5).scoreUp > 0) {
         return SortedSkillDetails{*skillDetails, false};
     }
-    // 如果指定队友实效 计算期望（前5次为 自己*0.2+队友*0.8，最后一次为自己）
-    if (multiTeammateScoreUp.has_value()) {
-        auto selfSkill = getMultiLiveSkill(deckDetail);
-        std::vector<DeckCardSkillDetail> skills(5, DeckCardSkillDetail{
-            .scoreUp = selfSkill.scoreUp * 0.2 + multiTeammateScoreUp.value() * 0.8,
-        });
-        skills[0].lifeRecovery = selfSkill.lifeRecovery; 
-        // 最后一个技能为自己技能
-        skills.push_back(selfSkill);
-        return SortedSkillDetails{skills, false};
-    }
-    // 如果是多人联机，复制6次当前卡组的效果
+
+    int cardNum = (int)deckDetail.cards.size();
+    std::vector<DeckCardSkillDetail> skills{};
+
     if (Enums::LiveType::isMulti(liveType)) {
-        return SortedSkillDetails{ 
-            std::vector<DeckCardSkillDetail>(6, getMultiLiveSkill(deckDetail)), 
-            false 
-        };
+        // 多人live
+        auto selfSkill = getMultiLiveSkill(deckDetail);
+        auto otherSkill = multiTeammateScoreUp.has_value() 
+            ? DeckCardSkillDetail{ .scoreUp = (double)multiTeammateScoreUp.value() }
+            : selfSkill;
+        // 放入1个自己的技能和4个队友技能
+        skills.push_back(selfSkill);
+        for (int i = 0; i < 4; ++i) 
+            skills.push_back(otherSkill);
+        // 最后一个固定为自己技能
+        skills.push_back(selfSkill);
     }
-    // 单人，按效果正序排序技能
-    std::vector<DeckCardSkillDetail> sortedSkill{};
-    for (const auto &card : deckDetail.cards) {
-        sortedSkill.push_back(card.skill);
+    else {
+        // 单人live
+        for (const auto &card : deckDetail.cards)
+            skills.push_back(card.skill);
+        // 最后一个固定C位
+        skills.push_back(deckDetail.cards.front().skill);
     }
-    std::sort(sortedSkill.begin(), sortedSkill.end(), [](const DeckCardSkillDetail &a, const DeckCardSkillDetail &b) {
-        return a.scoreUp < b.scoreUp;
-    });
-    // 如果卡牌数量不足5张，中间技能需要留空
-    DeckCardSkillDetail emptySkill{};
-    std::vector<DeckCardSkillDetail> emptySkills(5 - sortedSkill.size(), emptySkill);
-    // 将有效技能填充到前面、中间留空、第6个固定为C位
-    sortedSkill.insert(sortedSkill.end(), emptySkills.begin(), emptySkills.end());
-    sortedSkill.push_back(deckDetail.cards[0].skill);
-    return SortedSkillDetails{sortedSkill, true};
+
+    bool skillSorted = false;
+
+    // 根据技能排序方式处理
+    if (liveSkillOrder == LiveSkillOrder::specific) {
+        // 指定顺序
+        if (!specificSkillOrder.has_value()) 
+            throw std::runtime_error("specificSkillOrder is required for specific LiveSkillOrder");
+        if (specificSkillOrder->size() != skills.size() - 1)
+            throw std::runtime_error("specificSkillOrder size does not match skills size");
+        
+        // 按照顺序放入技能
+        std::vector<DeckCardSkillDetail> orderedSkills{};
+        for (const auto &index : specificSkillOrder.value()) {
+            if (index < 0 || index >= skills.size()) 
+                throw std::runtime_error("specificSkillOrder index out of range: " + std::to_string(index));
+            orderedSkills.push_back(skills[index]);
+        }
+        // 放入返场技能
+        orderedSkills.push_back(skills.back());
+        skills = std::move(orderedSkills);
+    }
+    else if (liveSkillOrder == LiveSkillOrder::best) {
+        // 最佳技能，按效果正序排序技能
+        std::sort(skills.begin(), skills.begin() + cardNum, [](const DeckCardSkillDetail &a, const DeckCardSkillDetail &b) {
+            return a.scoreUp < b.scoreUp;
+        });
+        skillSorted = true;
+    }
+    else if (liveSkillOrder == LiveSkillOrder::worst) {
+        // 最差技能，按效果反序排序技能
+        std::sort(skills.begin(), skills.begin() + cardNum, [](const DeckCardSkillDetail &a, const DeckCardSkillDetail &b) {
+            return a.scoreUp > b.scoreUp;
+        });
+        skillSorted = true;
+    }
+    else if (liveSkillOrder == LiveSkillOrder::average) {
+        // 平均技能，进行平均
+        double avgScoreUp = 0;
+        for (int i = 0; i < cardNum; ++i)
+            avgScoreUp += skills[i].scoreUp;
+        avgScoreUp /= cardNum;
+        for (int i = 0; i < cardNum; ++i)
+            skills[i].scoreUp = avgScoreUp;
+    }
+
+    if (cardNum < 5) {
+        // 如果卡牌数量不足5张，中间技能需要留空
+        DeckCardSkillDetail emptySkill{};
+        std::vector<DeckCardSkillDetail> emptySkills(5 - cardNum, emptySkill);
+        // 将有效技能填充到前面、中间留空、第6个固定为C位
+        skills.insert(skills.end() - 1, emptySkills.begin(), emptySkills.end());
+    }
+    return SortedSkillDetails{skills, skillSorted};
 }
 
 
 void LiveCalculator::sortSkillRate(bool sorted, int cardLength, std::vector<double> &skillScores)
 {
     // 如果技能未排序，原样返回
-    if (!sorted) {
-        return;
-    }
-    // 按效果正序排序前cardLength个技能、中间和后面不动
+    if (!sorted) return;
+    // 按效果正序排序前cardLength个技能段、中间和后面不动
     std::sort(skillScores.begin(), skillScores.begin() + cardLength);
 }
 
@@ -88,6 +133,8 @@ LiveDetail LiveCalculator::getLiveDetailByDeck(
     const DeckDetail &deckDetail, 
     const MusicMeta &musicMeta, 
     int liveType, 
+    LiveSkillOrder liveSkillOrder,
+    std::optional<std::vector<int>> specificSkillOrder,
     const std::optional<std::vector<DeckCardSkillDetail>> &skillDetails, 
     int multiPowerSum,
     std::optional<int> multiTeammateScoreUp,
@@ -95,10 +142,14 @@ LiveDetail LiveCalculator::getLiveDetailByDeck(
 )
 {
     // 确定技能发动顺序，未指定则直接按效果排序或多人重复当前技能
-    auto skills = this->getSortedSkillDetails(deckDetail, liveType, skillDetails, multiTeammateScoreUp);
+    auto skills = this->getSortedSkillDetails(
+        deckDetail, liveType, 
+        liveSkillOrder, specificSkillOrder, 
+        skillDetails, multiTeammateScoreUp
+    );
     // 与技能无关的分数比例
     auto baseRate = this->getBaseScore(musicMeta, liveType);
-    // 技能分数比例，如果是最佳技能计算则按加成排序（复制一下防止影响原数组顺序）
+    // 技能分数比例，如果是最佳/最差技能计算则按加成排序
     auto skillScores = this->getSkillScore(musicMeta, liveType);
     this->sortSkillRate(skills.sorted, deckDetail.cards.size(), skillScores);
     auto& skillRate = skillScores;
@@ -167,21 +218,33 @@ int LiveCalculator::getLiveScoreByDeck(
     const DeckDetail &deckDetail, 
     const MusicMeta &musicMeta, 
     int liveType,
+    LiveSkillOrder liveSkillOrder,
+    std::optional<std::vector<int>> specificSkillOrder,
     std::optional<int> multiTeammateScoreUp,
     std::optional<int> multiTeammatePower
 )
 {
-    return this->getLiveDetailByDeck(deckDetail, musicMeta, liveType, std::nullopt, 0, multiTeammateScoreUp, multiTeammatePower).score;
+    return this->getLiveDetailByDeck(
+        deckDetail, musicMeta, liveType, 
+        liveSkillOrder, specificSkillOrder, 
+        std::nullopt, 0, multiTeammateScoreUp, multiTeammatePower
+    ).score;
 }
 
 ScoreFunction LiveCalculator::getLiveScoreFunction(
     int liveType,
+    LiveSkillOrder liveSkillOrder,
+    std::optional<std::vector<int>> specificSkillOrder,
     std::optional<int> multiTeammateScoreUp,
     std::optional<int> multiTeammatePower
 )
 {
-    return [this, liveType, multiTeammateScoreUp, multiTeammatePower](const MusicMeta &musicMeta, const DeckDetail &deckDetail) {
-        int liveScore = this->getLiveScoreByDeck(deckDetail, musicMeta, liveType, multiTeammateScoreUp, multiTeammatePower);
+    return [this, liveType, liveSkillOrder, specificSkillOrder, multiTeammateScoreUp, multiTeammatePower](const MusicMeta &musicMeta, const DeckDetail &deckDetail) {
+        int liveScore = this->getLiveScoreByDeck(
+            deckDetail, musicMeta, liveType, 
+            liveSkillOrder, specificSkillOrder,
+            multiTeammateScoreUp, multiTeammatePower
+        );
         Score ret{};
         ret.score = liveScore;
         ret.liveScore = liveScore;

@@ -67,6 +67,11 @@ struct DeckRecommendConfig {
     // 实效下限
     double multiScoreUpLowerBound = 0.0;
 
+    // 技能顺序类型
+    LiveSkillOrder liveSkillOrder = LiveSkillOrder::best;
+    // 指定技能顺序，从0开始（只在liveSkillOrder为specific时有效）
+    std::optional<std::vector<int>> specificSkillOrder = std::nullopt;
+
     // 模拟退火参数
     int saRunCount = 20; // 运行次数
     int saSeed = -1; // 随机数种子 -1 代表使用当前时间
