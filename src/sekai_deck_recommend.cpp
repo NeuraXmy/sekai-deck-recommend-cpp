@@ -48,6 +48,7 @@ static const std::set<std::string> VALID_LIVE_TYPES = {
     "cheerful",
     "auto",
     "mysekai",
+    "challenge_auto",
 };
 static const std::set<std::string> VALID_RARITY_TYPES = {
     "rarity_4",
@@ -1130,6 +1131,7 @@ public:
         } else {
             ChallengeLiveDeckRecommend challengeLiveDeckRecommend(options.dataProvider);
             result = challengeLiveDeckRecommend.recommendChallengeLiveDeck(
+                options.liveType,
                 options.challengeLiveCharacterId,
                 options.config
             );

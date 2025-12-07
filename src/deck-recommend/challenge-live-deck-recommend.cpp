@@ -1,7 +1,10 @@
 #include "deck-recommend/challenge-live-deck-recommend.h"
 
-std::vector<RecommendDeck> ChallengeLiveDeckRecommend::recommendChallengeLiveDeck(int characterId, const DeckRecommendConfig &config)
+std::vector<RecommendDeck> ChallengeLiveDeckRecommend::recommendChallengeLiveDeck(int liveType, int characterId, const DeckRecommendConfig &config)
 {
+    if (!Enums::LiveType::isChallenge(liveType))
+        throw std::runtime_error("Invalid live type for challenge live deck recommend: " + std::to_string(liveType));
+
     auto& userCards = this->dataProvider.userData->userCards;
     auto& cards = this->dataProvider.masterData->cards;
     std::vector<UserCard> characterCards{};
@@ -13,14 +16,15 @@ std::vector<RecommendDeck> ChallengeLiveDeckRecommend::recommendChallengeLiveDec
             characterCards.push_back(userCard);
         }
     }
+
     return this->baseRecommend.recommendHighScoreDeck(
         characterCards,
         liveCalculator.getLiveScoreFunction(
-            Enums::LiveType::challenge_live,
+            liveType,
             config.liveSkillOrder,
             config.specificSkillOrder
         ),
         config,
-        Enums::LiveType::challenge_live
+        liveType
     );
 }

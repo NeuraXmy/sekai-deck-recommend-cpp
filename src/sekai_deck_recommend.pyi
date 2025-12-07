@@ -126,15 +126,15 @@ class DeckRecommendOptions:
         region (str): Region in ["jp", "en", "tw", "kr", "cn"]
         user_data_file_path (str): File path of user suite json
         user_data_str (str | bytes): String or bytes of user suite json
-        live_type (str): Live type in ["multi", "solo", "auto", "challenge", "mysekai"]
+        live_type (str): Live type in ["multi", "solo", "auto", "challenge", "challenge_auto", "mysekai"]
         music_id (int): Music ID
         music_diff (str): Music difficulty in ["easy", "normal", "hard", "expert", "master", "append"]
-        event_id (int): Event ID, only required when live_type is not "challenge". leave it None to use no-event or unit-attr-specificed recommendation
+        event_id (int): Event ID, leave it None to use no-event or unit-attr-specificed recommendation
         event_attr (str): Attribute of unit-attr-specificed recommendation, only available when event_id is None. In ["mysterious", "cute", "cool", "pure", "happy"]
         event_unit (str): Unit of unit-attr-specificed recommendation, only available when event_id is None. In ["light_sound", "idol", "street", "theme_park", "school_refusal", "piapro"]
         event_type (str): Event type of unit-attr-specificed/no-event recommendation, only available when event_id is None. In ["marathon", "cheerful_carnival"]
         world_bloom_character_id (int): World bloom character ID, only required when event is world bloom
-        challenge_live_character_id (int): Challenge live character ID, only required when live_type is "challenge"
+        challenge_live_character_id (int): Challenge live character ID, only required when live is challenge live
         limit (int): Limit of returned decks, default is 10. No guarantee to return this number of decks if not enough cards
         member (int): Number of members in the deck, default is 5
         timeout_ms (int): Timeout in milliseconds, default is None
