@@ -15,8 +15,8 @@ std::vector<RecommendDeck> ChallengeLiveDeckRecommend::recommendChallengeLiveDec
     }
     return this->baseRecommend.recommendHighScoreDeck(
         characterCards,
-        liveCalculator.getLiveScoreFunction(mapEnum(EnumMap::liveType, "solo")),
+        liveCalculator.getLiveScoreFunction(Enums::LiveType::challenge_live),
         config,
-        mapEnum(EnumMap::liveType, "challenge")
+        Enums::LiveType::challenge_live
     );
 }

@@ -1,15 +1,5 @@
 #include "event-point/event-calculator.h"
 
-static int solo_enum = mapEnum(EnumMap::liveType, "solo");
-static int auto_enum = mapEnum(EnumMap::liveType, "auto");
-static int challenge_enum = mapEnum(EnumMap::liveType, "challenge");
-static int multi_enum = mapEnum(EnumMap::liveType, "multi");
-static int cheerful_enum = mapEnum(EnumMap::liveType, "cheerful");
-
-static int cheerful_carnival_enum = mapEnum(EnumMap::eventType, "cheerful_carnival");
-static int world_bloom_enum = mapEnum(EnumMap::eventType, "world_bloom");
-
-
 int EventCalculator::getEventPoint(int liveType, int eventType, int selfScore, double musicRate, double deckBonus, double boostRate, int otherScore, int life)
 {
     double musicRate0 = musicRate / 100.;
@@ -19,22 +9,22 @@ int EventCalculator::getEventPoint(int liveType, int eventType, int selfScore, d
     double baseScore = 0;
     double lifeRate = 0;
 
-    if (liveType == solo_enum || liveType == auto_enum) {
-        baseScore = 100 + int(selfScore / 20000);
-        return int(baseScore * musicRate0 * deckRate) * boostRate;
-    } 
-    else if (liveType == challenge_enum) {
+    if (Enums::LiveType::isChallenge(liveType)) {
         baseScore = 100 + int(selfScore / 20000);
         return baseScore * 120;
     } 
-    else if (liveType == multi_enum) {
-        if (eventType == cheerful_carnival_enum) 
+    else if (!Enums::LiveType::isMulti(liveType)) {
+        baseScore = 100 + int(selfScore / 20000);
+        return int(baseScore * musicRate0 * deckRate) * boostRate;
+    }
+    else if (liveType == Enums::LiveType::multi_live) {
+        if (eventType == Enums::EventType::cheerful) 
             throw std::runtime_error("Multi live is not playable in cheerful event.");
         baseScore = (110 + int(selfScore / 17000.) + std::min(13, int(otherScore0 / 340000.)));
         return int(baseScore * musicRate0 * deckRate) * boostRate;
     } 
-    else if (liveType == cheerful_enum) {
-        if (eventType != cheerful_carnival_enum) 
+    else if (liveType == Enums::LiveType::challenge_live) {
+        if (eventType != Enums::EventType::cheerful)
             throw std::runtime_error("Cheerful live is only playable in cheerful event.");
         baseScore = (110 + int(selfScore / 17000.) + std::min(13, int(otherScore0 / 340000.)));
         lifeRate = 1.15 + std::min(std::max(life / 5000., 0.1), 0.2);
@@ -55,11 +45,11 @@ Score EventCalculator::getDeckScoreAndEventPoint(
 )
 {
     auto deckBonus = deckDetail.eventBonus;
-    if (liveType != challenge_enum && !deckBonus.has_value()) 
+    if (!Enums::LiveType::isChallenge(liveType) && !deckBonus.has_value()) 
         throw std::runtime_error("Deck bonus is undefined");
 
     auto supportDeckBonus = deckDetail.supportDeckBonus;
-    if (eventType == world_bloom_enum && !supportDeckBonus.has_value()) 
+    if (eventType == Enums::EventType::world_bloom && !supportDeckBonus.has_value()) 
         throw std::runtime_error("Support deck bonus is undefined");
 
     auto liveScore = this->liveCalculator.getLiveScoreByDeck(

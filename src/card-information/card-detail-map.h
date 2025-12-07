@@ -7,10 +7,6 @@
 
 #include "common/collection-utils.h"
 
-inline int any_unit_enum = mapEnum(EnumMap::unit, "any");
-inline int diff_unit_enum = mapEnum(EnumMap::unit, "diff");
-inline int ref_unit_enum = mapEnum(EnumMap::unit, "ref");
-
 /**
  * 用于记录在不同的同组合、同属性加成的情况下的综合力或加分技能
  */
@@ -57,14 +53,14 @@ public:
         std::optional<T> best{};
 
         // (vsbf花前) 不同组数只能是0-2
-        if (unit == diff_unit_enum) {
-            best = this->getValue(diff_unit_enum, std::min(2, unitMember), 1);
+        if (unit == Enums::Unit::diff) {
+            best = this->getValue(Enums::Unit::diff, std::min(2, unitMember), 1);
             if (best.has_value()) return best.value();
         }
 
         // (ocbf花前) 这边unit其实是当作技能tag用
-        if (unit == ref_unit_enum) {
-            best = this->getValue(ref_unit_enum, 1, 1);
+        if (unit == Enums::Unit::ref) {
+            best = this->getValue(Enums::Unit::ref, 1, 1);
             if (best.has_value()) return best.value();
         }
 
@@ -77,7 +73,7 @@ public:
         if (best.has_value()) return best.value();
 
         // 技能为固定数值的情况（能够变化但取到保底固定数值的也会落到这里）
-        best = this->getValue(any_unit_enum, 1, 1);
+        best = this->getValue(Enums::Unit::any, 1, 1);
         if (best.has_value()) return best.value();
 
         // 如果这还找不到，说明给的情况就不对

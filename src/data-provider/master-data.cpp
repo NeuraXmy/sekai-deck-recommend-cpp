@@ -4,9 +4,6 @@
 #include <iostream>
 #include "master-data.h"
 
-static int event_type_marathon = mapEnum(EnumMap::eventType, "marathon");
-static int event_type_cheerful = mapEnum(EnumMap::eventType, "cheerful_carnival");
-static int event_type_world_bloom = mapEnum(EnumMap::eventType, "world_bloom");
 
 const std::vector<std::string> requiredMasterDataKeys = {
     "areaItemLevels",
@@ -90,7 +87,7 @@ void addFinalChapterEventIfNeeded(MasterData& md) {
         // 活动本身
         Event event;
         event.id = finalChapterEventId;
-        event.eventType = mapEnum(EnumMap::eventType, "world_bloom");
+        event.eventType = Enums::EventType::world_bloom;
         md.events.push_back(event);
 
         // 角色加成
@@ -99,7 +96,7 @@ void addFinalChapterEventIfNeeded(MasterData& md) {
             bonus.eventId = finalChapterEventId;
             bonus.gameCharacterUnitId = gameCharacterUnit.id;
             bonus.bonusRate = 5.0;
-            bonus.cardAttr = mapEnum(EnumMap::attr, "");
+            bonus.cardAttr = Enums::Attr::null;
             md.eventDeckBonuses.push_back(bonus);
         }
 
@@ -179,9 +176,9 @@ void MasterData::loadFromJsons(std::map<std::string, json>& jsons) {
     this->mysekaiGates = loadMasterData<MysekaiGate>(jsons, "mysekaiGates", false);
     this->mysekaiGateLevels = loadMasterData<MysekaiGateLevel>(jsons, "mysekaiGateLevels", false);
 
-    addFakeEvent(event_type_world_bloom);
-    addFakeEvent(event_type_marathon);
-    addFakeEvent(event_type_cheerful);
+    addFakeEvent(Enums::EventType::world_bloom);
+    addFakeEvent(Enums::EventType::marathon);
+    addFakeEvent(Enums::EventType::cheerful);
     addFinalChapterEventIfNeeded(*this);
 }
 
@@ -208,7 +205,7 @@ void MasterData::loadFromStrings(std::map<std::string, std::string>& data) {
 
 // 添加用于无活动组卡和指定团+颜色组卡的假活动
 void MasterData::addFakeEvent(int eventType) {
-    if (eventType == event_type_world_bloom) {
+    if (eventType == Enums::EventType::world_bloom) {
         // WL 暂不支持
         return;
     }
@@ -224,7 +221,7 @@ void MasterData::addFakeEvent(int eventType) {
             for (auto attr : mapEnumList(EnumMap::attr)) {
                 Event e;
                 e.id = getUnitAttrFakeEventId(eventType, unit, attr);
-                e.eventType = event_type_marathon;
+                e.eventType = eventType;
                 events.push_back(e);
                 // 相同团的角色加成
                 for (auto& charaUnit : gameCharacterUnits) {
@@ -240,7 +237,7 @@ void MasterData::addFakeEvent(int eventType) {
                         EventDeckBonus b2;
                         b2.eventId = e.id;
                         b2.gameCharacterUnitId = charaUnit.id;
-                        b2.cardAttr = mapEnum(EnumMap::attr, "");
+                        b2.cardAttr = Enums::Attr::null;
                         b2.bonusRate = 25.0;
                         eventDeckBonuses.push_back(b2);
                     }
@@ -259,7 +256,7 @@ void MasterData::addFakeEvent(int eventType) {
 
 int MasterData::getNoEventFakeEventId(int eventType) const
 {
-    if (eventType != event_type_marathon && eventType != event_type_cheerful) {
+    if (eventType == Enums::EventType::world_bloom) {
         throw std::invalid_argument("Not supported event type for fake event");
     }
     return 2000000 + eventType * 100000;
@@ -267,7 +264,7 @@ int MasterData::getNoEventFakeEventId(int eventType) const
 
 int MasterData::getUnitAttrFakeEventId(int eventType, int unit, int attr) const
 {
-    if (eventType != event_type_marathon && eventType != event_type_cheerful) {
+    if (eventType == Enums::EventType::world_bloom) {
         throw std::invalid_argument("Not supported event type for fake event");
     }
     return 1000000 + unit * 100 + attr + eventType * 100000;

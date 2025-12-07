@@ -1,9 +1,5 @@
 #include "deck-recommend/event-deck-recommend.h"
 
-static int event_type_cheerful = mapEnum(EnumMap::eventType, "cheerful_carnival");
-static int live_type_cheerful = mapEnum(EnumMap::liveType, "cheerful");
-static int live_type_multi = mapEnum(EnumMap::liveType, "multi");
-
 std::vector<RecommendDeck> EventDeckRecommend::recommendEventDeck(int eventId, int liveType, const DeckRecommendConfig &config, int specialCharacterId)
 {
     auto eventConfig = eventService.getEventConfig(eventId, specialCharacterId);
@@ -11,8 +7,9 @@ std::vector<RecommendDeck> EventDeckRecommend::recommendEventDeck(int eventId, i
         throw std::runtime_error("Event type not found for " + std::to_string(eventId));
     }
 
-    if (eventConfig.eventType == event_type_cheerful && liveType == live_type_multi) {
-        liveType = live_type_cheerful;
+    // 5v5 外部参数传入统一liveType为multi 内部计算时改为cheerful
+    if (eventConfig.eventType == Enums::EventType::cheerful && liveType == Enums::LiveType::multi_live) {
+        liveType = Enums::LiveType::cheerful_live;
     }
 
     auto userCards = dataProvider.userData->userCards;

@@ -16,43 +16,9 @@
 using json = nlohmann::json;
 
 #include "common/enum-maps.h"
+#include "common/common-enums.h"
 
 using TS = long long;
-
-inline std::unordered_map<std::string, int> _enum_maps[static_cast<int>(EnumMap::_ENUM_MAP_NUM)];
-inline std::unordered_map<int, std::string> _enum_reverse_maps[static_cast<int>(EnumMap::_ENUM_MAP_NUM)];
-
-inline int mapEnum(EnumMap map_id, const std::string& key) {
-    auto& map = _enum_maps[static_cast<int>(map_id)];
-    auto mapIt = map.find(key);
-    if (mapIt != map.end()) 
-        return mapIt->second;
-    else {
-        int value = map.size() + 1;
-        map[key] = value;
-        _enum_reverse_maps[static_cast<int>(map_id)][value] = key;
-        return value;
-    }
-}
-
-inline std::string mappedEnumToString(EnumMap map_id, int key)
-{
-    auto& map = _enum_reverse_maps[static_cast<int>(map_id)];
-    auto mapIt = map.find(key);
-    if (mapIt != map.end()) 
-        return mapIt->second;
-    throw std::runtime_error("Key " + std::to_string(key) + " not found in map " + std::to_string(static_cast<int>(map_id)));
-}
-
-inline std::vector<int> mapEnumList(EnumMap map_id) {
-    std::vector<int> result;
-    auto& map = _enum_reverse_maps[static_cast<int>(map_id)];
-    for (const auto& pair : map) {
-        result.push_back(pair.first);
-    }
-    return result;
-}
-
 
 class ElementNoFoundError : public std::runtime_error {
 public:

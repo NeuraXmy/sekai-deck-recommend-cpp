@@ -1,10 +1,5 @@
 #include "live-score/live-calculator.h"
 
-static int enum_solo = mapEnum(EnumMap::liveType, "solo");
-static int enum_challenge = mapEnum(EnumMap::liveType, "challenge");
-static int enum_multi = mapEnum(EnumMap::liveType, "multi");
-static int enum_cheerful = mapEnum(EnumMap::liveType, "cheerful");
-static int enum_auto = mapEnum(EnumMap::liveType, "auto");
 
 MusicMeta LiveCalculator::getMusicMeta(int musicId, int musicDif)
 {
@@ -16,28 +11,20 @@ MusicMeta LiveCalculator::getMusicMeta(int musicId, int musicDif)
 
 double LiveCalculator::getBaseScore(const MusicMeta &musicMeta, int liveType)
 {
-    if (liveType == enum_solo || liveType == enum_challenge) {
-        return musicMeta.base_score;
-    } else if (liveType == enum_multi || liveType == enum_cheerful) {
-        return musicMeta.base_score + musicMeta.fever_score * 0.5;
-    } else if (liveType == enum_auto) {
+    if (Enums::LiveType::isAuto(liveType))
         return musicMeta.base_score_auto;
-    } else {
-        throw std::runtime_error("Invalid live type");
-    }
+    if (Enums::LiveType::isMulti(liveType))
+        return musicMeta.base_score + musicMeta.fever_score * 0.5;
+    return musicMeta.base_score;
 }
 
 std::vector<double> LiveCalculator::getSkillScore(const MusicMeta &musicMeta, int liveType)
 {
-    if (liveType == enum_solo || liveType == enum_challenge) {
-        return musicMeta.skill_score_solo;
-    } else if (liveType == enum_multi || liveType == enum_cheerful) {
-        return musicMeta.skill_score_multi;
-    } else if (liveType == enum_auto) {
+    if (Enums::LiveType::isAuto(liveType))
         return musicMeta.skill_score_auto;
-    } else {
-        throw std::runtime_error("Invalid live type");
-    }
+    if (Enums::LiveType::isMulti(liveType))
+        return musicMeta.skill_score_multi;
+    return musicMeta.skill_score_solo;
 }
 
 SortedSkillDetails LiveCalculator::getSortedSkillDetails(
@@ -63,7 +50,7 @@ SortedSkillDetails LiveCalculator::getSortedSkillDetails(
         return SortedSkillDetails{skills, false};
     }
     // 如果是多人联机，复制6次当前卡组的效果
-    if (liveType == enum_multi) {
+    if (Enums::LiveType::isMulti(liveType)) {
         return SortedSkillDetails{ 
             std::vector<DeckCardSkillDetail>(6, getMultiLiveSkill(deckDetail)), 
             false 
@@ -130,7 +117,7 @@ LiveDetail LiveCalculator::getLiveDetailByDeck(
         powerSum = multiPowerSum;   // 指定总和
     if (multiTeammatePower.has_value())
         powerSum = deckDetail.power.total + multiTeammatePower.value() * 4; // 指定队友综合力 自己+4*队友
-    double activeBonus = liveType == enum_multi ? 5 * 0.015 * powerSum : 0;
+    double activeBonus = liveType == Enums::LiveType::isMulti(liveType) ? 5 * 0.015 * powerSum : 0;
     return LiveDetail{
         int(rate * deckDetail.power.total * 4 + activeBonus),
         musicMeta.music_time,

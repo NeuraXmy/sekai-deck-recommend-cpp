@@ -6,16 +6,6 @@
 #include "base-deck-recommend.h"
 
 
-static int piapro_unit_enum = mapEnum(EnumMap::unit, "piapro");
-static int challenge_live_type_enum = mapEnum(EnumMap::liveType, "challenge");
-static int multi_live_type_enum = mapEnum(EnumMap::liveType, "multi");
-static int cheerful_live_type_enum = mapEnum(EnumMap::liveType, "cheerful");
-
-static int not_doing_special_training_status = mapEnum(EnumMap::specialTrainingStatus, "not_doing");
-
-static int world_bloom_type_enum = mapEnum(EnumMap::eventType, "world_bloom");
-
-
 long long BaseDeckRecommend::calcDeckHash(const std::vector<const CardDetail*>& deck) {
     std::vector<int> v{};
     for(auto& card : deck) 
@@ -91,7 +81,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
     if (config.fixedCards.size() && config.fixedCharacters.size())
         throw std::runtime_error("Cannot set both fixed cards and fixed characters");
     // 挑战live不允许指定固定角色
-    if (liveType == challenge_live_type_enum && config.fixedCharacters.size())
+    if (Enums::LiveType::isChallenge(liveType) && config.fixedCharacters.size())
         throw std::runtime_error("Cannot set fixed characters in challenge live");
 
     auto musicMeta = this->liveCalculator.getMusicMeta(config.musicId, config.musicDiff);
@@ -101,7 +91,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
 
     std::optional<double> scoreUpLimit = std::nullopt;
     // 终章技能加分上限为140
-    if (eventConfig.eventId == finalChapterEventId && liveType != challenge_live_type_enum)
+    if (eventConfig.eventId == finalChapterEventId && !Enums::LiveType::isChallenge(liveType))
         scoreUpLimit = 140.0;
 
     auto cards = cardCalculator.batchGetCardDetail(
@@ -120,7 +110,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
             std::sort(sc.begin(), sc.end(), [](const SupportDeckCard& a, const SupportDeckCard& b) { return a.bonus > b.bonus; });
             supportCards[i] = sc;
         }
-    } else if(eventConfig.eventType == world_bloom_type_enum) {
+    } else if(eventConfig.eventType == Enums::EventType::world_bloom) {
         // 普通wl只算一个支援卡组排序
         std::vector<SupportDeckCard> sc{};
         for (const auto& card : userCards) 
@@ -133,7 +123,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
     if (eventConfig.eventUnit && config.filterOtherUnit) {
         std::vector<CardDetail> newCards{};
         for (const auto& card : cards) {
-            if ((card.units.size() == 1 && card.units[0] == piapro_unit_enum) || 
+            if ((card.units.size() == 1 && card.units[0] == Enums::Unit::piapro) || 
                 std::find(card.units.begin(), card.units.end(), eventConfig.eventUnit) != card.units.end()) {
                 newCards.push_back(card);
             }
@@ -157,14 +147,14 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
             uc.level = 1;
             uc.skillLevel = 1;
             uc.masterRank = 0;
-            uc.specialTrainingStatus = not_doing_special_training_status;
+            uc.specialTrainingStatus = Enums::SpecialTrainingStatus::not_doing;
             
             auto& c = findOrThrow(this->dataProvider.masterData->cards, [&](const Card& c) {
                 return c.id == card_id;
             }, [&]() { return "Card not found for fixed cardId=" + std::to_string(card_id); });
-            bool hasSpecialTraining = c.cardRarityType == mapEnum(EnumMap::cardRarityType, "rarity_3")
-                                    || c.cardRarityType == mapEnum(EnumMap::cardRarityType, "rarity_4");
-            uc.defaultImage = mapEnum(EnumMap::defaultImage, hasSpecialTraining ? "special_training" : "original");
+            bool hasSpecialTraining = c.cardRarityType == Enums::CardRarityType::rarity_3
+                                    || c.cardRarityType == Enums::CardRarityType::rarity_4;
+            uc.defaultImage = hasSpecialTraining ? Enums::DefaultImage::special_training : Enums::DefaultImage::original;
 
             for (auto& ep : cardEpisodes) 
                 if (ep.cardId == card_id) {
@@ -198,7 +188,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
         if (fixedCardIds.size() != fixedCards.size()) {
             throw std::runtime_error("Fixed cards have duplicate cards");
         }
-        if (liveType == challenge_live_type_enum) {
+        if (Enums::LiveType::isChallenge(liveType)) {
             if (fixedCardCharacterIds.size() != 1 || fixedCards[0].characterId != cards[0].characterId) {
                 throw std::runtime_error("Fixed cards have invalid characters");
             }
@@ -228,7 +218,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
             throw std::runtime_error("Bonus target only supports DFS algorithm");
 
         // WL和普通活动采用不同代码
-        if (eventConfig.eventType != world_bloom_type_enum) {
+        if (eventConfig.eventType != Enums::EventType::world_bloom) {
             findTargetBonusCardsDFS(
                 liveType, config, cards, sf, calcInfo,
                 config.limit, config.member, eventConfig.eventType, eventConfig.eventId
@@ -292,7 +282,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
                 findBestCardsSA(
                     liveType, config, rng, cardsSortedByStrength, supportCards, sf,
                     calcInfo,
-                    config.limit, liveType == challenge_live_type_enum, config.member, honorBonus,
+                    config.limit, Enums::LiveType::isChallenge(liveType), config.member, honorBonus,
                     eventConfig.eventType, eventConfig.eventId, fixedCards
                 );
             }
@@ -307,7 +297,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
             findBestCardsGA(
                 liveType, config, rng, cardsSortedByStrength, supportCards, sf,
                 calcInfo,
-                config.limit, liveType == challenge_live_type_enum, config.member, honorBonus,
+                config.limit, Enums::LiveType::isChallenge(liveType), config.member, honorBonus,
                 eventConfig.eventType, eventConfig.eventId, fixedCards
             );
         }
@@ -325,7 +315,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
             findBestCardsDFS(
                 liveType, config, cardsSortedByStrength, supportCards, sf,
                 calcInfo,
-                config.limit, liveType == challenge_live_type_enum, config.member, honorBonus, 
+                config.limit, Enums::LiveType::isChallenge(liveType), config.member, honorBonus, 
                 eventConfig.eventType, eventConfig.eventId, fixedCards
             );
         }

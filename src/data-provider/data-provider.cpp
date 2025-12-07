@@ -1,8 +1,5 @@
 #include "data-provider.h"
 
-int high_honor_rarity_enum = mapEnum(EnumMap::honorRarity, "high");
-int highest_honor_rarity_enum = mapEnum(EnumMap::honorRarity, "highest");
-
 void DataProvider::init()
 {
     if (inited) return;
@@ -23,8 +20,8 @@ void DataProvider::init()
             auto& honor = findOrThrow(masterData->honors,  [&](const Honor& it) { 
                 return it.id == userHonor.honorId; 
             });
-            if (honor.honorRarity == high_honor_rarity_enum
-            || honor.honorRarity == highest_honor_rarity_enum) {
+            if (honor.honorRarity == Enums::HonorRarity::high
+            || honor.honorRarity == Enums::HonorRarity::highest) {
                 auto start_idx = honor.assetbundleName.find("wl_2nd");
                 if (start_idx != std::string::npos) {
                     start_idx += 7;

@@ -1,7 +1,5 @@
 #include "deck-recommend/base-deck-recommend.h"
 
-static int world_bloom_type_enum = mapEnum(EnumMap::eventType, "world_bloom");
-
 
 static int getCharaAttrBonusKey(int chara, int attr, int bonus) {
     return bonus * 1000 + chara * 10 + attr;
@@ -173,7 +171,7 @@ void BaseDeckRecommend::findWorldBloomTargetBonusCardsDFS(
     if (bonusList.empty()) 
         throw std::runtime_error("Bonus list is empty");
 
-    if (eventType.value_or(0) != world_bloom_type_enum) {
+    if (eventType.value_or(0) != Enums::EventType::world_bloom) {
         // 该函数只用于WL活动
         throw std::runtime_error("this func is only used for world bloom event");
     }

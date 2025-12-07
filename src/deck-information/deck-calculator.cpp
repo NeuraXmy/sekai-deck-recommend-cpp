@@ -2,15 +2,6 @@
 #include "common/timer.h"
 #include "deck-calculator.h"
 
-static int world_bloom_enum = mapEnum(EnumMap::eventType, "world_bloom");
-static int piapro_unit_enum = mapEnum(EnumMap::unit, "piapro");
-
-static int other_member_score_up_reference_rate_enum    = mapEnum(EnumMap::skillEffectType, "other_member_score_up_reference_rate");
-static int score_up_unit_count_enum                     = mapEnum(EnumMap::skillEffectType, "score_up_unit_count");
-
-static int default_image_original_enum = mapEnum(EnumMap::defaultImage, "original");
-static int default_image_special_training_enum = mapEnum(EnumMap::defaultImage, "special_training");
-
 
 DeckBonusInfo DeckCalculator::getDeckBonus(
     const std::vector<const CardDetail *> &deckCards, 
@@ -53,7 +44,7 @@ DeckBonusInfo DeckCalculator::getDeckBonus(
     }
 
     // WL异色加成
-    if (eventType == world_bloom_enum) 
+    if (eventType == Enums::EventType::world_bloom) 
     {
         auto& worldBloomDifferentAttributeBonuses = this->dataProvider.masterData->worldBloomDifferentAttributeBonuses;
         bool attr_vis[10] = {};
@@ -152,8 +143,8 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
 
     // 预处理队伍和属性，存储每个队伍或属性出现的次数
     int card_num = int(cardDetails.size());
-    int attr_map[10] = {};
-    int unit_map[10] = {};
+    int attr_map[15] = {};
+    int unit_map[15] = {};
     for (auto p : cardDetails) {
         auto& cardDetail = *p;
         attr_map[cardDetail.attr]++;
@@ -208,14 +199,14 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
         bool needEnumerate = false;
 
         // 吸分技能效果(max)
-        auto current = cardDetail.skill.get(ref_unit_enum, 1, 1);
+        auto current = cardDetail.skill.get(Enums::Unit::ref, 1, 1);
         current.scoreUp += current.scoreUpReferenceMax;   
         if (current.skillId != s2.skillId && current.scoreUp > s1.scoreUp) {
             s1 = current;
             needEnumerate = true;   // 吸分技能需要枚举
         }
         // 异组技能效果
-        current = cardDetail.skill.get(diff_unit_enum, unit_num - 1, 1);
+        current = cardDetail.skill.get(Enums::Unit::diff, unit_num - 1, 1);
         if (current.skillId != s2.skillId && current.scoreUp > s1.scoreUp) {
             s1 = current;
             needEnumerate = false;  // 异组技能不需要枚举
@@ -226,7 +217,7 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
 
         if (keepAfterTrainingState) {
             // 如果指定不改变状态，则无论如何都不枚举，并且根据用户选择的状态设置
-            if(cardDetail.defaultImage != default_image_special_training_enum && s1.isAfterTraining)
+            if(cardDetail.defaultImage != Enums::DefaultImage::special_training && s1.isAfterTraining)
                 s2 = s1; // 用户设置花前技能
         } else {
             if (needEnumerate) {
@@ -324,7 +315,7 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
             // 如果确实是双技能，根据技能调整卡面状态
             int defaultImage = cardDetail.defaultImage;
             if (doubleSkillMask & (1 << i)) {
-                defaultImage = skills[i].isAfterTraining ? default_image_special_training_enum : default_image_original_enum;
+                defaultImage = skills[i].isAfterTraining ? Enums::DefaultImage::special_training : Enums::DefaultImage::original;
             }
 
             cards.push_back(DeckCardDetail{ 

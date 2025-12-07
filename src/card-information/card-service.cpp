@@ -5,7 +5,7 @@ std::vector<int> CardService::getCardUnits(const Card &card)
     auto& gameCharacters = dataProvider.masterData->gameCharacters;
     // 组合（V家支援组合、角色原始组合）
     std::vector<int> cardUnits{};
-    if (card.supportUnit != mapEnum(EnumMap::unit, "none")) {
+    if (card.supportUnit != Enums::Unit::none) {
         cardUnits.push_back(card.supportUnit);
     }
     cardUnits.push_back(findOrThrow(gameCharacters, [&](const GameCharacter& it) {
@@ -38,7 +38,7 @@ UserCard CardService::applyCardConfig(const UserCard &userCard, const Card &card
         // 是否可以觉醒
         if (cardRarity.trainingMaxLevel != 0) {
             ret.level = cardRarity.trainingMaxLevel;
-            ret.specialTrainingStatus = mapEnum(EnumMap::specialTrainingStatus, "done");
+            ret.specialTrainingStatus = Enums::SpecialTrainingStatus::done;
         } else {
             ret.level = cardRarity.maxLevel;
         }
@@ -47,7 +47,7 @@ UserCard CardService::applyCardConfig(const UserCard &userCard, const Card &card
     // 处理前后篇解锁
     if (episodeRead) {
         for (auto& it : ret.episodes) {
-            it.scenarioStatus = mapEnum(EnumMap::scenarioStatus, "already_read");
+            it.scenarioStatus = Enums::ScenarioStatus::already_read;
         }
     }
 

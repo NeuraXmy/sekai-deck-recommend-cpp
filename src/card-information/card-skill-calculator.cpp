@@ -1,17 +1,6 @@
 #include "card-information/card-skill-calculator.h"
 
 
-static int score_up_enum                                = mapEnum(EnumMap::skillEffectType, "score_up");
-static int score_up_condition_life_enum                 = mapEnum(EnumMap::skillEffectType, "score_up_condition_life");
-static int score_up_keep_enum                           = mapEnum(EnumMap::skillEffectType, "score_up_keep");
-static int life_recovery_enum                           = mapEnum(EnumMap::skillEffectType, "life_recovery");
-static int score_up_character_rank_enum                 = mapEnum(EnumMap::skillEffectType, "score_up_character_rank");
-static int other_member_score_up_reference_rate_enum    = mapEnum(EnumMap::skillEffectType, "other_member_score_up_reference_rate");
-static int score_up_unit_count_enum                     = mapEnum(EnumMap::skillEffectType, "score_up_unit_count");
-
-static int special_training_enum = mapEnum(EnumMap::defaultImage, "special_training");
-
-
 CardDetailMap<DeckCardSkillDetail> CardSkillCalculator::getCardSkill(
     const UserCard &userCard, 
     const Card &card, 
@@ -34,7 +23,7 @@ CardDetailMap<DeckCardSkillDetail> CardSkillCalculator::getCardSkill(
         };
 
         // 固定加成，即便是组分也有个保底加成
-        skillMap.set(any_unit_enum, 1, 1, deckDetail.scoreUp, deckDetail);
+        skillMap.set(Enums::Unit::any, 1, 1, deckDetail.scoreUp, deckDetail);
 
         // 组分
         if (detail.sameUnitScoreUp) {
@@ -56,7 +45,7 @@ CardDetailMap<DeckCardSkillDetail> CardSkillCalculator::getCardSkill(
             dd.scoreUpReferenceMax = detail.scoreUpReferenceMax;
             dd.scoreUpReferenceMax = std::min(dd.scoreUpReferenceMax, limit - dd.scoreUp);
             // 这边cmpValue只设置最大值就行，因为最小值被前面的固定加成设置
-            skillMap.set(ref_unit_enum, 1, 1, dd.scoreUp + detail.scoreUpReferenceMax, dd);
+            skillMap.set(Enums::Unit::ref, 1, 1, dd.scoreUp + detail.scoreUpReferenceMax, dd);
         }
 
         // 异团数量加分
@@ -68,7 +57,7 @@ CardDetailMap<DeckCardSkillDetail> CardSkillCalculator::getCardSkill(
                     dd.scoreUp += detail.differentUnitCountScoreUpMap[i];
                     dd.scoreUp = std::min(dd.scoreUp, limit);
                 }
-                skillMap.set(diff_unit_enum, i, 1, dd.scoreUp, dd);
+                skillMap.set(Enums::Unit::diff, i, 1, dd.scoreUp, dd);
             }
         }
     }
@@ -89,9 +78,9 @@ SkillDetail CardSkillCalculator::getSkillDetail(const UserCard &userCard, const 
         auto skillEffectDetail = findOrThrow(skillEffect.skillEffectDetails, [&](auto& it) {
             return it.level == userCard.skillLevel;
         }, [&]() { return "Skill effect detail not found for skillEffectId=" + std::to_string(skillEffect.id) + " level=" + std::to_string(userCard.skillLevel); });
-        if (skillEffect.skillEffectType == score_up_enum ||
-            skillEffect.skillEffectType == score_up_condition_life_enum ||
-            skillEffect.skillEffectType == score_up_keep_enum) {
+        if (skillEffect.skillEffectType == Enums::SkillEffectType::score_up ||
+            skillEffect.skillEffectType == Enums::SkillEffectType::score_up_condition_life ||
+            skillEffect.skillEffectType == Enums::SkillEffectType::score_up_keep) {
             // 一般分卡
             double current = skillEffectDetail.activateEffectValue;
             // 组分
@@ -102,20 +91,20 @@ SkillDetail CardSkillCalculator::getSkillDetail(const UserCard &userCard, const 
             }
             // 通过取max的方式，可以直接拿到判分、血分最高加成
             ret.scoreUp = std::max(ret.scoreUp, current);
-        } else if (skillEffect.skillEffectType == life_recovery_enum) {
+        } else if (skillEffect.skillEffectType == Enums::SkillEffectType::life_recovery) {
             // 奶卡
             ret.lifeRecovery += skillEffectDetail.activateEffectValue;
-        } else if (skillEffect.skillEffectType == score_up_character_rank_enum) {
+        } else if (skillEffect.skillEffectType == Enums::SkillEffectType::score_up_character_rank) {
             // bf角色等级额外加成
             if (skillEffect.activateCharacterRank != 0 && skillEffect.activateCharacterRank <= characterRank) {
                 characterRankBonus = std::max(characterRankBonus, skillEffectDetail.activateEffectValue);
             }
-        } else if (skillEffect.skillEffectType == other_member_score_up_reference_rate_enum) {
+        } else if (skillEffect.skillEffectType == Enums::SkillEffectType::other_member_score_up_reference_rate) {
             // oc bfes花前 吸收加分
             ret.hasScoreUpReference = true;
             ret.scoreUpReferenceRate = skillEffectDetail.activateEffectValue;
             ret.scoreUpReferenceMax = skillEffectDetail.activateEffectValue2;
-        } else if (skillEffect.skillEffectType == score_up_unit_count_enum) {
+        } else if (skillEffect.skillEffectType == Enums::SkillEffectType::score_up_unit_count) {
             // vs bfes花前 异团数量加分
             ret.hasDifferentUnitCountScoreUp = true;
             ret.differentUnitCountScoreUpMap[skillEffect.activateUnitCount] = skillEffectDetail.activateEffectValue;

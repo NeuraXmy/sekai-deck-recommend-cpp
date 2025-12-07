@@ -1,20 +1,13 @@
 #include "event-point/card-event-calculator.h"
 
-static int event_type_marathon = mapEnum(EnumMap::eventType, "marathon");
-static int event_type_cheerful = mapEnum(EnumMap::eventType, "cheerful_carnival");
-static int event_type_world_bloom = mapEnum(EnumMap::eventType, "world_bloom");
-
 double CardEventCalculator::getEventDeckBonus(int eventId, const Card &card)
 {
     auto& eventDeckBonuses = this->dataProvider.masterData->eventDeckBonuses;
     auto& gameCharacterUnits = this->dataProvider.masterData->gameCharacterUnits;
     double maxBonus = 0;
 
-    int no_attr = mapEnum(EnumMap::attr, "");
-    int none_unit = mapEnum(EnumMap::unit, "none");
-
     for (const auto& it : eventDeckBonuses) {
-        if (it.eventId == eventId && (it.cardAttr == no_attr || it.cardAttr == card.attr)) {
+        if (it.eventId == eventId && (it.cardAttr == Enums::Attr::null || it.cardAttr == card.attr)) {
             // 无指定角色
             if (it.gameCharacterUnitId == 0) {
                 maxBonus = std::max(maxBonus, it.bonusRate);
@@ -25,7 +18,7 @@ double CardEventCalculator::getEventDeckBonus(int eventId, const Card &card)
                 // 角色不匹配
                 if (unit.gameCharacterId != card.characterId) continue;
                 // 非虚拟歌手或者组合正确（或者无组合）的虚拟歌手，享受全量加成
-                if (card.characterId < 21 || card.supportUnit == unit.unit || card.supportUnit == none_unit) {
+                if (card.characterId < 21 || card.supportUnit == unit.unit || card.supportUnit == Enums::Unit::none) {
                     maxBonus = std::max(maxBonus, it.bonusRate);
                 }
             }
@@ -44,8 +37,8 @@ CardEventBonusInfo CardEventCalculator::getCardEventBonus(const UserCard &userCa
     auto& eventRarityBonusRates = this->dataProvider.masterData->eventRarityBonusRates;
 
     // 无活动组卡
-    if (eventId == this->dataProvider.masterData->getNoEventFakeEventId(event_type_marathon)
-     || eventId == this->dataProvider.masterData->getNoEventFakeEventId(event_type_cheerful)) {
+    if (eventId == this->dataProvider.masterData->getNoEventFakeEventId(Enums::EventType::marathon)
+     || eventId == this->dataProvider.masterData->getNoEventFakeEventId(Enums::EventType::cheerful)) {
         return {};
     }
 

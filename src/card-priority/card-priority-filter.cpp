@@ -3,11 +3,6 @@
 #include "card-priority/marathon-cheerful-event-card-priority.h"
 #include "card-priority/challenge-live-card-priority.h"
 
-int live_type_challenge = mapEnum(EnumMap::liveType, "challenge");
-int live_type_bloom = mapEnum(EnumMap::liveType, "bloom");
-int event_type_marathon = mapEnum(EnumMap::eventType, "marathon");
-int event_type_cheerful = mapEnum(EnumMap::eventType, "cheerful_carnival");
-int event_type_bloom = mapEnum(EnumMap::eventType, "world_bloom");
 
 bool checkAttrForBloomDfs(std::unordered_map<int, std::unordered_set<int>> &attrMap, std::unordered_map<int, int> &attrs, std::unordered_map<int, int> &chars, std::unordered_map<int, int> &visit, int round, int attr)
 {
@@ -88,13 +83,13 @@ bool canMakeDeck(int liveType, int eventType, std::vector<CardDetail> &cardDetai
     for (const auto &cardDetail : cardDetails) {
         // 因为挑战Live的卡牌可以重复，所以属性要按卡的数量算
         attrMap[cardDetail.attr].insert(
-            liveType == live_type_challenge ? cardDetail.cardId : cardDetail.characterId
+            Enums::LiveType::isChallenge(liveType) ? cardDetail.cardId : cardDetail.characterId
         );
         for (const auto &unit : cardDetail.units) {
             unitMap[unit].insert(cardDetail.characterId);
         }
     }
-    if (liveType == live_type_challenge) {
+    if (Enums::LiveType::isChallenge(liveType) ) {
         // 对于挑战Live来说，如果卡组数量小于5只要有卡够就可以组队了
         if (member < 5) {
             return int(cardDetails.size()) >= member;
@@ -107,7 +102,7 @@ bool canMakeDeck(int liveType, int eventType, std::vector<CardDetail> &cardDetai
         return false;
     }
 
-    if (eventType == event_type_marathon || eventType == event_type_cheerful) {
+    if (eventType == Enums::EventType::marathon || eventType == Enums::EventType::cheerful) {
         // 对于马拉松、欢乐嘉年华活动来说，如果有任何一个大于等于5（能组出同色或同队），就没问题
         for (const auto &v : attrMap) {
             if (v.second.size() >= 5)
@@ -118,7 +113,7 @@ bool canMakeDeck(int liveType, int eventType, std::vector<CardDetail> &cardDetai
                 return true;
         }
         return false;
-    } else if (eventType == event_type_bloom) {
+    } else if (eventType == Enums::EventType::world_bloom) {
         // 对于世界开花活动，必须要满足能组出5种属性的队伍，且能组出一个团队
         if (!checkAttrForBloom(attrMap))
             return false;
@@ -165,11 +160,11 @@ std::vector<CardDetail> filterCardPriority(int liveType, int eventType, std::vec
 
 std::vector<CardPriority> getCardPriorities(int liveType, int eventType)
 {
-    if (liveType == live_type_challenge)
+    if (Enums::LiveType::isChallenge(liveType))
         return challengeLiveCardPriorities;
-    if (eventType == event_type_bloom)
+    if (eventType == Enums::EventType::world_bloom)
         return bloomCardPriorities;
-    if (eventType == event_type_marathon || eventType == event_type_cheerful)
+    if (eventType == Enums::EventType::marathon || eventType == Enums::EventType::cheerful)
         return marathonCheerfulCardPriorities;
     // 如果都不满足，那就只能都不筛选，所有卡全上
     return std::vector<CardPriority>();

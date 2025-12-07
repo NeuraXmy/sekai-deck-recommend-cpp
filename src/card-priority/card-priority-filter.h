@@ -7,12 +7,6 @@
 #include "card-information/card-calculator.h"
 #include "live-score/live-calculator.h"
 
-inline int rarity_4_enum = mapEnum(EnumMap::cardRarityType, "rarity_4");
-inline int rarity_3_enum = mapEnum(EnumMap::cardRarityType, "rarity_3");
-inline int rarity_2_enum = mapEnum(EnumMap::cardRarityType, "rarity_2");
-inline int rarity_1_enum = mapEnum(EnumMap::cardRarityType, "rarity_1");
-inline int rarity_birthday_enum = mapEnum(EnumMap::cardRarityType, "rarity_birthday");
-
 // 卡牌优先级
 struct CardPriority {
     // 活动加成下界

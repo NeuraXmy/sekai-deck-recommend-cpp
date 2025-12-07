@@ -1,12 +1,5 @@
 #include "card-information/card-power-calculator.h"
 
-int param1_enum = mapEnum(EnumMap::cardParameterType, "param1");
-int param2_enum = mapEnum(EnumMap::cardParameterType, "param2");
-int param3_enum = mapEnum(EnumMap::cardParameterType, "param3");
-int done_enum = mapEnum(EnumMap::specialTrainingStatus, "done");
-int already_read_enum = mapEnum(EnumMap::scenarioStatus, "already_read");
-int any_attr_enum = mapEnum(EnumMap::attr, "any");
-
 CardDetailMap<DeckCardPowerDetail> CardPowerCalculator::getCardPower(
     const UserCard &userCard, 
     const Card &card, 
@@ -63,23 +56,23 @@ BasePower CardPowerCalculator::getBasePower(const UserCard &userCard, const Card
     // 等级
     for (auto& it : card.cardParameters) {
         if (it.cardLevel == userCard.level) {
-            if (it.cardParameterType == param1_enum)
+            if (it.cardParameterType == Enums::CardParameterType::param1)
                 ret[0] = it.power;
-            else if (it.cardParameterType == param2_enum)
+            else if (it.cardParameterType == Enums::CardParameterType::param2)
                 ret[1] = it.power;
-            else if (it.cardParameterType == param3_enum)
+            else if (it.cardParameterType == Enums::CardParameterType::param3)
                 ret[2] = it.power;
         }
     }
     // 觉醒
-    if (userCard.specialTrainingStatus == done_enum) {
+    if (userCard.specialTrainingStatus == Enums::SpecialTrainingStatus::done) {
         ret[0] += card.specialTrainingPower1BonusFixed;
         ret[1] += card.specialTrainingPower2BonusFixed;
         ret[2] += card.specialTrainingPower3BonusFixed;
     }
     // 剧情
     for (auto& it : userCard.episodes) {
-        if (it.scenarioStatus == already_read_enum) {
+        if (it.scenarioStatus == Enums::ScenarioStatus::already_read) {
             auto episode = findOrThrow(cardEpisodes, [&](auto& e) {
                 return e.id == it.cardEpisodeId;
             }, [&]() { return "Card episode not found for cardId=" + std::to_string(card.id) + " episodeId=" + std::to_string(it.cardEpisodeId); });
@@ -113,11 +106,11 @@ int CardPowerCalculator::getAreaItemBonusPower(const std::vector<AreaItemLevel> 
 {
     double areaItemBonus[3] = {0, 0, 0};
     for (auto& it : userAreaItemLevels) {
-        if ((it.targetUnit == any_unit_enum || it.targetUnit == unit) &&
-            (it.targetCardAttr == any_attr_enum || it.targetCardAttr == attr) &&
+        if ((it.targetUnit == Enums::Unit::any || it.targetUnit == unit) &&
+            (it.targetCardAttr == Enums::Attr::any || it.targetCardAttr == attr) &&
             (it.targetGameCharacterId == 0 || it.targetGameCharacterId == characterId)) {
-            bool allMatch = (it.targetUnit != any_unit_enum && sameUnit) ||
-                            (it.targetCardAttr != any_attr_enum && sameAttr);
+            bool allMatch = (it.targetUnit != Enums::Unit::any && sameUnit) ||
+                            (it.targetCardAttr != Enums::Attr::any && sameAttr);
             double rates[3] = {0, 0, 0};
             if (allMatch) {
                 rates[0] = it.power1AllMatchBonusRate;
@@ -189,7 +182,7 @@ int CardPowerCalculator::getFixtureBonusPower(const BasePower &basePower, int ch
 
 int CardPowerCalculator::getGateBonusPower(const BasePower &basePower, const std::vector<MysekaiGateBonus> &userGateBonuses, const std::vector<int> &cardUnits)
 {
-    bool isOnlyPiapro = cardUnits.size() == 1 && cardUnits[0] == mapEnum(EnumMap::unit, "piapro");
+    bool isOnlyPiapro = cardUnits.size() == 1 && cardUnits[0] == Enums::Unit::piapro;
     double powerBonusRate = 0;
     for (auto& bonus : userGateBonuses) {
         if (isOnlyPiapro || std::find(cardUnits.begin(), cardUnits.end(), bonus.unit) != cardUnits.end()) {

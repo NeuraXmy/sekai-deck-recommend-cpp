@@ -1,7 +1,5 @@
 #include "deck-recommend/mysekai-deck-recommend.h"
 
-static int live_type_multi = mapEnum(EnumMap::liveType, "multi");
-
 std::vector<RecommendDeck> MysekaiDeckRecommend::recommendMysekaiDeck(
     int eventId, 
     const DeckRecommendConfig &config, 
@@ -21,7 +19,7 @@ std::vector<RecommendDeck> MysekaiDeckRecommend::recommendMysekaiDeck(
     return baseRecommend.recommendHighScoreDeck(userCards,
         this->mysekaiEventCalculator.getMysekaiEventPointFunction(), 
         cfg, 
-        live_type_multi,
+        Enums::LiveType::multi_live,
         eventConfig
     );
 }

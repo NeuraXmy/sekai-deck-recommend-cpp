@@ -26,7 +26,7 @@ std::optional<double> CardBloomEventCalculator::getCardSupportDeckBonus(const Us
     double total = 0;
 
     // 角色加成
-    int type = mapEnum(EnumMap::worldBloomSupportDeckCharacterType, (card.characterId == specialCharacterId) ? "specific" : "others");
+    int type = (card.characterId == specialCharacterId) ? Enums::WorldBloomSupportDeckCharacterType::specific : Enums::WorldBloomSupportDeckCharacterType::others;
     total += findOrThrow(bonus.worldBloomSupportDeckCharacterBonuses, [&](const WorldBloomSupportDeckCharacterBonus& it) { 
             return it.worldBloomSupportDeckCharacterType == type; 
         }, [&]() { return "World Bloom Support Deck Character Bonus not found for type=" + std::to_string(type); }
