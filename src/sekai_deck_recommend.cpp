@@ -628,10 +628,11 @@ class SekaiDeckRecommend {
         }
         else
             options.liveType = mapEnum(EnumMap::liveType, pyoptions.live_type.value());
+        bool is_challenge_live = Enums::LiveType::isChallenge(options.liveType);
         
         // eventId
         if (pyoptions.event_id.has_value()) {
-            if (pyoptions.live_type == "challenge")
+            if (is_challenge_live)
                 throw std::invalid_argument("event_id is not valid for challenge live.");
             options.eventId = pyoptions.event_id.value();
             findOrThrow(options.dataProvider.masterData->events, [&](const Event& it) {
@@ -639,7 +640,7 @@ class SekaiDeckRecommend {
             }, "Event not found for eventId: " + std::to_string(options.eventId));
         }
         else {
-            if (pyoptions.live_type != "challenge") {
+            if (!is_challenge_live) {
                 // 活动类型，没有指定则默认马拉松
                 auto event_type = pyoptions.event_type.value_or("marathon");
                 if (!VALID_EVENT_TYPES.count(event_type))
@@ -673,7 +674,7 @@ class SekaiDeckRecommend {
                 throw std::invalid_argument("Invalid challenge character ID: " + std::to_string(options.challengeLiveCharacterId));
         }
         else {
-            if (pyoptions.live_type == "challenge")
+            if (is_challenge_live)
                 throw std::invalid_argument("challenge_live_character_id is required for challenge live.");
         }
 
@@ -792,7 +793,7 @@ class SekaiDeckRecommend {
                     throw std::invalid_argument("Fixed characters size exceeds member count.");
                 if (config.fixedCards.size()) 
                     throw std::invalid_argument("fixed_characters and fixed_cards cannot be used together.");
-                if (pyoptions.live_type == "challenge")
+                if (is_challenge_live)
                     throw std::invalid_argument("fixed_characters is not valid for challenge live.");
                 for (const auto& character_id : fixed_characters) {
                     if (character_id < 1 || character_id > 26)
@@ -820,7 +821,7 @@ class SekaiDeckRecommend {
             // multi live teammate score up
             if (pyoptions.multi_live_teammate_score_up.has_value()) {
                 config.multiTeammateScoreUp = pyoptions.multi_live_teammate_score_up.value();
-                if (options.liveType != mapEnum(EnumMap::liveType, "multi"))
+                if (!Enums::LiveType::isMulti(options.liveType))
                     throw std::invalid_argument("multi_live_teammate_score_up is only valid for multi live.");
                 if (config.multiTeammateScoreUp < 0 || config.multiTeammateScoreUp > 1000)
                     throw std::invalid_argument("Invalid multi live teammate score up: " + std::to_string(config.multiTeammateScoreUp.value()));
@@ -829,7 +830,7 @@ class SekaiDeckRecommend {
             // multi live teammate power
             if (pyoptions.multi_live_teammate_power.has_value()) {
                 config.multiTeammatePower = pyoptions.multi_live_teammate_power.value();
-                if (options.liveType != mapEnum(EnumMap::liveType, "multi"))
+                if (!Enums::LiveType::isMulti(options.liveType))
                     throw std::invalid_argument("multi_live_teammate_power is only valid for multi live.");
                 if (config.multiTeammatePower < 0 || config.multiTeammatePower > 10000000)
                     throw std::invalid_argument("Invalid multi live teammate power: " + std::to_string(config.multiTeammatePower.value()));
@@ -842,7 +843,7 @@ class SekaiDeckRecommend {
 
             // multi live score up lower bound
             if (pyoptions.multi_live_score_up_lower_bound.has_value()) {
-                if (options.liveType != mapEnum(EnumMap::liveType, "multi"))
+                if (!Enums::LiveType::isMulti(options.liveType))
                     throw std::invalid_argument("multi_live_score_up_lower_bound is only valid for multi live.");
                 config.multiScoreUpLowerBound = pyoptions.multi_live_score_up_lower_bound.value();
             }
@@ -1120,20 +1121,20 @@ public:
                 options.config,
                 options.worldBloomCharacterId
             );
-        } else if (options.liveType != mapEnum(EnumMap::liveType, "challenge")) {
+        } else if (Enums::LiveType::isChallenge(options.liveType)) {
+            ChallengeLiveDeckRecommend challengeLiveDeckRecommend(options.dataProvider);
+            result = challengeLiveDeckRecommend.recommendChallengeLiveDeck(
+                options.liveType,
+                options.challengeLiveCharacterId,
+                options.config
+            );
+        } else {
             EventDeckRecommend eventDeckRecommend(options.dataProvider);
             result = eventDeckRecommend.recommendEventDeck(
                 options.eventId,
                 options.liveType,
                 options.config,
                 options.worldBloomCharacterId
-            );
-        } else {
-            ChallengeLiveDeckRecommend challengeLiveDeckRecommend(options.dataProvider);
-            result = challengeLiveDeckRecommend.recommendChallengeLiveDeck(
-                options.liveType,
-                options.challengeLiveCharacterId,
-                options.config
             );
         }
 
