@@ -1,6 +1,5 @@
 #include "deck-recommend/base-deck-recommend.h"
 
-
 template<typename T>
 bool containsAny(const std::vector<T>& collection, const std::vector<T>& contains) {
     for (const auto& item : collection) {
@@ -50,7 +49,6 @@ void BaseDeckRecommend::findBestCardsDFS(
     if (dfsInfo.isTimeout()) {
         return;
     }
-
     // 非完整卡组，继续遍历所有情况
     const CardDetail* preCard = nullptr;
 
@@ -64,6 +62,7 @@ void BaseDeckRecommend::findBestCardsDFS(
             }
         }
         if (has_card) continue;
+
         // 跳过重复角色
         if (!isChallengeLive && deckCharacters.test(card.characterId)) continue;
         // 强制角色限制（不需要考虑固定卡牌，两个参数不允许同时存在）
@@ -129,10 +128,12 @@ void BaseDeckRecommend::findBestCardsDFS(
         // 递归，寻找所有情况
         deckCards.push_back(&card);
         deckCharacters.flip(card.characterId);
+
         findBestCardsDFS(
             liveType, cfg, cardDetails, supportCards, scoreFunc, dfsInfo,
             limit, isChallengeLive, member, honorBonus, eventType, eventId, fixedCards
         );
+
         deckCards.pop_back();
         deckCharacters.flip(card.characterId);
     }

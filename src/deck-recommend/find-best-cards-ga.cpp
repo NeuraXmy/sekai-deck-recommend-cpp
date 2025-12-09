@@ -5,7 +5,7 @@
 
 struct Individual {
     std::vector<const CardDetail*> deck;
-    int deckHash;
+    uint64_t deckHash;
     double fitness;
 
     bool operator<(const Individual& other) const {
@@ -56,6 +56,7 @@ std::vector<int> randomSelectIndexByWeight(Rng& rng, const std::vector<double>& 
     if (n > (int)weights.size()) 
         throw std::invalid_argument("no enough cards to select");
     std::vector<int> indices{};
+    indices.reserve(n);
     while ((int)indices.size() < n) {
         int idx = randomSelectIndexByWeight(rng, weights, excluded);
         if (std::find(indices.begin(), indices.end(), idx) == indices.end()) {
@@ -211,6 +212,7 @@ void BaseDeckRecommend::findBestCardsGA(
         }
         // 从b中获取可以选择的所有位置（不包括固定）
         std::vector<int> b_pos{};
+        b_pos.reserve((int)b.deck.size() - fixedSize);
         for (int i = 0; i < (int)b.deck.size() - fixedSize; ++i) {
             auto c1 = b.deck[i];
             bool ok = true;
@@ -238,6 +240,7 @@ void BaseDeckRecommend::findBestCardsGA(
         b_pos.resize((int)a.deck.size() - fixedSize - (int)pos.size());
         // 生成新个体
         Individual child{};
+        child.deck.reserve(member);
         for (const auto& p : pos) 
             child.deck.push_back(a.deck[p]);
         for (const auto& p : b_pos)
@@ -253,7 +256,6 @@ void BaseDeckRecommend::findBestCardsGA(
         // for (auto card : a.deck) std::cerr << card->cardId << " "; std::cerr << std::endl;
         // for (auto card : b.deck) std::cerr << card->cardId << " "; std::cerr << std::endl;
         // for (auto card : child.deck) std::cerr << card->cardId << " "; std::cerr << std::endl;
-
         return child;
     };
 
@@ -333,7 +335,7 @@ void BaseDeckRecommend::findBestCardsGA(
 
         // 去重
         population.clear();
-        std::unordered_set<int> deckHashSet{};
+        std::unordered_set<uint64_t> deckHashSet{};
         for (const auto& individual : newPopulation) {
             if (deckHashSet.count(individual.deckHash) == 0) {
                 population.push_back(individual);

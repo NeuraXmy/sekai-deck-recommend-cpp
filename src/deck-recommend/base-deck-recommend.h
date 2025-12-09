@@ -121,7 +121,7 @@ public:
           areaItemService(dataProvider) {}
 
     // 计算第一位+后几位顺序无关的哈希值
-    long long calcDeckHash(const std::vector<const CardDetail*>& deck);
+    uint64_t calcDeckHash(const std::vector<const CardDetail*>& deck);
 
     /**
      * 获取卡组的最佳排列并计算分数，返回可能用到的最优推荐卡组信息

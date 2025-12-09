@@ -7,6 +7,10 @@
 
 #include "common/collection-utils.h"
 
+constexpr int UNIT_MAX = 12;
+constexpr int UNIT_MEMBER_MAX = 6;
+constexpr int ATTR_MEMBER_MAX = 2;
+
 /**
  * 用于记录在不同的同组合、同属性加成的情况下的综合力或加分技能
  */
@@ -15,13 +19,13 @@ class CardDetailMap {
 
     inline const std::optional<T> getValue(int unit, int unitMember, int attrMember) const {
         int key = getKey(unit, unitMember, attrMember);
-        if (this->values.count(key) > 0) 
-            return this->values.at(key);
+        if (this->values[key].has_value())
+            return this->values[key];
         return std::nullopt;
     }
 
 public:
-    mutable std::map<int, T> values = {};
+    std::array<std::optional<T>, UNIT_MAX * UNIT_MEMBER_MAX * ATTR_MEMBER_MAX> values = {};
     int min = std::numeric_limits<int>::max();
     int max = std::numeric_limits<int>::min();
     
@@ -88,10 +92,10 @@ public:
      * @private
      */
     inline int getKey(int unit, int unitMember, int attrMember) const {
-        assert(unit >= 0 && unit < 20);
+        assert(unit >= 0 && unit < 12);
         assert(unitMember >= 0 && unitMember <= 5);
         assert(attrMember == 1 || attrMember == 5);
-        return (unit << 16) | (unitMember << 12) | (attrMember << 8);
+        return (unit * UNIT_MEMBER_MAX + unitMember) * ATTR_MEMBER_MAX + (attrMember == 5 ? 1 : 0);
     }
 
     /**

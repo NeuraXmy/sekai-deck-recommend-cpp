@@ -1,5 +1,4 @@
 #include "deck-recommend/deck-result-update.h"
-#include "deck-result-update.h"
 
 bool RecommendDeck::operator>(const RecommendDeck &other) const
 {
@@ -9,31 +8,30 @@ bool RecommendDeck::operator>(const RecommendDeck &other) const
     return cards[0].cardId < other.cards[0].cardId;
 }
 
-long long getDeckHash(const RecommendDeck &deck)
+uint64_t getRecommendDeckHash(const RecommendDeck &deck)
 {
     // 计算卡组的哈希值
     // 如果分数或者综合不一样，说明肯定不是同一队
     // 如果C位不一样，也不认为是同一队
-    long long hash = 0;
-    constexpr long long base = 10007;
-    constexpr long long mod = 1e9 + 7;
-    hash = (hash * base + deck.score) % mod;
-    hash = (hash * base + deck.power.total) % mod;
-    hash = (hash * base + deck.cards[0].cardId) % mod;
+    uint64_t hash = 0;
+    constexpr uint64_t base = 10007;
+    hash = hash * base + deck.score;
+    hash = hash * base + deck.power.total;
+    hash = hash * base + deck.cards[0].cardId;
     return hash;
 }
 
 void RecommendCalcInfo::update(const RecommendDeck &deck, int limit)
 {
-    // 判断是否已经存在
-    long long hash = getDeckHash(deck);
-    if (deckHashSet.count(hash)) 
-        return; 
-    deckHashSet.insert(hash);
-    
     // 如果已经足够，判断是否劣于当前最差的
     if (int(deckQueue.size()) >= limit && deckQueue.top() > deck)
         return;
+
+    // 判断是否已经存在
+    uint64_t hash = getRecommendDeckHash(deck);
+    if (deckQueueHashSet.count(hash)) 
+        return; 
+    deckQueueHashSet.insert(hash);
 
     deckQueue.push(deck);
     while (int(deckQueue.size()) > limit) {
@@ -41,7 +39,8 @@ void RecommendCalcInfo::update(const RecommendDeck &deck, int limit)
     }
 }
 
-bool RecommendCalcInfo::isTimeout() const
+bool RecommendCalcInfo::isTimeout()
 {
+    if (++timeout_check_count % 256 != 0) return false;
     return std::chrono::high_resolution_clock::now().time_since_epoch().count() - start_ts > timeout;
 }

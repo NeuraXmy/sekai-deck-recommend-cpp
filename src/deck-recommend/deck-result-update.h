@@ -69,18 +69,19 @@ struct RecommendDeck : DeckDetail {
 struct RecommendCalcInfo {
     long long start_ts = 0;
     long long timeout = std::numeric_limits<long long>::max();
+    int timeout_check_count = 0;
     std::priority_queue<RecommendDeck, std::vector<RecommendDeck>, std::greater<>> deckQueue = {};
-    std::unordered_set<long long> deckHashSet = {};
+    std::unordered_set<uint64_t> deckQueueHashSet = {};
     
     std::vector<const CardDetail*> deckCards = {};
     std::bitset<32> deckCharacters = 0;
-    std::map<long long, double> deckTargetValueMap{};
+    std::unordered_map<uint64_t, double> deckTargetValueMap{};
 
     // 添加一个新结果
     void update(const RecommendDeck &deck, int limit);
 
     // 检查是否超时
-    bool isTimeout() const;
+    bool isTimeout();
 };
 
 

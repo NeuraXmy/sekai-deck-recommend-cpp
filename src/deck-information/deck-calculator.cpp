@@ -19,6 +19,7 @@ DeckBonusInfo DeckCalculator::getDeckBonus(
         }
 
     // 正常加成
+    ret.cardBonus.reserve(deckCards.size());
     for (const auto &card : deckCards) {
         ret.cardBonus.push_back(card->maxEventBonus.value());
     }
@@ -157,32 +158,34 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
         unit_num += bool(unit_map[i]);
 
     // 计算当前卡组的综合力，要加上称号的固定加成
-    std::vector<DeckCardPowerDetail> cardPower{};
-    cardPower.reserve(card_num);
-    for (auto p : cardDetails) {
-        auto& cardDetail = *p;
+    std::array<DeckCardPowerDetail, 5> cardPower{};
+    for (int i = 0; i < card_num; ++i) {
+        auto& cardDetail = *cardDetails[i];
         DeckCardPowerDetail powerDetail = {};
         for (const auto &unit : cardDetail.units) {
             auto current = cardDetail.power.get(unit, unit_map[unit], attr_map[cardDetail.attr]);
             // 有多个组合时，取最高加成组合
             powerDetail = current.total > powerDetail.total ? current : powerDetail;
         }
-        cardPower.push_back(powerDetail);
+        cardPower[i] = powerDetail;
     }
     DeckPowerDetail power{};
-    for (const auto &p : cardPower) power.base += p.base;
-    for (const auto &p : cardPower) power.areaItemBonus += p.areaItemBonus;
-    for (const auto &p : cardPower) power.characterBonus += p.characterBonus;
-    for (const auto &p : cardPower) power.fixtureBonus += p.fixtureBonus;
-    for (const auto &p : cardPower) power.gateBonus += p.gateBonus;
-    for (const auto &p : cardPower) power.total += p.total;
+    for (int i = 0; i < card_num; ++i) {
+        auto& p = cardPower[i];
+        power.base += p.base;
+        power.areaItemBonus += p.areaItemBonus;
+        power.characterBonus += p.characterBonus;
+        power.fixtureBonus += p.fixtureBonus;
+        power.gateBonus += p.gateBonus;
+        power.total += p.total;
+    }
     power.total += honorBonus;
 
     // 计算当前卡组每个卡牌的花前/花后固定技能效果（进Live之前）
-    std::vector<std::array<DeckCardSkillDetail, 2>> prepareSkills{};
-    prepareSkills.reserve(card_num);
+    std::array<std::array<DeckCardSkillDetail, 2>, 5> prepareSkills{};
     int doubleSkillMask = 0;
     int needEnumerateStatusMask = 0;  
+    int needEnumerateCount = 0;
 
     for (int i = 0; i < card_num; ++i) {
         auto& cardDetail = *cardDetails[i];
@@ -223,30 +226,31 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
             if (needEnumerate) {
                 // 需要枚举则记录需要枚举的位置
                 needEnumerateStatusMask |= (1 << i);   
+                needEnumerateCount++;
             } else {
                 // 不需要枚举则花后设置为两个技能的最大 
                 s2 = (s2.scoreUp >= s1.scoreUp ? s2 : s1); 
             }
         }
 
-        prepareSkills.push_back({ s1, s2 });
+        prepareSkills[i] = { s1, s2 };
     }
 
     // 枚举技能状态，计算当前卡组的实际技能效果（包括选择花前/花后技能），并归纳卡牌在队伍中的详情信息
-    std::vector<DeckDetail> ret{};
-    std::vector<DeckCardDetail> cards{};
-    std::vector<DeckCardSkillDetail> skills{};
-    std::vector<int> order{};
+    std::array<DeckCardSkillDetail, 5> skills{};
+    std::array<int, 5> order{};
+    std::array<double, 5> memberSkillMaxs{};
     std::vector<std::pair<int, int>> scoreUps{};
+    scoreUps.reserve(1 << needEnumerateCount);
+    std::vector<DeckDetail> ret{};
     for (int mask = needEnumerateStatusMask; mask >= 0; mask = mask ? (mask - 1) & needEnumerateStatusMask : -1) {
         // 根据mask枚举花前/花后技能状态，计算实际技能
-        skills.clear();
         for (int i = 0; i < card_num; ++i) {
             auto& s1 = prepareSkills[i][0]; // 花前技能
             auto& s2 = prepareSkills[i][1]; // 花后技能（或者已经被花前技能替换的技能）
             auto& s = (mask & (1 << i)) ? s1 : s2; // 实际技能，0为花后技能，1为花前技能
             s.scoreUpToReference = s.scoreUp; // 此时的值为吸分技能能吸取的值
-            skills.push_back(s);
+            skills[i] = s;
         } 
 
         // 计算枚举状态的技能的实际值
@@ -257,11 +261,10 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
             if (s.hasScoreUpReference) {
                 s.scoreUp -= s.scoreUpReferenceMax; // 从max回到还没吸的基础值
                 // 收集其他成员的技能最大值
-                std::vector<double> memberSkillMaxs = {};
                 for (int j = 0; j < card_num; ++j) if (i != j) {
                     double m = skills[j].scoreUpToReference;
                     m = std::min(std::floor(m * s.scoreUpReferenceRate / 100.), s.scoreUpReferenceMax);
-                    memberSkillMaxs.push_back(m);
+                    memberSkillMaxs[j] = m;
                 }
                 // 不同选择策略
                 double chosenSkillMax = 0;
@@ -275,17 +278,16 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
             } 
         }
 
-        order.resize(card_num);
-        std::iota(order.begin(), order.end(), 0);
+        std::iota(order.begin(), order.begin() + card_num, 0);
         if (bestSkillAsLeader) {
             // 如果需要，调整最大技能的卡为队长
-            int bestIndex = std::max_element(order.begin(), order.end(), [&skills, &cardDetails](int x, int y) {
+            int bestIndex = std::max_element(order.begin(), order.begin() + card_num, [&skills, &cardDetails](int x, int y) {
                 return std::tuple(skills[x].scoreUp, -cardDetails[x]->cardId) < std::tuple(skills[y].scoreUp, -cardDetails[y]->cardId);
             }) - order.begin();
             if (bestIndex != 0) std::swap(order[0], order[bestIndex]);
         } else {
             // 否则只需要队长之后的按卡牌ID排序
-            std::sort(order.begin() + 1, order.end(), [&cardDetails](int x, int y) {
+            std::sort(order.begin() + 1, order.begin() + card_num, [&cardDetails](int x, int y) {
                 return cardDetails[x]->cardId < cardDetails[y]->cardId;
             });
         }
@@ -308,7 +310,8 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
         scoreUps.push_back({ leaderScoreUp, otherScoreUpSum });
 
         // 归纳卡牌在队伍中的详情信息
-        cards.clear();
+        std::vector<DeckCardDetail> cards{};
+        cards.reserve(card_num);
         for (auto i : order) {
             auto& cardDetail = *cardDetails[i];
 
@@ -345,7 +348,7 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
             .eventBonus = eventBonusInfo.totalBonus,
             .supportDeckBonus = supportDeckBonus.bonus,
             .supportDeckCards = std::nullopt, // supportDeckBonus.cards
-            .cards = cards,
+            .cards = std::move(cards),
             .multiLiveScoreUp = multiLiveScoreUp
         });
     }

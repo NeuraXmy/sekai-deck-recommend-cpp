@@ -3,20 +3,18 @@
 #include "common/timer.h"
 #include <chrono>
 #include <random>
-#include "base-deck-recommend.h"
 
 
-long long BaseDeckRecommend::calcDeckHash(const std::vector<const CardDetail*>& deck) {
-    std::vector<int> v{};
-    for(auto& card : deck) 
-        v.push_back(card->cardId);
-    std::sort(v.begin() + 1, v.end());
-    long long hash = 0;
-    constexpr long long base = 10007;
-    constexpr long long mod = 1e9 + 7;
-    for (auto& x : v) {
-        hash = (hash * base + x) % mod;
-    }
+uint64_t BaseDeckRecommend::calcDeckHash(const std::vector<const CardDetail*>& deck) {
+    int card_num = (int)deck.size();
+    std::array<int, 5> v{};
+    for (int i = 0; i < card_num; ++i)
+        v[i] = deck[i]->cardId;
+    std::sort(v.begin() + 1, v.begin() + card_num);
+    constexpr uint64_t base = 10007;
+    uint64_t hash = 0;
+    for (int i = 0; i < card_num; ++i) 
+        hash = hash * base + v[i];
     return hash;
 };
 
