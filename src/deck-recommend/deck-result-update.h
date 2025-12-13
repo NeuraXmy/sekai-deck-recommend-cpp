@@ -70,6 +70,7 @@ struct RecommendCalcInfo {
     long long start_ts = 0;
     long long timeout = std::numeric_limits<long long>::max();
     int timeout_check_count = 0;
+    bool is_timeout = false;
     std::priority_queue<RecommendDeck, std::vector<RecommendDeck>, std::greater<>> deckQueue = {};
     std::unordered_set<uint64_t> deckQueueHashSet = {};
     

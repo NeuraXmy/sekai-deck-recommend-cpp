@@ -27,6 +27,11 @@ void BaseDeckRecommend::findBestCardsDFS(
     const std::vector<CardDetail>& fixedCards
 )
 {
+    // 超时
+    if (dfsInfo.isTimeout()) {
+        return;
+    }
+
     auto& deckCards = dfsInfo.deckCards;
     auto& deckCharacters = dfsInfo.deckCharacters;
 
@@ -45,10 +50,6 @@ void BaseDeckRecommend::findBestCardsDFS(
         return;
     }
 
-    // 超时
-    if (dfsInfo.isTimeout()) {
-        return;
-    }
     // 非完整卡组，继续遍历所有情况
     const CardDetail* preCard = nullptr;
 

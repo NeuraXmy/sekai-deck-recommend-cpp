@@ -41,6 +41,9 @@ void RecommendCalcInfo::update(const RecommendDeck &deck, int limit)
 
 bool RecommendCalcInfo::isTimeout()
 {
-    if (++timeout_check_count % 256 != 0) return false;
-    return std::chrono::high_resolution_clock::now().time_since_epoch().count() - start_ts > timeout;
+    if (++timeout_check_count % 256 != 0) 
+        return is_timeout;
+    if (std::chrono::high_resolution_clock::now().time_since_epoch().count() - start_ts > timeout) 
+        is_timeout = true;
+    return is_timeout;
 }
