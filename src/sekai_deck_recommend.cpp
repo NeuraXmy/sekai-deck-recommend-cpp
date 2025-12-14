@@ -93,6 +93,20 @@ static const std::set<std::string> VALID_SKILL_ORDER_CHOOSE_STRATEGIES = {
     "specific",
 };
 
+// 用户数据缓存
+struct PyUserData {
+    std::shared_ptr<UserData> user_data;
+
+    void load_from_file(const std::string& path) {
+        user_data = std::make_shared<UserData>();
+        user_data->loadFromFile(path);
+    }
+
+    void load_from_bytes(const std::string& bytes) {
+        user_data = std::make_shared<UserData>();
+        user_data->loadFromString(bytes);
+    }
+};
 
 // python传入的card config
 struct PyCardConfig {
@@ -248,6 +262,7 @@ struct PyDeckRecommendOptions {
     std::optional<std::string> region;
     std::optional<std::string> user_data_file_path;
     std::optional<std::string> user_data_str;
+    std::optional<PyUserData> user_data;
     std::optional<std::string> live_type;
     std::optional<int> music_id;
     std::optional<std::string> music_diff;
@@ -282,12 +297,14 @@ struct PyDeckRecommendOptions {
     std::optional<PyGaOptions> ga_options;
 
     py::dict to_dict() const {
+        if (user_data.has_value()) 
+            throw std::runtime_error("Cannot be converted to dict when user_data is set.");
         py::dict result;
         if (target.has_value())                result["target"] = target.value();
         if (algorithm.has_value())             result["algorithm"] = algorithm.value();
         if (region.has_value())                result["region"] = region.value();
         if (user_data_file_path.has_value())   result["user_data_file_path"] = user_data_file_path.value();
-        if (user_data_str.has_value())         result["user_data_str"] = user_data_str.value();
+        if (user_data_str.has_value())         result["user_data_str"] = user_data_str.value();       
         if (live_type.has_value())             result["live_type"] = live_type.value();
         if (music_id.has_value())              result["music_id"] = music_id.value();
         if (music_diff.has_value())            result["music_diff"] = music_diff.value();
@@ -349,6 +366,7 @@ struct PyDeckRecommendOptions {
             result["ga_options"] = ga_options->to_dict();
         return result;
     }
+
     static PyDeckRecommendOptions from_dict(const py::dict& dict) {
         PyDeckRecommendOptions options;
         if (dict.contains("target"))                options.target = dict["target"].cast<std::string>();
@@ -565,7 +583,7 @@ struct PyDeckRecommendResult {
     }
 };
 
-
+// 推荐主类
 class SekaiDeckRecommend {
 
     mutable std::map<Region, std::shared_ptr<MasterData>> region_masterdata;
@@ -592,12 +610,14 @@ class SekaiDeckRecommend {
 
         // user data
         auto userdata = std::make_shared<UserData>();
-        if (pyoptions.user_data_file_path.has_value())
+        if (pyoptions.user_data.has_value())
+            userdata = pyoptions.user_data.value().user_data;
+        else if (pyoptions.user_data_file_path.has_value())
             userdata->loadFromFile(pyoptions.user_data_file_path.value());
         else if (pyoptions.user_data_str.has_value()) 
             userdata->loadFromString(pyoptions.user_data_str.value());
         else 
-            throw std::invalid_argument("user_data_file_path or user_data_bytes is required.");
+            throw std::invalid_argument("Either user_data / user_data_file_path / user_data_str is required.");
 
         // region master data and music metas
         if (!region_masterdata.count(region))
@@ -1147,6 +1167,12 @@ public:
 PYBIND11_MODULE(sekai_deck_recommend, m) {
     m.doc() = "pybind11 sekai_deck_recommend plugin";
 
+    py::class_<PyUserData>(m, "DeckRecommendUserData")
+        .def(py::init<>())
+        .def(py::init<const PyUserData&>())
+        .def("load_from_file", &PyUserData::load_from_file)
+        .def("load_from_bytes", &PyUserData::load_from_bytes);
+
     py::class_<PyCardConfig>(m, "DeckRecommendCardConfig")
         .def(py::init<>())
         .def(py::init<const PyCardConfig&>())
@@ -1212,6 +1238,7 @@ PYBIND11_MODULE(sekai_deck_recommend, m) {
         .def_readwrite("region", &PyDeckRecommendOptions::region)
         .def_readwrite("user_data_file_path", &PyDeckRecommendOptions::user_data_file_path)
         .def_readwrite("user_data_str", &PyDeckRecommendOptions::user_data_str)
+        .def_readwrite("user_data", &PyDeckRecommendOptions::user_data)
         .def_readwrite("live_type", &PyDeckRecommendOptions::live_type)
         .def_readwrite("music_id", &PyDeckRecommendOptions::music_id)
         .def_readwrite("music_diff", &PyDeckRecommendOptions::music_diff)
