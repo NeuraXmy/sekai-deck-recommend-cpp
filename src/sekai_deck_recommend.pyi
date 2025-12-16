@@ -1,6 +1,24 @@
 from typing import Optional, Dict, Any, List, Union
 
 
+class DeckRecommendUserData:
+    """
+    User data for deck recommendation
+    Methods:
+        load_from_file(path: str) -> None: Load user data from a local file
+        load_from_bytes(data: Union[str, bytes]) -> None: Load user data from string or bytes
+    """
+    
+    def __init__(self) -> None:
+        ...
+    
+    def load_from_file(self, path: str) -> None:
+        ...
+    
+    def load_from_bytes(self, data: Union[str, bytes]) -> None:
+        ...
+
+
 class DeckRecommendCardConfig:
     """
     Card config for a specific rarity
@@ -124,8 +142,9 @@ class DeckRecommendOptions:
         target (str): Target of the recommendation in ["score", "power", "skill", "bonus"], default is "score"
         algorithm (str): "dfs" for brute force, "sa" for simulated annealing, "ga" for genetic algorithm, default is "ga"
         region (str): Region in ["jp", "en", "tw", "kr", "cn"]
-        user_data_file_path (str): File path of user suite json
-        user_data_str (str | bytes): String or bytes of user suite json
+        user_data (DeckRecommendUserData): User suite data for deck recommendation
+        user_data_file_path (str): File path of user suite data json
+        user_data_str (str | bytes): String or bytes of user suite data json
         live_type (str): Live type in ["multi", "solo", "auto", "challenge", "challenge_auto", "mysekai"]
         music_id (int): Music ID
         music_diff (str): Music difficulty in ["easy", "normal", "hard", "expert", "master", "append"]
@@ -162,6 +181,7 @@ class DeckRecommendOptions:
     target: Optional[str]
     algorithm: Optional[str]
     region: str
+    user_data: Optional[DeckRecommendUserData]
     user_data_file_path: Optional[str]
     user_data_str: Optional[Union[str, bytes]]
     live_type: str
