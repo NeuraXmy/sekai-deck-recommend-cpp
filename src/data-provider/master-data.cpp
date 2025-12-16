@@ -225,7 +225,7 @@ void MasterData::addFakeEvent(int eventType) {
                 events.push_back(e);
                 // 相同团的角色加成
                 for (auto& charaUnit : gameCharacterUnits) {
-                    if (charaUnit.unit == unit) {
+                    if (charaUnit.unit == unit || (unit == Enums::Unit::piapro && charaUnit.id > 20)) {
                         // 同团同色
                         EventDeckBonus b;
                         b.eventId = e.id;
