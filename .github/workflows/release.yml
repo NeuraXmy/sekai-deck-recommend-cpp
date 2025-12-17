@@ -1,31 +1,32 @@
-# .github/workflows/release.yml
-
 name: Build and publish to PyPI
 
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
-  build_wheels:
-    name: Build wheels on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+  # ------------------------------------------------------------
+  # Linux x86_64 (native)
+  # ------------------------------------------------------------
+  build_linux_x64:
+    name: Build wheels (Linux x86_64)
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
+          submodules: recursive
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.18"
+          cache: true
 
       - name: Install cibuildwheel
         run: python -m pip install cibuildwheel
@@ -34,52 +35,171 @@ jobs:
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
           CIBW_BUILD: "cp31*-*"
-          CIBW_SKIP: "*musllinux*"
           CIBW_ARCHS_LINUX: "x86_64"
-          CIBW_ARCHS_WINDOWS: "AMD64"
-          CIBW_ARCHS_MACOS: "x86_64 arm64"
+          CIBW_BUILD_FRONTEND: "build[uv]"
           CIBW_BUILD_VERBOSITY: "1"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-linux-x64
+          path: wheelhouse/*.whl
+
+  # ------------------------------------------------------------
+  # Linux arm64 (native arm runner, NO QEMU)
+  # ------------------------------------------------------------
+  build_linux_arm64:
+    name: Build wheels (Linux arm64)
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.18"
+          cache: true
+
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel
+
+      - name: Build wheels
+        run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BUILD: "cp31*-*"
+          CIBW_ARCHS_LINUX: "aarch64"
+          CIBW_BUILD_FRONTEND: "build[uv]"
+          CIBW_BUILD_VERBOSITY: "1"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-linux-arm64
+          path: wheelhouse/*.whl
+
+  # ------------------------------------------------------------
+  # macOS arm64 (Apple Silicon)
+  # ------------------------------------------------------------
+  build_macos_arm64:
+    name: Build wheels (macOS arm64)
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.18"
+          cache: true
+
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel
+
+      - name: Build wheels
+        run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BUILD: "cp31*-*"
+          CIBW_ARCHS_MACOS: "arm64"
+          CIBW_BUILD_FRONTEND: "build[uv]"
+          CIBW_BUILD_VERBOSITY: "1"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-macos-arm64
+          path: wheelhouse/*.whl
+
+  # ------------------------------------------------------------
+  # Windows x64 (clang-cl + Ninja)
+  # ------------------------------------------------------------
+  build_windows_x64:
+    name: Build wheels (Windows x64)
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.18"
+          cache: true
+
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel
+
+      - name: Build wheels
+        run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BUILD: "cp31*-*"
+          CIBW_ARCHS_WINDOWS: "AMD64"
+
           CIBW_CMAKE_GENERATOR: "Ninja"
           CIBW_ENVIRONMENT_WINDOWS: >
             CC=clang-cl
             CXX=clang-cl
 
-      - name: Store artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-${{ matrix.os }}
-          path: ./wheelhouse/*.whl
+          CIBW_BUILD_FRONTEND: "build[uv]"
+          CIBW_BUILD_VERBOSITY: "1"
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-windows-x64
+          path: wheelhouse/*.whl
+
+  # ------------------------------------------------------------
+  # sdist
+  # ------------------------------------------------------------
   build_sdist:
-    name: Build source distribution
+    name: Build sdist
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
+          submodules: recursive
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
-      - name: Build sdist
-        run: |
-          pip install build
-          python -m build --sdist
+      - run: pip install build
+      - run: python -m build --sdist
 
-      - name: Store artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: artifact-sdist
+          name: sdist
           path: dist/*.tar.gz
 
+  # ------------------------------------------------------------
+  # Publish
+  # ------------------------------------------------------------
   publish:
-    name: Create Release and Publish
-    needs: [build_wheels, build_sdist]
+    name: Publish to PyPI
+    needs:
+      - build_linux_x64
+      - build_linux_arm64
+      - build_macos_arm64
+      - build_windows_x64
+      - build_sdist
     runs-on: ubuntu-latest
-    if: success()
 
     environment:
       name: pypi-publish
@@ -90,8 +210,7 @@ jobs:
       contents: write
 
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
