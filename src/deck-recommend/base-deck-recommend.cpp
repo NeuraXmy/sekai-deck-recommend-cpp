@@ -167,6 +167,7 @@ std::vector<RecommendDeck> BaseDeckRecommend::recommendHighScoreDeck(
             );
             if (card.size() > 0) {
                 fixedCards.push_back(card[0]);
+                cards.push_back(card[0]);
             } else {
                 throw std::runtime_error("Failed to generate virtual card for fixed card id: " + std::to_string(card_id));
             }
