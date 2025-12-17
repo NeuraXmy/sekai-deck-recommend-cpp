@@ -4,7 +4,8 @@
 
 
 struct Individual {
-    std::vector<const CardDetail*> deck;
+    int cardNum = 0;
+    std::array<const CardDetail*, 5> deck;
     uint64_t deckHash;
     double fitness;
 
@@ -13,6 +14,21 @@ struct Individual {
     }
     bool operator>(const Individual& other) const {
         return fitness > other.fitness;
+    }
+
+    uint64_t calcDeckHash() {
+        std::sort(deck.begin() + 1, deck.begin() + cardNum, [](const CardDetail* a, const CardDetail* b) {
+            return a->cardId < b->cardId;
+        });
+        constexpr uint64_t base = 10007;
+        uint64_t hash = 0;
+        for (int i = 0; i < cardNum; ++i) 
+            hash = hash * base + deck[i]->cardId;
+        return hash;
+    }
+
+    void addCard(const CardDetail* card) {
+        deck[cardNum++] = card;
     }
 };
 
@@ -108,14 +124,18 @@ void BaseDeckRecommend::findBestCardsGA(
     // 计算个体的分数并更新答案
     auto updateIndividualScore = [&](Individual& individual) {
         // 检查是否已经计算过这个组合
-        auto deckHash = calcDeckHash(individual.deck);
+        auto deckHash = individual.calcDeckHash();
         double targetValue = 0.0;
         if (gaInfo.deckTargetValueMap.count(deckHash)) {
             targetValue = gaInfo.deckTargetValueMap[deckHash];
         } else {
             // 计算当前综合力
+            std::vector<const CardDetail*> deck{};
+            deck.reserve(individual.cardNum);
+            for (const auto& cardPtr : individual.deck) 
+                deck.push_back(cardPtr);
             auto ret = getBestPermutation(
-                this->deckCalculator, individual.deck, supportCards, scoreFunc, 
+                this->deckCalculator, deck, supportCards, scoreFunc, 
                 honorBonus, eventType, eventId, liveType, cfg
             );
             if (ret.bestDeck.has_value()) {
@@ -169,18 +189,18 @@ void BaseDeckRecommend::findBestCardsGA(
             // 每个角色随机1张
             for (const auto& chara : valid_charas) {
                 auto idx = randomSelectIndexByWeight(rng, charaCardWeights[chara]);
-                individual.deck.push_back(&charaCardDetails[chara][idx]);
+                individual.addCard(&charaCardDetails[chara][idx]);
             }
         } 
         else {
             // 挑战live随机member-fixed张不重复的（不能是和fixedCards相同的卡）
             auto indices = randomSelectIndexByWeight(rng, allCardWeights, member - fixedSize, fixedCardIndices);
             for (const auto& idx : indices) 
-                individual.deck.push_back(&cardDetails[idx]);
+                individual.addCard(&cardDetails[idx]);
         }
         // 添加固定卡牌
         for (const auto& card : fixedCards) 
-            individual.deck.push_back(&card);
+            individual.addCard(&card);
         updateIndividualScore(individual);
         population.push_back(individual);
     }   
@@ -201,7 +221,8 @@ void BaseDeckRecommend::findBestCardsGA(
             return std::max(a, b);
         // 随机选择要保留的a位置（不包括固定）
         std::vector<int> pos{};
-        for (int i = 0; i < (int)a.deck.size() - fixedSize; ++i) {
+        pos.reserve(a.cardNum - fixedSize);
+        for (int i = 0; i < a.cardNum - fixedSize; ++i) {
             // 如果是固定角色则一定保留
             if (std::find(cfg.fixedCharacters.begin(), cfg.fixedCharacters.end(), a.deck[i]->characterId) != cfg.fixedCharacters.end()) {
                 pos.push_back(i);
@@ -212,8 +233,8 @@ void BaseDeckRecommend::findBestCardsGA(
         }
         // 从b中获取可以选择的所有位置（不包括固定）
         std::vector<int> b_pos{};
-        b_pos.reserve((int)b.deck.size() - fixedSize);
-        for (int i = 0; i < (int)b.deck.size() - fixedSize; ++i) {
+        b_pos.reserve(b.cardNum - fixedSize);
+        for (int i = 0; i < b.cardNum - fixedSize; ++i) {
             auto c1 = b.deck[i];
             bool ok = true;
             for (int j = 0; j < (int)pos.size(); ++j) {
@@ -234,22 +255,20 @@ void BaseDeckRecommend::findBestCardsGA(
             }
         }
         // 不应该出现的情况: b中可以选择的位置少于要在a中替换的位置
-        if ((int)b_pos.size() < (int)a.deck.size() - fixedSize - (int)pos.size()) 
+        if ((int)b_pos.size() < a.cardNum - fixedSize - (int)pos.size()) 
             throw std::runtime_error("crossover error: not enough other cards to select");
         std::shuffle(b_pos.begin(), b_pos.end(), rng);
-        b_pos.resize((int)a.deck.size() - fixedSize - (int)pos.size());
+        b_pos.resize(a.cardNum - fixedSize - (int)pos.size());
         // 生成新个体
         Individual child{};
-        child.deck.reserve(member);
         for (const auto& p : pos) 
-            child.deck.push_back(a.deck[p]);
+            child.addCard(a.deck[p]);
         for (const auto& p : b_pos)
-            child.deck.push_back(b.deck[p]);
-
+            child.addCard(b.deck[p]);
         // 添加固定卡牌
         for (const auto& card : fixedCards) 
-            child.deck.push_back(&card);
-        if (int(child.deck.size()) != member) 
+            child.addCard(&card);
+        if (child.cardNum != member) 
             throw std::runtime_error("crossover error: deck size not equal to member");
 
         // std::cerr << "crossover: ";
@@ -262,7 +281,7 @@ void BaseDeckRecommend::findBestCardsGA(
     // 变异操作
     auto mutate = [&](Individual& a) {
         // 遍历非固定的每个位置
-        for (int pos = 0; pos < (int)a.deck.size() - fixedSize; ++pos) {
+        for (int pos = 0; pos < a.cardNum - fixedSize; ++pos) {
             if (std::uniform_real_distribution<double>(0.0, 1.0)(rng) > cur_mutation_rate) 
                 continue;
             // 随机选择一张卡进行替换，需要检查新卡是否重复，最多10次避免死循环
@@ -282,7 +301,7 @@ void BaseDeckRecommend::findBestCardsGA(
                 }
                 // 检查与队里其他卡的冲突
                 bool ok = true;
-                for (int i = 0; i < (int)a.deck.size(); ++i) {
+                for (int i = 0; i < a.cardNum; ++i) {
                     if (i == pos) continue;
                     auto card = a.deck[i];
                     // 检查id是否重复
