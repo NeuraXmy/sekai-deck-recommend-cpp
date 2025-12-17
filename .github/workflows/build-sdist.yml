@@ -1,0 +1,26 @@
+name: Build sdist
+
+on:
+  workflow_call:
+
+jobs:
+  sdist:
+    name: sdist
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install build
+      - run: python -m build --sdist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz

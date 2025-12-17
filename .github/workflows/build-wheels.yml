@@ -1,0 +1,257 @@
+name: Build wheels
+
+on:
+  workflow_call:
+
+jobs:
+  # ============================================================
+  # Linux x86_64 manylinux
+  # ============================================================
+  linux_x64_many:
+    name: Linux x64 manylinux
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.18"
+          enable-cache: true
+
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel
+
+      - name: Build wheels
+        run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BUILD: "cp31*-manylinux*"
+          CIBW_ARCHS_LINUX: "x86_64"
+          CIBW_BUILD_FRONTEND: "build[uv]"
+          CIBW_BUILD_VERBOSITY: "1"
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-linux-x64-many
+          path: wheelhouse/*.whl
+
+  # ============================================================
+  # Linux x86_64 musllinux
+  # ============================================================
+  linux_x64_musl:
+    name: Linux x64 musllinux
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.18"
+          enable-cache: true
+
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel
+
+      - name: Build wheels
+        run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BUILD: "cp31*-musllinux*"
+          CIBW_ARCHS_LINUX: "x86_64"
+          CIBW_BUILD_FRONTEND: "build[uv]"
+          CIBW_BUILD_VERBOSITY: "1"
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-linux-x64-musl
+          path: wheelhouse/*.whl
+
+  # ============================================================
+  # Linux arm64 manylinux
+  # ============================================================
+  linux_arm64_many:
+    name: Linux arm64 manylinux
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.18"
+          enable-cache: true
+
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel
+
+      - name: Build wheels
+        run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BUILD: "cp31*-manylinux*"
+          CIBW_ARCHS_LINUX: "aarch64"
+          CIBW_BUILD_FRONTEND: "build[uv]"
+          CIBW_BUILD_VERBOSITY: "1"
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-linux-arm64-many
+          path: wheelhouse/*.whl
+
+  # ============================================================
+  # Linux arm64 musllinux
+  # ============================================================
+  linux_arm64_musl:
+    name: Linux arm64 musllinux
+    runs-on: ubuntu-24.04-arm
+    continue-on-error: true
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.18"
+          enable-cache: true
+
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel
+
+      - name: Build wheels
+        run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BUILD: "cp31*-musllinux*"
+          CIBW_ARCHS_LINUX: "aarch64"
+          CIBW_BUILD_FRONTEND: "build[uv]"
+          CIBW_BUILD_VERBOSITY: "1"
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-linux-arm64-musl
+          path: wheelhouse/*.whl
+
+  # ============================================================
+  # Windows x64
+  # ============================================================
+  windows_x64:
+    name: Windows x64
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.18"
+          enable-cache: true
+
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel
+
+      - name: Build wheels
+        run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BUILD: "cp31*-*"
+          CIBW_ARCHS_WINDOWS: "AMD64"
+          CIBW_CMAKE_GENERATOR: "Ninja"
+          CIBW_ENVIRONMENT_WINDOWS: >
+            CC=clang-cl
+            CXX=clang-cl
+          CIBW_BUILD_FRONTEND: "build[uv]"
+          CIBW_BUILD_VERBOSITY: "1"
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-windows-x64
+          path: wheelhouse/*.whl
+
+  # ============================================================
+  # macOS arm64
+  # ============================================================
+  macos_arm64:
+    name: macOS arm64
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.18"
+          enable-cache: true
+
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel
+
+      - name: Build wheels
+        run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BUILD: "cp31*-*"
+          CIBW_ARCHS_MACOS: "arm64"
+          CIBW_BUILD_FRONTEND: "build[uv]"
+          CIBW_BUILD_VERBOSITY: "1"
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-macos-arm64
+          path: wheelhouse/*.whl
