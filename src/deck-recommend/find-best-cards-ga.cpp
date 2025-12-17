@@ -182,6 +182,9 @@ void BaseDeckRecommend::findBestCardsGA(
                 if (std::find(cfg.fixedCharacters.begin(), cfg.fixedCharacters.end(), j) != cfg.fixedCharacters.end()) continue;
                 valid_charas.push_back(j);
             }
+            // 不足member个角色直接不能组
+            if ((int)valid_charas.size() < member) 
+                return;
             std::shuffle(valid_charas.begin(), valid_charas.end(), rng);
             valid_charas.resize(member - fixedSize - cfg.fixedCharacters.size());
             // 在开头添加固定角色
