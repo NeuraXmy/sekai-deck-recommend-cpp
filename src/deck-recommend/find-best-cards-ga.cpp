@@ -57,6 +57,8 @@ std::vector<double> calcRandomSelectWeights(const std::vector<CardDetail>& cards
 
 // 根据权重随机选择一个index
 int randomSelectIndexByWeight(Rng& rng, const std::vector<double>& weights, const std::vector<int>& excluded = {}) {
+    if (weights.empty()) 
+        throw std::invalid_argument("no cards to select");
     while (true) {
         double rand = std::uniform_real_distribution<double>(0.0, 1.0)(rng);
         auto it = std::lower_bound(weights.begin(), weights.end(), rand);
@@ -183,7 +185,7 @@ void BaseDeckRecommend::findBestCardsGA(
                 valid_charas.push_back(j);
             }
             // 不足member个角色直接不能组
-            if ((int)valid_charas.size() < member) 
+            if ((int)valid_charas.size() < member - fixedSize - (int)cfg.fixedCharacters.size())
                 return;
             std::shuffle(valid_charas.begin(), valid_charas.end(), rng);
             valid_charas.resize(member - fixedSize - cfg.fixedCharacters.size());
