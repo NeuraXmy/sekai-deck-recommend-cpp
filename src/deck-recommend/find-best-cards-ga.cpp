@@ -5,7 +5,7 @@
 
 struct Individual {
     int cardNum = 0;
-    std::array<const CardDetail*, 5> deck;
+    std::array<const CardDetail*, 5> deck{};
     uint64_t deckHash;
     double fitness;
 
@@ -17,26 +17,54 @@ struct Individual {
     }
 
     uint64_t calcDeckHash() {
-        std::sort(deck.begin() + 1, deck.begin() + cardNum, [](const CardDetail* a, const CardDetail* b) {
+        auto a = deck;
+        std::sort(a.begin() + 1, a.begin() + cardNum, [](const CardDetail* a, const CardDetail* b) {
             return a->cardId < b->cardId;
         });
         constexpr uint64_t base = 10007;
         uint64_t hash = 0;
         for (int i = 0; i < cardNum; ++i) 
-            hash = hash * base + deck[i]->cardId;
+            hash = hash * base + a[i]->cardId;
         return hash;
     }
 
     void addCard(const CardDetail* card) {
         deck[cardNum++] = card;
     }
+
+    std::string toString() const {
+        std::string s = "Individual(";
+        for (int i = 0; i < cardNum; ++i) {
+            s += std::to_string(deck[i]->cardId);
+            if (i != cardNum - 1) 
+                s += ",";
+        }
+        s += ")";
+        return s;
+    }
 };
 
 
 // 计算随机选择权重（综合力/技能加成越大越容易被选中）
-std::vector<double> calcRandomSelectWeights(const std::vector<CardDetail>& cards, RecommendTarget target) {
+std::vector<double> calcRandomSelectWeights(
+    const std::vector<CardDetail>& cards, 
+    RecommendTarget target,
+    const std::vector<CardDetail>& excluded
+) {
     std::vector<double> weights{};
     for (const auto& card : cards) {
+        bool skip = false;
+        for (const auto& ex : excluded) {
+            if (card.cardId == ex.cardId) {
+                skip = true;
+                break;
+            }
+        }
+        if (skip) {
+            weights.push_back(0.0);
+            continue;
+        }
+
         if (target == RecommendTarget::Skill) {
             // 以技能加成的平方为权重以扩大差距
             weights.push_back((double)card.skill.max * card.skill.max);
@@ -47,8 +75,9 @@ std::vector<double> calcRandomSelectWeights(const std::vector<CardDetail>& cards
     }
     // 归一化 & 计算前缀和
     double sum = std::accumulate(weights.begin(), weights.end(), 0.0);
-    for (auto& weight : weights) 
-        weight /= sum;
+    if (sum > 0) 
+        for (auto& weight : weights) 
+            weight /= sum;
     for (int i = 1; i < (int)weights.size(); ++i)
         weights[i] += weights[i - 1];
     return weights;
@@ -56,27 +85,23 @@ std::vector<double> calcRandomSelectWeights(const std::vector<CardDetail>& cards
 
 
 // 根据权重随机选择一个index
-int randomSelectIndexByWeight(Rng& rng, const std::vector<double>& weights, const std::vector<int>& excluded = {}) {
+int randomSelectIndexByWeight(Rng& rng, const std::vector<double>& weights) {
     if (weights.empty()) 
         throw std::invalid_argument("no cards to select");
-    while (true) {
-        double rand = std::uniform_real_distribution<double>(0.0, 1.0)(rng);
-        auto it = std::lower_bound(weights.begin(), weights.end(), rand);
-        int index = std::distance(weights.begin(), it);
-        if (std::find(excluded.begin(), excluded.end(), index) == excluded.end()) {
-            return index;
-        }
-    }
+    double rand = std::uniform_real_distribution<double>(0.0, 1.0)(rng);
+    auto it = std::lower_bound(weights.begin(), weights.end(), rand);
+    int index = std::distance(weights.begin(), it);
+    return index;
 }
 
 // 根据权重随机选择n个不重复的index
-std::vector<int> randomSelectIndexByWeight(Rng& rng, const std::vector<double>& weights, int n, const std::vector<int>& excluded = {}) {
+std::vector<int> randomSelectIndexByWeight(Rng& rng, const std::vector<double>& weights, int n) {
     if (n > (int)weights.size()) 
         throw std::invalid_argument("no enough cards to select");
     std::vector<int> indices{};
     indices.reserve(n);
     while ((int)indices.size() < n) {
-        int idx = randomSelectIndexByWeight(rng, weights, excluded);
+        int idx = randomSelectIndexByWeight(rng, weights);
         if (std::find(indices.begin(), indices.end(), idx) == indices.end()) {
             indices.push_back(idx);
         }
@@ -102,15 +127,6 @@ void BaseDeckRecommend::findBestCardsGA(
     const std::vector<CardDetail>& fixedCards
 ) {
     int fixedSize = fixedCards.size();
-    std::vector<int> fixedCardIndices{}; // 用于随机选择时排除
-    for (int i = 0; i < fixedSize; ++i) {
-        auto it = std::find_if(cardDetails.begin(), cardDetails.end(), [&](const CardDetail& card) {
-            return card.cardId == fixedCards[i].cardId;
-        });
-        if (it != cardDetails.end()) {
-            fixedCardIndices.push_back(std::distance(cardDetails.begin(), it));
-        }
-    }
 
     // 参数检查
     if (cfg.gaParentSize < 0 || cfg.gaParentSize > cfg.gaPopSize) 
@@ -153,9 +169,9 @@ void BaseDeckRecommend::findBestCardsGA(
         individual.deckHash = deckHash;
     };
 
-    // 计算用于随机选择的卡牌权重
+    // 计算用于随机选择的卡牌权重，fixedCards不参与选择
     constexpr int MAX_CID = 27;
-    auto allCardWeights = calcRandomSelectWeights(cardDetails, cfg.target); 
+    auto allCardWeights = calcRandomSelectWeights(cardDetails, cfg.target, fixedCards);
 
     // 根据卡的角色map参与组队的卡牌
     std::vector<CardDetail> charaCardDetails[MAX_CID] = {};
@@ -163,7 +179,7 @@ void BaseDeckRecommend::findBestCardsGA(
     for (const auto& card : cardDetails) 
         charaCardDetails[card.characterId].push_back(card);
     for (int i = 0; i < MAX_CID; ++i) 
-        charaCardWeights[i] = calcRandomSelectWeights(charaCardDetails[i], cfg.target);
+        charaCardWeights[i] = calcRandomSelectWeights(charaCardDetails[i], cfg.target, fixedCards);
 
     // 生成初始种群
     std::vector<Individual> population;
@@ -198,12 +214,12 @@ void BaseDeckRecommend::findBestCardsGA(
             }
         } 
         else {
-            // 挑战live随机member-fixed张不重复的（不能是和fixedCards相同的卡）
-            auto indices = randomSelectIndexByWeight(rng, allCardWeights, member - fixedSize, fixedCardIndices);
+            // 挑战live随机member-fixed张不重复的
+            auto indices = randomSelectIndexByWeight(rng, allCardWeights, member - fixedSize);
             for (const auto& idx : indices) 
                 individual.addCard(&cardDetails[idx]);
         }
-        // 添加固定卡牌
+        // 添加固定卡牌（整个流程固定在最后）
         for (const auto& card : fixedCards) 
             individual.addCard(&card);
         updateIndividualScore(individual);
@@ -224,7 +240,7 @@ void BaseDeckRecommend::findBestCardsGA(
     auto crossover = [&](const Individual& a, const Individual& b) {
         if (std::uniform_real_distribution<double>(0.0, 1.0)(rng) > cfg.gaCrossoverRate)
             return std::max(a, b);
-        // 随机选择要保留的a位置（不包括固定）
+        // 随机选择要保留的a位置（不包括固定卡牌）
         std::vector<int> pos{};
         pos.reserve(a.cardNum - fixedSize);
         for (int i = 0; i < a.cardNum - fixedSize; ++i) {
@@ -242,8 +258,8 @@ void BaseDeckRecommend::findBestCardsGA(
         for (int i = 0; i < b.cardNum - fixedSize; ++i) {
             auto c1 = b.deck[i];
             bool ok = true;
-            for (int j = 0; j < (int)pos.size(); ++j) {
-                auto c2 = a.deck[pos[j]];
+            for (auto p : pos) {
+                auto c2 = a.deck[p];
                 // 检查id是否重复
                 if (c1->cardId == c2->cardId) {
                     ok = false;
@@ -261,7 +277,8 @@ void BaseDeckRecommend::findBestCardsGA(
         }
         // 不应该出现的情况: b中可以选择的位置少于要在a中替换的位置
         if ((int)b_pos.size() < a.cardNum - fixedSize - (int)pos.size()) 
-            throw std::runtime_error("crossover error: not enough other cards to select");
+            throw std::runtime_error("crossover error: not enough position in B to select with "
+            + a.toString() + " and " + b.toString());
         std::shuffle(b_pos.begin(), b_pos.end(), rng);
         b_pos.resize(a.cardNum - fixedSize - (int)pos.size());
         // 生成新个体
@@ -274,7 +291,8 @@ void BaseDeckRecommend::findBestCardsGA(
         for (const auto& card : fixedCards) 
             child.addCard(&card);
         if (child.cardNum != member) 
-            throw std::runtime_error("crossover error: deck size not equal to member");
+            throw std::runtime_error("crossover error: deck size not equal to member with "
+            + a.toString() + " and " + b.toString() + ", child: " + child.toString());
 
         // std::cerr << "crossover: ";
         // for (auto card : a.deck) std::cerr << card->cardId << " "; std::cerr << std::endl;
@@ -296,12 +314,12 @@ void BaseDeckRecommend::findBestCardsGA(
                 const CardDetail* newCard = nullptr;
                 if (isFixedChara) {
                     // 如果是固定角色，则只能从该角色的卡随机
-                    index = randomSelectIndexByWeight(rng, charaCardWeights[a.deck[pos]->characterId], fixedCardIndices);
+                    index = randomSelectIndexByWeight(rng, charaCardWeights[a.deck[pos]->characterId]);
                     newCard = &charaCardDetails[a.deck[pos]->characterId][index];
                 }
                 else {
                     // 否则从所有卡随机
-                    index = randomSelectIndexByWeight(rng, allCardWeights, fixedCardIndices);
+                    index = randomSelectIndexByWeight(rng, allCardWeights);
                     newCard = &cardDetails[index];
                 }
                 // 检查与队里其他卡的冲突
