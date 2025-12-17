@@ -14,10 +14,19 @@ add_subdirectory(3rdparty/pybind11)
 
 pybind11_add_module(sekai_deck_recommend ${SRC_FILES})
 
-if(MSVC)
-    target_compile_options(sekai_deck_recommend PRIVATE /W4)
+if (MSVC)
+    target_compile_options(sekai_deck_recommend PRIVATE
+        /W4
+        /MP
+        /Z7
+    )
+    target_link_options(sekai_deck_recommend PRIVATE
+        /DEBUG:NONE
+    )
 else()
-    target_compile_options(sekai_deck_recommend PRIVATE -Wall -Wextra -Wuninitialized)
+    target_compile_options(sekai_deck_recommend PRIVATE
+        -Wall -Wextra -Wuninitialized
+    )
 endif()
 
 install(TARGETS sekai_deck_recommend DESTINATION .)
