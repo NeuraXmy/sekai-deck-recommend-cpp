@@ -14,7 +14,7 @@ pip install sekai-deck-recommend-cpp
 
 - CMake ≥ 3.15
 - C++20 compatible compiler (GCC/Clang/MSVC)
-- Python 3.8+ with development headers
+- Python 3.10+ with development headers
 
 ### Steps
 
