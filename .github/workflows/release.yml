@@ -39,6 +39,10 @@ jobs:
           CIBW_ARCHS_WINDOWS: "AMD64"
           CIBW_ARCHS_MACOS: "x86_64 arm64"
           CIBW_BUILD_VERBOSITY: "1"
+          CIBW_CMAKE_GENERATOR: "Ninja"
+          CIBW_ENVIRONMENT_WINDOWS: >
+            CC=clang-cl
+            CXX=clang-cl
 
       - name: Store artifacts
         uses: actions/upload-artifact@v4
