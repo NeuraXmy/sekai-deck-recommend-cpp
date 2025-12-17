@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core", "pybind11"]
+requires = ["scikit-build-core"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -7,4 +7,7 @@ name = "sekai-deck-recommend-cpp"
 version = "0.2.12"
 
 [tool.scikit-build]
-cmake.args = ["-DCMAKE_BUILD_TYPE=Release"]
+build-dir = "build/{wheel_tag}"
+
+[tool.scikit-build.cmake.define]
+CMAKE_MSVC_DEBUG_INFORMATION_FORMAT = "Embedded"
