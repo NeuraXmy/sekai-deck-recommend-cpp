@@ -29,5 +29,9 @@ else()
     )
 endif()
 
-install(TARGETS sekai_deck_recommend DESTINATION .)
-install(FILES ${PROJECT_SOURCE_DIR}/src/sekai_deck_recommend.pyi DESTINATION .)
+set(INSTALL_DIR "sekai_deck_recommend_cpp")
+
+install(TARGETS sekai_deck_recommend DESTINATION ${INSTALL_DIR})
+install(DIRECTORY "${PROJECT_SOURCE_DIR}/data" DESTINATION ${INSTALL_DIR})
+install(FILES "${PROJECT_SOURCE_DIR}/src/_sekai_deck_recommend.pyi" DESTINATION ${INSTALL_DIR})
+install(FILES "${PROJECT_SOURCE_DIR}/src/__init__.py" DESTINATION ${INSTALL_DIR})

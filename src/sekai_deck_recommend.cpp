@@ -1,6 +1,7 @@
 #include "deck-recommend/event-deck-recommend.h"
 #include "deck-recommend/challenge-live-deck-recommend.h"
 #include "deck-recommend/mysekai-deck-recommend.h"
+#include "data-provider/static-data.h"
 
 #include <iostream>
 #include <chrono>
@@ -9,6 +10,13 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 namespace py = pybind11;
+
+
+// 初始化静态数据路径
+void init_data_path(const std::string& path) {
+    setStaticDataDir(path);
+}
+
 
 static const std::map<std::string, Region> REGION_ENUM_MAP = {
     {"jp", Region::JP},
@@ -1166,6 +1174,8 @@ public:
 
 PYBIND11_MODULE(sekai_deck_recommend, m) {
     m.doc() = "pybind11 sekai_deck_recommend plugin";
+
+    m.def("init_data_path", &init_data_path);
 
     py::class_<PyUserData>(m, "DeckRecommendUserData")
         .def(py::init<>())

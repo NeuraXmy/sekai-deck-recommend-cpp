@@ -1,4 +1,5 @@
 #include "data-provider/master-data.h"
+#include "data-provider/static-data.h"
 
 #include <fstream>
 #include <iostream>
@@ -167,7 +168,6 @@ void MasterData::loadFromJsons(std::map<std::string, json>& jsons) {
     this->skills = loadMasterData<Skill>(jsons, "skills");
     this->worldBloomDifferentAttributeBonuses = loadMasterData<WorldBloomDifferentAttributeBonus>(jsons, "worldBloomDifferentAttributeBonuses");
     this->worldBlooms = loadMasterData<WorldBloom>(jsons, "worldBlooms");
-    this->worldBloomSupportDeckBonuses = loadMasterData<WorldBloomSupportDeckBonus>(jsons, "worldBloomSupportDeckBonuses");
 
     this->worldBloomSupportDeckUnitEventLimitedBonuses = loadMasterData<WorldBloomSupportDeckUnitEventLimitedBonus>(jsons, "worldBloomSupportDeckUnitEventLimitedBonuses", false);
     this->cardMysekaiCanvasBonuses = loadMasterData<CardMysekaiCanvasBonus>(jsons, "cardMysekaiCanvasBonuses", false);
@@ -175,6 +175,12 @@ void MasterData::loadFromJsons(std::map<std::string, json>& jsons) {
     this->mysekaiFixtureGameCharacterGroupPerformanceBonuses = loadMasterData<MysekaiFixtureGameCharacterGroupPerformanceBonus>(jsons, "mysekaiFixtureGameCharacterGroupPerformanceBonuses", false);
     this->mysekaiGates = loadMasterData<MysekaiGate>(jsons, "mysekaiGates", false);
     this->mysekaiGateLevels = loadMasterData<MysekaiGateLevel>(jsons, "mysekaiGateLevels", false);
+
+    std::map<std::string, json> tmp{};
+    loadMasterDataJsonFromFile(tmp, getStaticDataDir(), "worldBloomSupportDeckBonusesWL1");
+    loadMasterDataJsonFromFile(tmp, getStaticDataDir(), "worldBloomSupportDeckBonusesWL2");
+    this->worldBloomSupportDeckBonusesWL1 = loadMasterData<WorldBloomSupportDeckBonus>(tmp, "worldBloomSupportDeckBonusesWL1");
+    this->worldBloomSupportDeckBonusesWL2 = loadMasterData<WorldBloomSupportDeckBonus>(tmp, "worldBloomSupportDeckBonusesWL2");
 
     addFakeEvent(Enums::EventType::world_bloom);
     addFakeEvent(Enums::EventType::marathon);

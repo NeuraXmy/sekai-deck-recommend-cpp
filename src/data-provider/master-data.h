@@ -45,8 +45,10 @@ public:
     std::vector<Skill> skills;
     std::vector<WorldBloomDifferentAttributeBonus> worldBloomDifferentAttributeBonuses;
     std::vector<WorldBloom> worldBlooms;
-    std::vector<WorldBloomSupportDeckBonus> worldBloomSupportDeckBonuses;
     std::vector<WorldBloomSupportDeckUnitEventLimitedBonus> worldBloomSupportDeckUnitEventLimitedBonuses;
+
+    std::vector<WorldBloomSupportDeckBonus> worldBloomSupportDeckBonusesWL1;
+    std::vector<WorldBloomSupportDeckBonus> worldBloomSupportDeckBonusesWL2;
 
     void loadFromJsons(std::map<std::string, json>& jsons);
 
