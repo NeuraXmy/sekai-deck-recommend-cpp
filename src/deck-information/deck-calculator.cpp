@@ -144,8 +144,8 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
 
     // 预处理队伍和属性，存储每个队伍或属性出现的次数
     int card_num = int(cardDetails.size());
-    int attr_map[15] = {};
-    int unit_map[15] = {};
+    int attr_map[16] = {};
+    int unit_map[16] = {};
     for (auto p : cardDetails) {
         auto& cardDetail = *p;
         attr_map[cardDetail.attr]++;
@@ -154,7 +154,7 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
         }
     }
     int unit_num = 0;
-    for (int i = 0; i < 10; ++i) 
+    for (int i = 0; i < 16; ++i) 
         unit_num += bool(unit_map[i]);
 
     // 计算当前卡组的综合力，要加上称号的固定加成
