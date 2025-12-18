@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "sekai-deck-recommend-cpp"
-version = "0.2.14"
+version = "0.2.15"
 
 [tool.scikit-build]
 build-dir = "build/{wheel_tag}"
