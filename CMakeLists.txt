@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(sekai-deck-recommend-cpp VERSION 0.2.17 LANGUAGES CXX)
+project(sekai-deck-recommend-cpp VERSION 0.2.18 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -33,5 +33,5 @@ set(INSTALL_DIR "sekai_deck_recommend_cpp")
 
 install(TARGETS sekai_deck_recommend DESTINATION ${INSTALL_DIR})
 install(DIRECTORY "${PROJECT_SOURCE_DIR}/data" DESTINATION ${INSTALL_DIR})
-install(FILES "${PROJECT_SOURCE_DIR}/src/_sekai_deck_recommend.pyi" DESTINATION ${INSTALL_DIR})
+install(FILES "${PROJECT_SOURCE_DIR}/src/sekai_deck_recommend.pyi" DESTINATION ${INSTALL_DIR})
 install(FILES "${PROJECT_SOURCE_DIR}/src/__init__.py" DESTINATION ${INSTALL_DIR})
