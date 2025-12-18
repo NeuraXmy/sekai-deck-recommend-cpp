@@ -239,7 +239,7 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
     // 枚举技能状态，计算当前卡组的实际技能效果（包括选择花前/花后技能），并归纳卡牌在队伍中的详情信息
     std::array<DeckCardSkillDetail, 5> skills{};
     std::array<int, 5> order{};
-    std::array<double, 5> memberSkillMaxs{};
+    std::vector<double> memberSkillMaxs{};
     std::vector<std::pair<int, int>> scoreUps{};
     scoreUps.reserve(1 << needEnumerateCount);
     std::vector<DeckDetail> ret{};
@@ -260,11 +260,12 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
             // 吸分
             if (s.hasScoreUpReference) {
                 s.scoreUp -= s.scoreUpReferenceMax; // 从max回到还没吸的基础值
+                memberSkillMaxs.clear();
                 // 收集其他成员的技能最大值
                 for (int j = 0; j < card_num; ++j) if (i != j) {
                     double m = skills[j].scoreUpToReference;
                     m = std::min(std::floor(m * s.scoreUpReferenceRate / 100.), s.scoreUpReferenceMax);
-                    memberSkillMaxs[j] = m;
+                    memberSkillMaxs.push_back(m);
                 }
                 // 不同选择策略
                 double chosenSkillMax = 0;
