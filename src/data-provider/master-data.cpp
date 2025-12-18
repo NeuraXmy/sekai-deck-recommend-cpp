@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <vector>
 #include "master-data.h"
 
 
@@ -223,26 +224,25 @@ void MasterData::addFakeEvent(int eventType) {
                 std::set<int> charas{};
                 // 相同团的角色加成
                 for (auto& charaUnit : gameCharacterUnits) {
-                    if (charaUnit.unit == unit || (unit == Enums::Unit::piapro && charaUnit.id > 20)) {
+                    if ((charaUnit.unit == unit && charaUnit.id <= 20) || (unit == Enums::Unit::piapro && charaUnit.id > 20)) {
                         EventDeckBonus b;
                         b.eventId = e.id;
                         b.gameCharacterUnitId = charaUnit.id;
                         b.cardAttr = Enums::Attr::null;
                         b.bonusRate = 25.0;
                         eventDeckBonuses.push_back(b);
-                        charas.insert(charaUnit.id);
+                        if (charaUnit.id <= 26)
+                            charas.insert(charaUnit.id);
                     }
                 }
                 // WL章节
                 int chapterNo = 0;
-                for (auto& charaUnit : gameCharacterUnits) {
-                    if ((charaUnit.unit == unit && charaUnit.id <= 20) || (unit == Enums::Unit::piapro && charaUnit.id > 20 && charaUnit.id <= 26)) {
-                        WorldBloom wb;
-                        wb.eventId = e.id;
-                        wb.gameCharacterId = charaUnit.id;
-                        wb.chapterNo = ++chapterNo;
-                        worldBlooms.push_back(wb);
-                    }
+                for (auto chara : charas) {
+                    WorldBloom wb;
+                    wb.eventId = e.id;
+                    wb.gameCharacterId = chara;
+                    wb.chapterNo = ++chapterNo;
+                    worldBlooms.push_back(wb);
                 }
                 // 如果是WL2，并且已经有WL1的卡，则添加WL1卡的支援加成（从现有的复制）
                 if (turn == 2) {
