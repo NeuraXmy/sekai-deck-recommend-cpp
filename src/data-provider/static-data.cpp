@@ -1,6 +1,6 @@
 #include "static-data.h"
 
-std::string staticDataDir = "./data/";
+std::string staticDataDir = "./data";
 
 void setStaticDataDir(const std::string &path)
 {

@@ -28,12 +28,41 @@ namespace Enums {
         const int any = mapEnum(EnumMap::unit, "any");
         const int diff = mapEnum(EnumMap::unit, "diff");
         const int ref = mapEnum(EnumMap::unit, "ref");
+
+        const int light_sound = mapEnum(EnumMap::unit, "light_sound");
+        const int idol = mapEnum(EnumMap::unit, "idol");
+        const int street = mapEnum(EnumMap::unit, "street");
+        const int theme_park = mapEnum(EnumMap::unit, "theme_park");
+        const int school_refusal = mapEnum(EnumMap::unit, "school_refusal");
         const int piapro = mapEnum(EnumMap::unit, "piapro");
+
+        const std::array<int, 6> specificUnits = {
+            light_sound,
+            idol,
+            street,
+            theme_park,
+            school_refusal,
+            piapro
+        };
     }
 
     namespace Attr {
         const int null = mapEnum(EnumMap::attr, "");
         const int any = mapEnum(EnumMap::attr, "any");
+
+        const int mysterious = mapEnum(EnumMap::attr, "mysterious");
+        const int cool = mapEnum(EnumMap::attr, "cool");
+        const int pure = mapEnum(EnumMap::attr, "pure");
+        const int cute = mapEnum(EnumMap::attr, "cute");
+        const int happy = mapEnum(EnumMap::attr, "happy");
+
+        const std::array<int, 5> specificAttrs = {
+            mysterious,
+            cool,
+            pure,
+            cute,
+            happy
+        };
     }
 
     namespace CardParameterType {

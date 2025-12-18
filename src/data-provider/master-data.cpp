@@ -212,8 +212,56 @@ void MasterData::loadFromStrings(std::map<std::string, std::string>& data) {
 // 添加用于无活动组卡和指定团+颜色组卡的假活动
 void MasterData::addFakeEvent(int eventType) {
     if (eventType == Enums::EventType::world_bloom) {
-        // WL 暂不支持
-        return;
+        // 模拟WL组卡
+        for (int turn = 1; turn <= 2; turn++) {
+            for (auto unit : Enums::Unit::specificUnits) {
+                // 活动本身
+                Event e;
+                e.id = getWorldBloomFakeEventId(turn, unit);
+                e.eventType = eventType;
+                events.push_back(e);
+                std::set<int> charas{};
+                // 相同团的角色加成
+                for (auto& charaUnit : gameCharacterUnits) {
+                    if (charaUnit.unit == unit || (unit == Enums::Unit::piapro && charaUnit.id > 20)) {
+                        EventDeckBonus b;
+                        b.eventId = e.id;
+                        b.gameCharacterUnitId = charaUnit.id;
+                        b.cardAttr = Enums::Attr::null;
+                        b.bonusRate = 25.0;
+                        eventDeckBonuses.push_back(b);
+                        charas.insert(charaUnit.id);
+                    }
+                }
+                // WL章节
+                int chapterNo = 0;
+                for (auto& charaUnit : gameCharacterUnits) {
+                    if (charaUnit.unit == unit || (unit == Enums::Unit::piapro && charaUnit.id > 20 && charaUnit.id <= 26)) {
+                        WorldBloom wb;
+                        wb.eventId = e.id;
+                        wb.gameCharacterId = charaUnit.id;
+                        wb.chapterNo = ++chapterNo;
+                        worldBlooms.push_back(wb);
+                    }
+                }
+                // 如果是WL2，并且已经有WL1的卡，则添加WL1卡的支援加成（从现有的复制）
+                if (turn == 2) {
+                    std::vector<WorldBloomSupportDeckUnitEventLimitedBonus> newBonuses{};
+                    for (const auto& bonus : worldBloomSupportDeckUnitEventLimitedBonuses) {
+                        if (bonus.eventId < 180 && charas.count(bonus.gameCharacterId)) {
+                            auto newBonus = bonus;
+                            newBonus.eventId = e.id;
+                            newBonuses.push_back(newBonus);
+                        }
+                    }
+                    worldBloomSupportDeckUnitEventLimitedBonuses.insert(
+                        worldBloomSupportDeckUnitEventLimitedBonuses.end(),
+                        newBonuses.begin(),
+                        newBonuses.end()
+                    );
+                }
+            }
+        }
     }
     else {
         // 无活动组卡
@@ -223,8 +271,8 @@ void MasterData::addFakeEvent(int eventType) {
         events.push_back(noEvent);
 
         // 指定团名+指定颜色组卡
-        for (auto unit : mapEnumList(EnumMap::unit)) {
-            for (auto attr : mapEnumList(EnumMap::attr)) {
+        for (auto unit : Enums::Unit::specificUnits) {
+            for (auto attr : Enums::Attr::specificAttrs) {
                 Event e;
                 e.id = getUnitAttrFakeEventId(eventType, unit, attr);
                 e.eventType = eventType;
@@ -276,12 +324,12 @@ int MasterData::getUnitAttrFakeEventId(int eventType, int unit, int attr) const
     return 1000000 + unit * 100 + attr + eventType * 100000;
 }
 
-int MasterData::getWorldBloomFakeEventId(int worldBloomTurn, int characterId) const
+int MasterData::getWorldBloomFakeEventId(int worldBloomTurn, int unit) const
 {
     if (worldBloomTurn < 1 || worldBloomTurn > 2) {
         throw std::invalid_argument("Invalid world bloom turn: " + std::to_string(worldBloomTurn));
     }
-    return 3000000 + (worldBloomTurn - 1) * 100000 + characterId;
+    return 3000000 + (worldBloomTurn - 1) * 100000 + unit;
 }
 
 int MasterData::getWorldBloomEventTurn(int eventId) const

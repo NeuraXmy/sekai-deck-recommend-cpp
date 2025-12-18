@@ -60,7 +60,7 @@ public:
 
     int getUnitAttrFakeEventId(int eventType, int unit, int attr) const;
 
-    int getWorldBloomFakeEventId(int worldBloomTurn, int characterId) const;
+    int getWorldBloomFakeEventId(int worldBloomTurn, int unit) const;
 
     int getWorldBloomEventTurn(int eventId) const;
 
