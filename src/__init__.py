@@ -1,6 +1,6 @@
 import os
 
-from ._sekai_deck_recommend import (
+from .sekai_deck_recommend import (
     DeckRecommendUserData,
     DeckRecommendCardConfig,
     DeckRecommendSingleCardConfig,
@@ -13,7 +13,7 @@ from ._sekai_deck_recommend import (
     SekaiDeckRecommend,
 )
 
-from . import _sekai_deck_recommend as _extension_module
+from . import sekai_deck_recommend as _extension_module
 
 _package_root = os.path.dirname(__file__)
 _data_dir = os.path.join(_package_root, "data")
