@@ -236,7 +236,7 @@ void MasterData::addFakeEvent(int eventType) {
                 // WL章节
                 int chapterNo = 0;
                 for (auto& charaUnit : gameCharacterUnits) {
-                    if (charaUnit.unit == unit || (unit == Enums::Unit::piapro && charaUnit.id > 20 && charaUnit.id <= 26)) {
+                    if ((charaUnit.unit == unit && charaUnit.id <= 20) || (unit == Enums::Unit::piapro && charaUnit.id > 20 && charaUnit.id <= 26)) {
                         WorldBloom wb;
                         wb.eventId = e.id;
                         wb.gameCharacterId = charaUnit.id;
@@ -279,7 +279,7 @@ void MasterData::addFakeEvent(int eventType) {
                 events.push_back(e);
                 // 相同团的角色加成
                 for (auto& charaUnit : gameCharacterUnits) {
-                    if ((charaUnit.unit == unit && charaUnit.id <= 20) || (unit == Enums::Unit::piapro && charaUnit.id > 20)) {
+                    if (charaUnit.unit == unit || (unit == Enums::Unit::piapro && charaUnit.id > 20)) {
                         // 同团同色
                         EventDeckBonus b;
                         b.eventId = e.id;
