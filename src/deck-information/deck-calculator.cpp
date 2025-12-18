@@ -82,14 +82,6 @@ SupportDeckBonus DeckCalculator::getSupportDeckBonus(
             continue;
         bonus += card.bonus;
         count++;
-
-        // debug
-        // cards.push_back(CardDetail{
-        //     .cardId = card.cardId,
-        //     .supportDeckBonus = card.bonus,
-        // });
-        // std::cerr << "SupportDeckCard: cardId=" << card.cardId << ", bonus=" << card.bonus << std::endl;
-
         if (count >= supportDeckCount) return { bonus, cards };
     }
     // 就算组不出完整的支援卡组也得返回
@@ -220,7 +212,7 @@ std::vector<DeckDetail> DeckCalculator::getDeckDetailByCards(
 
         if (keepAfterTrainingState) {
             // 如果指定不改变状态，则无论如何都不枚举，并且根据用户选择的状态设置
-            if(cardDetail.defaultImage != Enums::DefaultImage::special_training && s1.isAfterTraining)
+            if(cardDetail.defaultImage != Enums::DefaultImage::special_training && s2.isAfterTraining)
                 s2 = s1; // 用户设置花前技能
         } else {
             if (needEnumerate) {
