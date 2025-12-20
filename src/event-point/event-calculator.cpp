@@ -23,7 +23,7 @@ int EventCalculator::getEventPoint(int liveType, int eventType, int selfScore, d
         baseScore = (110 + int(selfScore / 17000.) + std::min(13, int(otherScore0 / 340000.)));
         return int(baseScore * musicRate0 * deckRate) * boostRate;
     } 
-    else if (liveType == Enums::LiveType::challenge_live) {
+    else if (liveType == Enums::LiveType::cheerful_live) {
         if (eventType != Enums::EventType::cheerful)
             throw std::runtime_error("Cheerful live is only playable in cheerful event.");
         baseScore = (110 + int(selfScore / 17000.) + std::min(13, int(otherScore0 / 340000.)));
